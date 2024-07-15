@@ -1,0 +1,11 @@
+# Default ignored files
+/.vscode/
+/.idea/
+/build/
+/CMakeFiles/
+Makefile
+CMakeCache.txt
+frogger
+cmake_install.cmake
+debug.log
+vgcore.*
