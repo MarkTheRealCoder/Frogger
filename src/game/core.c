@@ -197,86 +197,22 @@ void cancel_threads(struct game_threads *game_threads)
 
 void init_game_mutexes(struct game_threads *game_threads)
 {
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-
-    pthread_mutex_init(&game_threads->master.mutex, NULL);
-    pthread_mutex_init(&game_threads->frog.mutex, NULL);
-    pthread_mutex_init(&game_threads->time.mutex, NULL);
-    pthread_mutex_init(&game_threads->projectile.mutex, NULL);
-
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        pthread_mutex_init(&game_threads->crocs[i].mutex, NULL);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        pthread_mutex_init(&game_threads->plants[i].mutex, NULL);
-    }
+    CREATE_MUTEXES(pthread_mutex_init, game_threads, NULL);
 }
 
 void lock_game_mutexes(struct game_threads *game_threads)
 {
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-
-    pthread_mutex_lock(&game_threads->master.mutex);
-    pthread_mutex_lock(&game_threads->frog.mutex);
-    pthread_mutex_lock(&game_threads->time.mutex);
-    pthread_mutex_lock(&game_threads->projectile.mutex);
-
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        pthread_mutex_lock(&game_threads->crocs[i].mutex);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        pthread_mutex_lock(&game_threads->plants[i].mutex);
-    }
+    HANDLE_MUTEXES(pthread_mutex_lock, game_threads);
 }
 
 void unlock_game_mutexes(struct game_threads *game_threads)
 {
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-
-    pthread_mutex_unlock(&game_threads->master.mutex);
-    pthread_mutex_unlock(&game_threads->frog.mutex);
-    pthread_mutex_unlock(&game_threads->time.mutex);
-    pthread_mutex_unlock(&game_threads->projectile.mutex);
-
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        pthread_mutex_unlock(&game_threads->crocs[i].mutex);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        pthread_mutex_unlock(&game_threads->plants[i].mutex);
-    }
+    HANDLE_MUTEXES(pthread_mutex_unlock, game_threads);
 }
 
 void destroy_game_mutexes(struct game_threads *game_threads)
 {
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-
-    pthread_mutex_destroy(&game_threads->master.mutex);
-    pthread_mutex_destroy(&game_threads->frog.mutex);
-    pthread_mutex_destroy(&game_threads->time.mutex);
-    pthread_mutex_destroy(&game_threads->projectile.mutex);
-
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        pthread_mutex_destroy(&game_threads->crocs[i].mutex);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        pthread_mutex_destroy(&game_threads->plants[i].mutex);
-    }
+    HANDLE_MUTEXES(pthread_mutex_destroy, game_threads);
 }
 
 /*

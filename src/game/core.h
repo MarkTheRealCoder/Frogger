@@ -4,6 +4,47 @@
 #include "../utils/shortcuts.h"
 
 
+#define CREATE_MUTEXES(func, mutexes, arg) {                \
+    int crocs_num = mutexes->crocs_num;                     \
+    int plants_num = mutexes->plants_num;                   \
+                                                            \
+    func(&mutexes->master.mutex, arg);                      \
+    func(&mutexes->frog.mutex, arg);                        \
+    func(&mutexes->time.mutex, arg);                        \
+    func(&mutexes->projectile.mutex, arg);                  \
+                                                            \
+    for (int i = 0; i < crocs_num; i++)                     \
+    {                                                       \
+        func(&mutexes->crocs[i].mutex, arg);                \
+    }                                                       \
+                                                            \
+    for (int i = 0; i < plants_num; i++)                    \
+    {                                                       \
+        func(&mutexes->plants[i].mutex, arg);               \
+    }                                                       \
+}
+
+#define HANDLE_MUTEXES(func, mutexes) {                     \
+    int crocs_num = mutexes->crocs_num;                     \
+    int plants_num = mutexes->plants_num;                   \
+                                                            \
+    func(&mutexes->master.mutex);                           \
+    func(&mutexes->frog.mutex);                             \
+    func(&mutexes->time.mutex);                             \
+    func(&mutexes->projectile.mutex);                       \
+                                                            \
+    for (int i = 0; i < crocs_num; i++)                     \
+    {                                                       \
+        func(&mutexes->crocs[i].mutex);                     \
+    }                                                       \
+                                                            \
+    for (int i = 0; i < plants_num; i++)                    \
+    {                                                       \
+        func(&mutexes->plants[i].mutex);                    \
+    }                                                       \
+}
+
+
 /*
  * Packets related.
  */
