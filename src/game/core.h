@@ -4,47 +4,6 @@
 #include "../utils/shortcuts.h"
 
 
-#define CREATE_MUTEXES(func, mutexes, arg) {                \
-    int crocs_num = mutexes->crocs_num;                     \
-    int plants_num = mutexes->plants_num;                   \
-                                                            \
-    func(&mutexes->master.mutex, arg);                      \
-    func(&mutexes->frog.mutex, arg);                        \
-    func(&mutexes->time.mutex, arg);                        \
-    func(&mutexes->projectile.mutex, arg);                  \
-                                                            \
-    for (int i = 0; i < crocs_num; i++)                     \
-    {                                                       \
-        func(&mutexes->crocs[i].mutex, arg);                \
-    }                                                       \
-                                                            \
-    for (int i = 0; i < plants_num; i++)                    \
-    {                                                       \
-        func(&mutexes->plants[i].mutex, arg);               \
-    }                                                       \
-}
-
-#define HANDLE_MUTEXES(func, mutexes) {                     \
-    int crocs_num = mutexes->crocs_num;                     \
-    int plants_num = mutexes->plants_num;                   \
-                                                            \
-    func(&mutexes->master.mutex);                           \
-    func(&mutexes->frog.mutex);                             \
-    func(&mutexes->time.mutex);                             \
-    func(&mutexes->projectile.mutex);                       \
-                                                            \
-    for (int i = 0; i < crocs_num; i++)                     \
-    {                                                       \
-        func(&mutexes->crocs[i].mutex);                     \
-    }                                                       \
-                                                            \
-    for (int i = 0; i < plants_num; i++)                    \
-    {                                                       \
-        func(&mutexes->plants[i].mutex);                    \
-    }                                                       \
-}
-
-
 /*
  * Packets related.
  */
@@ -135,5 +94,81 @@ void signal_consumer(struct game_threads *game_threads);
 
 void wait_mutex(struct game_threads *game_threads);
 void signal_mutex(struct game_threads *game_threads);
+
+#define APPLY_TO_GAME_ARG(func, game, target, arg)  \
+    int crocs_num = game->crocs_num;                \
+    int plants_num = game->plants_num;              \
+                                                    \
+    func(game->master.target, arg);                 \
+    func(game->frog.target, arg);                   \
+    func(game->time.target, arg);                   \
+    func(game->projectile.target, arg);             \
+                                                    \
+    for (int i = 0; i < crocs_num; i++)             \
+    {                                               \
+        func(game->crocs[i].target, arg);           \
+    }                                               \
+                                                    \
+    for (int i = 0; i < plants_num; i++)            \
+    {                                               \
+        func(game->plants[i].target, arg);          \
+    }
+
+#define APPLY_TO_GAME_ARG_PTR(func, game, target, arg)  \
+    int crocs_num = *game->crocs_num;                   \
+    int plants_num = *game->plants_num;                 \
+                                                        \
+    func(game->master.target, arg);                     \
+    func(game->frog.target, arg);                       \
+    func(game->time.target, arg);                       \
+    func(game->projectile.target, arg);                 \
+                                                        \
+    for (int i = 0; i < crocs_num; i++)                 \
+    {                                                   \
+        func(game->crocs[i].target, arg);               \
+    }                                                   \
+                                                        \
+    for (int i = 0; i < plants_num; i++)                \
+    {                                                   \
+        func(game->plants[i].target, arg);              \
+    }
+
+#define APPLY_TO_GAME(func, game, target)   \
+    int crocs_num = game->crocs_num;        \
+    int plants_num = game->plants_num;      \
+                                            \
+    func(game->master.target);              \
+    func(game->frog.target);                \
+    func(game->time.target);                \
+    func(game->projectile.target);          \
+                                            \
+    for (int i = 0; i < crocs_num; i++)     \
+    {                                       \
+        func(game->crocs[i].target);        \
+    }                                       \
+                                            \
+    for (int i = 0; i < plants_num; i++)    \
+    {                                       \
+        func(game->plants[i].target);       \
+    }
+
+#define APPLY_TO_GAME_PTR(func, game, target)   \
+    int crocs_num = *game->crocs_num;           \
+    int plants_num = *game->plants_num;         \
+                                                \
+    func(game->master.target);                  \
+    func(game->frog.target);                    \
+    func(game->time.target);                    \
+    func(game->projectile.target);              \
+                                                \
+    for (int i = 0; i < crocs_num; i++)         \
+    {                                           \
+        func(game->crocs[i].target);            \
+    }                                           \
+                                                \
+    for (int i = 0; i < plants_num; i++)        \
+    {                                           \
+        func(game->plants[i].target);           \
+    }
 
 #endif // !FROGGER_CORE_H

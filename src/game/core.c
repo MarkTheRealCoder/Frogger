@@ -41,48 +41,15 @@ void destroy_packet(Packet *packet)
     free(packet);
 }
 
-void broadcast_signal(struct game_threads *game_threads, GameSignal signal)
+void broadcast_signal(struct game_threads *game_threads, GameSignal newSignal)
 {
-    printf("- Broadcast of new signal to all threads: %d\n", signal);
-
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-
-    atomic_store(&game_threads->master.signal, signal);
-    atomic_store(&game_threads->frog.signal, signal);
-    atomic_store(&game_threads->time.signal, signal);
-    atomic_store(&game_threads->projectile.signal, signal);
-
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        atomic_store(&game_threads->crocs[i].signal, signal);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        atomic_store(&game_threads->plants[i].signal, signal);
-    }
+    printf("- Broadcast of new signal to all threads: %d\n", newSignal);
+    APPLY_TO_GAME_ARG_PTR(atomic_init, &game_threads, signal, newSignal)
 }
 
 void init_signals(struct game_threads *game_threads)
 {
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-    
-    atomic_init(&game_threads->master.signal, GAMESIGNAL_RUN);
-    atomic_init(&game_threads->frog.signal, GAMESIGNAL_RUN);
-    atomic_init(&game_threads->time.signal, GAMESIGNAL_RUN);
-    atomic_init(&game_threads->projectile.signal, GAMESIGNAL_RUN);
-    
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        atomic_init(&game_threads->crocs[i].signal, GAMESIGNAL_RUN);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        atomic_init(&game_threads->plants[i].signal, GAMESIGNAL_RUN);
-    }
+    APPLY_TO_GAME_ARG_PTR(atomic_init, &game_threads, signal, GAMESIGNAL_RUN) 
 
     init_game_mutexes(game_threads);
     init_semaphores(game_threads);
@@ -124,23 +91,7 @@ void create_threads(struct game_threads *game_threads)
 
 void join_threads(struct game_threads *game_threads)
 {
-    int crocs_num = game_threads->crocs_num;
-    int plants_num = game_threads->plants_num;
-
-    pthread_join(game_threads->master.thread, NULL);
-    pthread_join(game_threads->frog.thread, NULL);
-    pthread_join(game_threads->time.thread, NULL);
-    pthread_join(game_threads->projectile.thread, NULL);
-
-    for (int i = 0; i < crocs_num; i++) 
-    {
-        pthread_join(game_threads->crocs[i].thread, NULL);
-    }
-
-    for (int i = 0; i < plants_num; i++) 
-    {
-        pthread_join(game_threads->plants[i].thread, NULL);
-    }
+    APPLY_TO_GAME_ARG(pthread_join, game_threads, thread, NULL)
 }
 
 /*
@@ -197,22 +148,22 @@ void cancel_threads(struct game_threads *game_threads)
 
 void init_game_mutexes(struct game_threads *game_threads)
 {
-    CREATE_MUTEXES(pthread_mutex_init, game_threads, NULL);
+    APPLY_TO_GAME_ARG_PTR(pthread_mutex_init, &game_threads, mutex, NULL)
 }
 
 void lock_game_mutexes(struct game_threads *game_threads)
 {
-    HANDLE_MUTEXES(pthread_mutex_lock, game_threads);
+    APPLY_TO_GAME_PTR(pthread_mutex_lock, &game_threads, mutex)
 }
 
 void unlock_game_mutexes(struct game_threads *game_threads)
 {
-    HANDLE_MUTEXES(pthread_mutex_unlock, game_threads);
+    APPLY_TO_GAME_PTR(pthread_mutex_unlock, &game_threads, mutex)
 }
 
 void destroy_game_mutexes(struct game_threads *game_threads)
 {
-    HANDLE_MUTEXES(pthread_mutex_destroy, game_threads);
+    APPLY_TO_GAME_PTR(pthread_mutex_destroy, &game_threads, mutex)
 }
 
 /*
