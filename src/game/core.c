@@ -44,7 +44,7 @@ void destroy_packet(Packet *packet)
 void broadcast_signal(struct game_threads *game_threads, GameSignal newSignal)
 {
     printf("- Broadcast of new signal to all threads: %d\n", newSignal);
-    APPLY_TO_GAME_ARG_PTR(atomic_init, &game_threads, signal, newSignal)
+    APPLY_TO_GAME_ARG_PTR(atomic_store, &game_threads, signal, newSignal)
 }
 
 void init_signals(struct game_threads *game_threads)
