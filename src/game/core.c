@@ -1,7 +1,5 @@
 #include "core.h"
 #include "routines.h"
-#include <semaphore.h>
-#include <stdio.h>
 
 Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
 {

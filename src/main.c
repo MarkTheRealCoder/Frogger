@@ -1,7 +1,6 @@
 #include "game/core.h"
 #include "game/addons.h"
 #include "utils/shortcuts.h"
-#include <stdio.h>
 
 #define TEST_MODE true
 

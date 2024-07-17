@@ -1,6 +1,5 @@
 #include "routines.h"
 #include "core.h"
-#include <unistd.h>
 
 void *example_routine() 
 {
