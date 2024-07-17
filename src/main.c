@@ -27,7 +27,6 @@ int main(int argc, char *argv[])
     game_threads.comms->buffer = MALLOC(Packet *, 10);
     game_threads.comms->buffer_size = 10;
     game_threads.comms->next_prod_index = 0;
-    game_threads.comms->await_cleanup = 0;
     game_threads.total_threads = 4 + game_threads.crocs_num + game_threads.plants_num;
 
     if (TEST_MODE)

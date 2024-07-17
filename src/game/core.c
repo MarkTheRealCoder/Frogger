@@ -1,5 +1,6 @@
 #include "core.h"
 #include "routines.h"
+#include <semaphore.h>
 #include <stdio.h>
 
 Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
@@ -231,16 +232,23 @@ void signal_mutex(struct game_threads *game_threads)
     sem_post(&game_threads->comms->sem_mutex);
 }
 
+int await_cleanup_count(struct game_threads *game_threads)
+{
+    int count;
+    sem_getvalue(&game_threads->comms->sem_occupied, &count);
+    return count;
+}
+
 void cleanup_buffer(struct game_threads *game_threads)
 {
-    printf("still awaiting cleanup: %d elems\n", game_threads->comms->await_cleanup);
+    printf("still awaiting cleanup: %d elems\n", await_cleanup_count(game_threads));
     
     Packet **comms_buffer = (Packet **) game_threads->comms->buffer;
     int buffer_size = game_threads->comms->buffer_size;
 
     wait_mutex(game_threads);
 
-    int await_cleanup = game_threads->comms->await_cleanup;
+    int await_cleanup = await_cleanup_count(game_threads);
     int next_prod_index = game_threads->comms->next_prod_index;
     
     for (int i = 0; i < await_cleanup; i++) 

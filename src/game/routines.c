@@ -4,7 +4,7 @@
 
 void *example_routine() 
 {
-    sleepy(5, TIMEFRAME_SECONDS);
+    sleepy(1, TIMEFRAME_SECONDS);
     return NULL; 
 }
 
@@ -22,7 +22,6 @@ void *example_producer2(void *args)
 
     Packet *product;
     int *index = &game->comms->next_prod_index;
-    int *await_cleanup = &game->comms->await_cleanup;
 
     while (true)
     {
@@ -39,12 +38,11 @@ void *example_producer2(void *args)
         comms_buffer[*index] = product;
         printf("Produced\t: %d (index: %d)\n", *(int *) product->data, *index);
         *index = (*index + 1) % buffer_size;
-        *await_cleanup += 1;
         signal_mutex(game);
         
         signal_producer(game);
 
-        sleepy(5, TIMEFRAME_MILLIS);
+        sleepy(50, TIMEFRAME_MILLIS);
     }
     
     printf("exited from prod2\n");
@@ -67,7 +65,6 @@ void *example_producer(void *args)
 
     Packet *product;
     int *index = &game->comms->next_prod_index;
-    int *await_cleanup = &game->comms->await_cleanup;
 
     while (true)
     {
@@ -84,12 +81,11 @@ void *example_producer(void *args)
         comms_buffer[*index] = product;
         printf("Produced\t: %d (index: %d)\n", *(int *) product->data, *index);
         *index = (*index + 1) % buffer_size;
-        *await_cleanup += 1;
         signal_mutex(game);
         
         signal_producer(game);
 
-        sleepy(5, TIMEFRAME_MILLIS);
+        sleepy(50, TIMEFRAME_MILLIS);
     }
 
     printf("exited from prod1\n");
@@ -112,7 +108,6 @@ void *master_routine(void *args)
 
     Packet *consumed_product;
     int index = 0;
-    int *await_cleanup = &game->comms->await_cleanup;
     
     while (true)
     {
@@ -125,13 +120,14 @@ void *master_routine(void *args)
         consumed_product = comms_buffer[index];
         printf("Read\t\t: %d (index: %d)\n", *(int *) consumed_product->data, index);
         index = (index + 1) % buffer_size;
-        *await_cleanup -= 1;
         signal_mutex(game);
 
         /* destruction of the now-consumed packet. */
         destroy_packet(consumed_product);
 
         signal_consumer(game);
+
+        sleepy(200, TIMEFRAME_MILLIS);
     }
 
     printf("exited from master\n");
