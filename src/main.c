@@ -10,23 +10,16 @@ void test_threads(struct game_threads *game_threads);
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
-    struct program_args parsed_program_args = parse_program_args(argc, argv); 
+    struct program_args parsed_program_args = addons_parse_args(argc, argv); 
 
     if (parsed_program_args.help)
     {
-        program_args_print_help(); 
+        addons_args_help(); 
         return EXIT_SUCCESS;
     }
 
     struct game_threads game_threads = { };
-    game_threads.crocs_num = 2;
-    game_threads.plants_num = 2;
-
-    game_threads.comms = MALLOC(struct comms, 1);
-    game_threads.comms->buffer = MALLOC(Packet *, 10);
-    game_threads.comms->buffer_size = 10;
-    game_threads.comms->next_prod_index = 0;
-    game_threads.total_threads = 4 + game_threads.crocs_num + game_threads.plants_num;
+    init_game_threads(&game_threads); 
 
     if (TEST_MODE)
     {
@@ -47,8 +40,7 @@ int main(int argc, char *argv[])
     // da eseguire alla fine di ogni partita
     if (parsed_program_args.save_game_stats)
     {
-        // commentato per evitare la creazione del file
-        // program_args_save_stats();
+        addons_args_save_stats(&game_threads);
     }
 
     // da eseguire alla fine di ogni partita, dopo il save_game_stats

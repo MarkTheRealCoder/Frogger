@@ -1,6 +1,6 @@
 #include "addons.h"
 
-struct program_args parse_program_args(int argc, char *argv[])
+struct program_args addons_parse_args(int argc, char *argv[])
 {
     struct program_args parsed_arguments = { };
     char *current_arg;
@@ -23,33 +23,57 @@ struct program_args parse_program_args(int argc, char *argv[])
         {
             parsed_arguments.save_game_stats = true;
         }
+
+        if (str_eq("-rs", current_arg) || str_eq("--replay_save", current_arg))
+        {
+            parsed_arguments.save_replay = true;
+        }
+
+        if (str_eq("-rv", current_arg) || str_eq("--replay_view", current_arg))
+        {
+            parsed_arguments.replay_view = true;
+        }
     }
 
     return parsed_arguments;
 }
 
-void program_args_print_help()
+void addons_args_help()
 {
     printf("Usage: frogger [options]\n");
     printf("Options:\n");
     printf("\t-h, --help\t\tShows this help message\n");
     printf("\t-q, --quit_after_win\tQuits the program after game is won.\n");
     printf("\t-s, --save_game_stats\tSaves the last game's statistics to file.\n");
+    printf("\t-rs, --replay_save\tSaves the last game replay to a file.");
+    printf("\t-rv, --replay_view\tViews the saved replays.");
 }
 
-void program_args_save_stats()
+void addons_args_save_stats(struct game_threads *game_threads)
 {
     FILE *file;
-    time_t current_time = time(NULL);
-    char file_name[34];
     
-    strftime(file_name, 34, "frogger_%Y-%m-%d+%H-%M-%S.txt", localtime(&current_time));
+    char date[24];
+    char file_name[34];
+
+    time_t current_time = time(NULL);
+
+    strftime(date, 24, "%Y-%m-%d+%H-%M-%S", localtime(&current_time));
+    snprintf(file_name, sizeof(file_name), "frogger_%s.txt", date);
 
     file = fopen(file_name, "w");
 
     // todo: salvare ogni statistica di gioco
-    fprintf(file, "statistica: XX\n");
     
+    fprintf(file, "Statistiche della partita di Frogger del `%s`\n\n", date);
+
+    fprintf(file, "DETTAGLI PARTITA\n");
+    fprintf(file, "\t* ...\n");
+
+    fprintf(file, "DETTAGLI TECNICI\n");
+    fprintf(file, "\t* Threads totali:%d\n", game_threads->total_threads);
+    fprintf(file, "\t* ...\n");
+
     fclose(file); 
 }
 

@@ -4,6 +4,30 @@
 #include "../utils/shortcuts.h"
 
 
+// Rispettivamente: master, frog, time, frog_projectile, plants_projectile threads.
+#define CORE_THREADS 5 
+#define CORE_BUFFER_SIZE 64
+
+#define CORE_GAME_HIDEOUTS 5
+#define CORE_GAME_MAXTIME 120 // in secondi
+
+#define CORE_GAME_ENTITY_SIZE 3
+
+#define CORE_GAME_FROG_LIVES 5
+#define CORE_GAME_FROG_JUMP CORE_GAME_ENTITY_SIZE
+
+#define CORE_GAME_LAWN_TOP_LANES 2
+#define CORE_GAME_LAWN_BOTTOM_LANES 2
+#define CORE_GAME_RIVER_LANES 8
+
+#define CORE_GAME_PROJECTILE_WAIT 2 // in secondi
+
+#define CORE_GAME_PLANTS 3
+
+#define CORE_GAME_CROCS_MIN_WIDTH 2 * CORE_GAME_ENTITY_SIZE
+#define CORE_GAME_CROCS_MAX_WIDTH 3 * CORE_GAME_ENTITY_SIZE
+
+
 /*
  * Packets related.
  */
@@ -49,7 +73,9 @@ struct game_threads
     GameThread master;
     GameThread frog;
     GameThread time;
-    GameThread projectile;
+
+    GameThread frog_projectile;
+    GameThread plants_projectile;
 
     GameThread *crocs;
     GameThread *plants;
@@ -72,6 +98,8 @@ struct comms
     int next_prod_index;
     sem_t sem_mutex;
 };
+
+void init_game_threads(struct game_threads *game_threads);
 
 void create_threads(struct game_threads *game_threads);
 
@@ -109,7 +137,8 @@ void cleanup_buffer(struct game_threads *game_threads);
     func(game->master.target, arg);                 \
     func(game->frog.target, arg);                   \
     func(game->time.target, arg);                   \
-    func(game->projectile.target, arg);             \
+    func(game->frog_projectile.target, arg);        \
+    func(game->plants_projectile.target, arg);      \
                                                     \
     for (int i = 0; i < crocs_num; i++)             \
     {                                               \
@@ -128,7 +157,8 @@ void cleanup_buffer(struct game_threads *game_threads);
     func(game->master.target, arg);                     \
     func(game->frog.target, arg);                       \
     func(game->time.target, arg);                       \
-    func(game->projectile.target, arg);                 \
+    func(game->frog_projectile.target, arg);            \
+    func(game->plants_projectile.target, arg);          \
                                                         \
     for (int i = 0; i < crocs_num; i++)                 \
     {                                                   \
@@ -140,23 +170,24 @@ void cleanup_buffer(struct game_threads *game_threads);
         func(game->plants[i].target, arg);              \
     }
 
-#define APPLY_TO_GAME(func, game, target)   \
-    int crocs_num = game->crocs_num;        \
-    int plants_num = game->plants_num;      \
-                                            \
-    func(game->master.target);              \
-    func(game->frog.target);                \
-    func(game->time.target);                \
-    func(game->projectile.target);          \
-                                            \
-    for (int i = 0; i < crocs_num; i++)     \
-    {                                       \
-        func(game->crocs[i].target);        \
-    }                                       \
-                                            \
-    for (int i = 0; i < plants_num; i++)    \
-    {                                       \
-        func(game->plants[i].target);       \
+#define APPLY_TO_GAME(func, game, target)       \
+    int crocs_num = game->crocs_num;            \
+    int plants_num = game->plants_num;          \
+                                                \
+    func(game->master.target);                  \
+    func(game->frog.target);                    \
+    func(game->time.target);                    \
+    func(game->frog_projectile.target);         \
+    func(game->plants_projectile.target);       \
+                                                \
+    for (int i = 0; i < crocs_num; i++)         \
+    {                                           \
+        func(game->crocs[i].target);            \
+    }                                           \
+                                                \
+    for (int i = 0; i < plants_num; i++)        \
+    {                                           \
+        func(game->plants[i].target);           \
     }
 
 #define APPLY_TO_GAME_PTR(func, game, target)   \
@@ -166,7 +197,8 @@ void cleanup_buffer(struct game_threads *game_threads);
     func(game->master.target);                  \
     func(game->frog.target);                    \
     func(game->time.target);                    \
-    func(game->projectile.target);              \
+    func(game->frog_projectile.target);         \
+    func(game->plants_projectile.target);       \
                                                 \
     for (int i = 0; i < crocs_num; i++)         \
     {                                           \

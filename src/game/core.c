@@ -1,6 +1,28 @@
 #include "core.h"
 #include "routines.h"
 
+void init_game_threads(struct game_threads *game_threads)
+{
+    game_threads->crocs_num = 2;
+    game_threads->plants_num = 2;
+    game_threads->total_threads = CORE_THREADS + game_threads->crocs_num + game_threads->plants_num;
+
+    game_threads->comms = MALLOC(struct comms, 1);
+    game_threads->comms->buffer = MALLOC(Packet *, CORE_BUFFER_SIZE);
+    game_threads->comms->buffer_size = CORE_BUFFER_SIZE;
+    game_threads->comms->next_prod_index = 0;
+}
+
+int calculate_manche_points(int frog_lives, int plants_alive, int time_remaining)
+{
+    int points = 0;
+
+    points = (frog_lives * 2) + time_remaining;
+    points = plants_alive >= points ? 1 : points - plants_alive;
+
+    return points;
+}
+
 Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
 {
     Packet *packet = MALLOC(Packet, 1); 
@@ -66,7 +88,6 @@ void create_threads(struct game_threads *game_threads)
     game_threads->plants = MALLOC(GameThread, plants_num);
     CRASH_IF_NULL(game_threads->plants)
 
-    // Initialize signals for threads.
     init_signals(game_threads);
     halt_threads(game_threads); 
     
@@ -77,7 +98,8 @@ void create_threads(struct game_threads *game_threads)
     pthread_create(&game_threads->master.thread, NULL, master_routine, masterPacket);
     pthread_create(&game_threads->frog.thread, NULL, example_producer, producerPacket);
     pthread_create(&game_threads->time.thread, NULL, example_producer2, producerPacket2);
-    pthread_create(&game_threads->projectile.thread, NULL, example_routine, NULL);
+    pthread_create(&game_threads->plants_projectile.thread, NULL, example_routine, NULL);
+    pthread_create(&game_threads->frog_projectile.thread, NULL, example_routine, NULL);
 
     for (int i = 0; i < crocs_num; i++) 
     {
@@ -251,8 +273,11 @@ void cleanup_buffer(struct game_threads *game_threads)
     
     for (int i = 0; i < await_cleanup; i++) 
     {
-        int pos = (next_prod_index + i) % buffer_size;
-        printf("clean buffer(%d) = %d\n", pos, *(int *)comms_buffer[pos]->data);
+        int pos = (next_prod_index - 1 - i + buffer_size) % buffer_size;
+     
+        printf("clean buffer(%d) = ", pos);
+        printf("%d\n", *(int *)comms_buffer[pos]->data);
+
         destroy_packet(comms_buffer[pos]);
     }
     

@@ -11,13 +11,24 @@ typedef enum {
     DIRECTION_WEST
 } Direction;
 
+typedef enum {
+    ENTITY_TYPE__FROG,
+    ENTITY_TYPE__CROC,
+    ENTITY_TYPE__PLANT,
+    ENTITY_TYPE__PROJECTILE
+} EntityType;
+
 typedef unsigned long long entity_id_t;
 
 struct entity {
     entity_id_t id;
-    bool alive;
+    EntityType entity_type;
 
     unsigned int width;
+
+    bool alive;
+    int x;
+    int y;
     Direction direction;
 };
 
@@ -35,8 +46,6 @@ struct plant {
 struct projectile {
     entity_id_t id;
     entity_id_t shooter;
-
-    Direction direction;
     //todo many attributes if we want to implement different types of projectiles.
 };
 
