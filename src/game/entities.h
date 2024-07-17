@@ -1,10 +1,8 @@
-#ifndef ENTITIES_H
-#define ENTITIES_H
+#ifndef FROGGER_ENTITIES_H
+#define FROGGER_ENTITIES_H
 
 #define GLOBAL_HEIGHT 3
 
-typedef char byte;
-typedef unsigned long long entity_id_t;
 
 typedef enum {
     DIRECTION_NORTH,
@@ -13,28 +11,15 @@ typedef enum {
     DIRECTION_WEST
 } Direction;
 
+typedef unsigned long long entity_id_t;
+
 struct entity {
-    unsigned int width;
     entity_id_t id;
-    Direction direction;
     bool alive;
-    char *shape[GLOBAL_HEIGHT];  
+
+    unsigned int width;
+    Direction direction;
 };
-
-/* 
-FROG
-        \-/                 
-        (_)                 
-        / \   
-
-CROP
-        \|/
-        -o-
-        /|\
-
-PROJECTILE
-         |              
-*/
 
 struct croc {
     entity_id_t id;
@@ -42,24 +27,25 @@ struct croc {
     bool dipped;
 };
 
-struct crop {
+struct plant {
     entity_id_t id;
-    byte lives; // from 1 to 3
+    // int lives; optional
 };
 
 struct projectile {
     entity_id_t id;
     entity_id_t shooter;
+
+    Direction direction;
     //todo many attributes if we want to implement different types of projectiles.
 };
 
 struct frog {
     entity_id_t id;
-    byte lives;
-    byte hps;
+    int lives;
     //todo let's see later what we can add...
 };
 
 // suggestion: add a field to the entity struct to bind a display function for the specific entity.
 
-#endif
+#endif // !FROGGER_ENTITIES_H

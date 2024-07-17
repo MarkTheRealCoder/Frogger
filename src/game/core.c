@@ -1,5 +1,6 @@
 #include "core.h"
 #include "routines.h"
+#include <stdio.h>
 
 Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
 {
@@ -72,10 +73,11 @@ void create_threads(struct game_threads *game_threads)
     
     Packet *masterPacket = create_packet(game_threads, 1, PACKET_TYPE__GAMETHREADS, false);
     Packet *producerPacket = create_packet(game_threads, 1, PACKET_TYPE__GAMETHREADS, false);
+    Packet *producerPacket2 = create_packet(game_threads, 1, PACKET_TYPE__GAMETHREADS, false);
 
     pthread_create(&game_threads->master.thread, NULL, master_routine, masterPacket);
     pthread_create(&game_threads->frog.thread, NULL, example_producer, producerPacket);
-    pthread_create(&game_threads->time.thread, NULL, example_routine, NULL);
+    pthread_create(&game_threads->time.thread, NULL, example_producer2, producerPacket2);
     pthread_create(&game_threads->projectile.thread, NULL, example_routine, NULL);
 
     for (int i = 0; i < crocs_num; i++) 
@@ -126,7 +128,16 @@ void cancel_threads(struct game_threads *game_threads)
     // non ci siano elementi da consumare.
     signal_producer(game_threads);
 
+    // In modo da sbloccare i thread produttori in caso
+    // non ci siano elementi da produrre.
+    for (int i = 0; i < game_threads->total_threads; i++) 
+    {
+        signal_consumer(game_threads);
+    }
+
     join_threads(game_threads);
+    
+    cleanup_buffer(game_threads);
 
     destroy_game_mutexes(game_threads);
     destroy_semaphores(game_threads);
@@ -220,3 +231,24 @@ void signal_mutex(struct game_threads *game_threads)
     sem_post(&game_threads->comms->sem_mutex);
 }
 
+void cleanup_buffer(struct game_threads *game_threads)
+{
+    printf("still awaiting cleanup: %d elems\n", game_threads->comms->await_cleanup);
+    
+    Packet **comms_buffer = (Packet **) game_threads->comms->buffer;
+    int buffer_size = game_threads->comms->buffer_size;
+
+    wait_mutex(game_threads);
+
+    int await_cleanup = game_threads->comms->await_cleanup;
+    int next_prod_index = game_threads->comms->next_prod_index;
+    
+    for (int i = 0; i < await_cleanup; i++) 
+    {
+        int pos = (next_prod_index + i) % buffer_size;
+        printf("clean buffer(%d) = %d\n", pos, *(int *)comms_buffer[pos]->data);
+        destroy_packet(comms_buffer[pos]);
+    }
+    
+    signal_mutex(game_threads);
+}

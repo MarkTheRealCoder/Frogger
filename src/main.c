@@ -1,6 +1,7 @@
 #include "game/core.h"
 #include "game/addons.h"
 #include "utils/shortcuts.h"
+#include <stdio.h>
 
 #define TEST_MODE true
 
@@ -23,8 +24,11 @@ int main(int argc, char *argv[])
     game_threads.plants_num = 2;
 
     game_threads.comms = MALLOC(struct comms, 1);
-    game_threads.comms->buffer = MALLOC(Packet *, 128);
-    game_threads.comms->buffer_size = 128;
+    game_threads.comms->buffer = MALLOC(Packet *, 10);
+    game_threads.comms->buffer_size = 10;
+    game_threads.comms->next_prod_index = 0;
+    game_threads.comms->await_cleanup = 0;
+    game_threads.total_threads = 4 + game_threads.crocs_num + game_threads.plants_num;
 
     if (TEST_MODE)
     {
@@ -83,16 +87,12 @@ void test_packets()
 void test_threads(struct game_threads *game_threads)
 {
     create_threads(game_threads);
-    sleepy(1, TIMEFRAME_SECONDS);
+    sleepy(500, TIMEFRAME_MILLIS);
     run_threads(game_threads);
-    sleepy(1, TIMEFRAME_SECONDS);
+    sleepy(500, TIMEFRAME_MILLIS);
     halt_threads(game_threads);
-    sleepy(1, TIMEFRAME_SECONDS);
+    sleepy(500, TIMEFRAME_MILLIS);
     run_threads(game_threads);
-    sleepy(1, TIMEFRAME_SECONDS);
-    halt_threads(game_threads);
-    sleepy(1, TIMEFRAME_SECONDS);
-    run_threads(game_threads);
-    sleepy(1, TIMEFRAME_SECONDS);
+    sleepy(500, TIMEFRAME_MILLIS);
     cancel_threads(game_threads);
 }

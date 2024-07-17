@@ -56,6 +56,8 @@ struct game_threads
     int crocs_num;
     int plants_num;
 
+    int total_threads;
+
     struct comms *comms;
 };
 
@@ -66,6 +68,9 @@ struct comms
 
     sem_t sem_free;
     sem_t sem_occupied;
+
+    int await_cleanup;
+    int next_prod_index;
     sem_t sem_mutex;
 };
 
@@ -94,6 +99,8 @@ void signal_consumer(struct game_threads *game_threads);
 
 void wait_mutex(struct game_threads *game_threads);
 void signal_mutex(struct game_threads *game_threads);
+
+void cleanup_buffer(struct game_threads *game_threads);
 
 #define APPLY_TO_GAME_ARG(func, game, target, arg)  \
     int crocs_num = game->crocs_num;                \
