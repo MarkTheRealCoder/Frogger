@@ -97,7 +97,7 @@ void create_threads(struct game_threads *game_threads)
 
     pthread_create(&game_threads->master.thread, NULL, master_routine, masterPacket);
     pthread_create(&game_threads->frog.thread, NULL, example_producer, producerPacket);
-    pthread_create(&game_threads->time.thread, NULL, example_producer2, producerPacket2);
+    pthread_create(&game_threads->time.thread, NULL, run_timer, producerPacket2);
     pthread_create(&game_threads->plants_projectile.thread, NULL, example_routine, NULL);
     pthread_create(&game_threads->frog_projectile.thread, NULL, example_routine, NULL);
 
@@ -283,3 +283,6 @@ void cleanup_buffer(struct game_threads *game_threads)
     
     signal_mutex(game_threads);
 }
+
+
+

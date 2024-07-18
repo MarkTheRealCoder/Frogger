@@ -9,7 +9,8 @@
 #define CORE_BUFFER_SIZE 64
 
 #define CORE_GAME_HIDEOUTS 5
-#define CORE_GAME_MAXTIME 120 // in secondi
+#define CORE_GAME_MANCHE_MAXTIME 120 // in secondi
+#define CORE_GAME_MANCHE_FRACTION 1 // in secondi
 
 #define CORE_GAME_ENTITY_SIZE 3
 
@@ -36,6 +37,7 @@ typedef enum
 {
     PACKET_TYPE__VOID,
     PACKET_TYPE__INT,
+    PACKET_TYPE__TIMER,
     PACKET_TYPE__GAMETHREADS
 } PacketType;
 
@@ -53,6 +55,13 @@ void destroy_packet(Packet *packet);
 /*
  * Game threads & signals related.
  */
+
+
+/*
+          /----------\
+        ==
+          \----------/
+*/
 
 typedef enum 
 {
@@ -211,3 +220,4 @@ void cleanup_buffer(struct game_threads *game_threads);
     }
 
 #endif // !FROGGER_CORE_H
+

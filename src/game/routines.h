@@ -25,5 +25,9 @@ void *master_routine(void *args);
 void *example_producer(void *args);
 void *example_producer2(void *args);
 
+
+void *run_timer(void *args);
+
+
 #endif // !FROGGER_ROUTINES_H
 
