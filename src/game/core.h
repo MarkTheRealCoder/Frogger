@@ -109,7 +109,7 @@ struct comms
 
 void init_game_threads(struct game_threads *game_threads);
 
-void create_threads(struct game_threads *game_threads);
+Packet *create_threads(struct game_threads *game);
 
 void join_threads(struct game_threads *game_threads);
 void run_threads(struct game_threads *game_threads);

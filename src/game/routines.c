@@ -67,7 +67,6 @@ void *example_producer(void *args)
     }
 
     DEBUG("exited from prod1\n");
-    destroy_packet(packet);
 
     return NULL;
 }
@@ -109,12 +108,9 @@ void *master_routine(void *args)
         destroy_packet(consumed_product);
 
         signal_consumer(game);
-
-        sleepy(200, TIMEFRAME_MILLIS);
     }
 
     DEBUG("exited from master\n");
-    destroy_packet(packet);
 
     return NULL;
 }
@@ -167,8 +163,6 @@ void *run_timer(void *args)
     }
 
     DEBUG("exited from timer\n");
-
-    destroy_packet(packet);
 
     return NULL;
 }

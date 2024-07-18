@@ -17,6 +17,13 @@ void init_game_threads(struct game_threads *game)
     game->comms->next_prod_index = 0;
 }
 
+/*
+ * Calcola i punti della manche.
+ * @param frog_lives        Le vite della rana.
+ * @param plants_alive      Le piante ancora vive.
+ * @param time_remaining    Il tempo rimanente.
+ * @return                  I punti della manche.
+ */
 int calculate_manche_points(int frog_lives, int plants_alive, int time_remaining)
 {
     int points = 0;
@@ -27,6 +34,14 @@ int calculate_manche_points(int frog_lives, int plants_alive, int time_remaining
     return points;
 }
 
+/*
+ * Crea un pacchetto.
+ * @param data          I dati da inserire nel pacchetto.
+ * @param size          La dimensione dei dati.
+ * @param packetType    Il tipo del pacchetto.
+ * @param clone         Se i dati devono essere clonati.
+ * @return              Il pacchetto creato.
+ */
 Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
 {
     Packet *packet = MALLOC(Packet, 1); 
@@ -62,6 +77,10 @@ Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
     return packet;
 }
 
+/*
+ * Distrugge un pacchetto.
+ * @param packet    Il pacchetto da distruggere.
+ */
 void destroy_packet(Packet *packet)
 {
     if (packet->cloned)
@@ -72,12 +91,21 @@ void destroy_packet(Packet *packet)
     free(packet);
 }
 
+/*
+ * Segnala un nuovo segnale a tutti i thread.
+ * @param game          La struttura game_threads.
+ * @param newSignal     Il nuovo segnale.
+ */
 void broadcast_signal(struct game_threads *game, GameSignal newSignal)
 {
     DEBUG("- Broadcast of new signal to all threads: %d\n", newSignal);
     APPLY_TO_GAME_ARG_PTR(atomic_store, &game, signal, newSignal)
 }
 
+/*
+ * Inizializza i segnali.
+ * @param game  La struttura game_threads.
+ */
 void init_signals(struct game_threads *game)
 {
     APPLY_TO_GAME_ARG_PTR(atomic_init, &game, signal, GAMESIGNAL_RUN) 
@@ -86,8 +114,15 @@ void init_signals(struct game_threads *game)
     init_semaphores(game);
 }
 
-void create_threads(struct game_threads *game)
+/*
+ * Crea i thread di gioco.
+ * @param game  La struttura game_threads.
+ * @return      Il pacchetto iniziale.
+ */
+Packet *create_threads(struct game_threads *game)
 {
+    Packet *packet = create_packet(game, 1, PACKET_TYPE__GAMETHREADS, false);
+
     int crocs_num = game->crocs_num;
     int plants_num = game->plants_num;
 
@@ -99,28 +134,30 @@ void create_threads(struct game_threads *game)
 
     init_signals(game);
     halt_threads(game); 
-    
-    Packet *masterPacket = create_packet(game, 1, PACKET_TYPE__GAMETHREADS, false);
-    Packet *producerPacket = create_packet(game, 1, PACKET_TYPE__GAMETHREADS, false);
-    Packet *producerPacket2 = create_packet(game, 1, PACKET_TYPE__GAMETHREADS, false);
 
-    pthread_create(&game->master.thread, NULL, master_routine, masterPacket);
-    pthread_create(&game->frog.thread, NULL, example_producer, producerPacket);
-    pthread_create(&game->time.thread, NULL, run_timer, producerPacket2);
-    pthread_create(&game->plants_projectile.thread, NULL, example_routine, NULL);
-    pthread_create(&game->frog_projectile.thread, NULL, example_routine, NULL);
+    pthread_create(&game->master.thread, NULL, master_routine, packet);
+    pthread_create(&game->frog.thread, NULL, example_producer, packet);
+    pthread_create(&game->time.thread, NULL, run_timer, packet);
+    pthread_create(&game->plants_projectile.thread, NULL, example_routine, packet);
+    pthread_create(&game->frog_projectile.thread, NULL, example_routine, packet);
 
     for (int i = 0; i < crocs_num; i++) 
     {
-        pthread_create(&game->crocs[i].thread, NULL, example_routine, NULL);
+        pthread_create(&game->crocs[i].thread, NULL, example_routine, packet);
     }
 
     for (int i = 0; i < plants_num; i++) 
     {
-         pthread_create(&game->plants[i].thread, NULL, example_routine, NULL);
+         pthread_create(&game->plants[i].thread, NULL, example_routine, packet);
     }
+
+    return packet; 
 }
 
+/*
+ * Esegue il JOIN dei thread di gioco.
+ * @param game  La struttura game_threads.
+ */
 void join_threads(struct game_threads *game)
 {
     APPLY_TO_GAME_ARG(pthread_join, game, thread, NULL)
@@ -132,24 +169,40 @@ void join_threads(struct game_threads *game)
  *
  */
 
+/*
+ * Segnala ai thread di riprendere l'esecuzione.
+ * @param game  La struttura game_threads.
+ */
 void run_threads(struct game_threads *game)
 {
     broadcast_signal(game, GAMESIGNAL_RUN);
     unlock_game_mutexes(game);
 }
 
+/*
+ * Segnala ai thread di fermare temporaneamente l'esecuzione.
+ * @param game  La struttura game_threads.
+ */
 void halt_threads(struct game_threads *game)
 {
     broadcast_signal(game, GAMESIGNAL_HALT); 
     lock_game_mutexes(game);
 }
 
+/*
+ * Segnala ai thread di fermare definitivamente l'esecuzione.
+ * @param game  La struttura game_threads.
+ */
 void stop_threads(struct game_threads *game)
 {
     broadcast_signal(game, GAMESIGNAL_STOP);
     unlock_game_mutexes(game);
 }
 
+/*
+ * Cancella i thread di gioco.
+ * @param game  La struttura game_threads.
+ */
 void cancel_threads(struct game_threads *game)
 {
     stop_threads(game);
@@ -187,21 +240,37 @@ void cancel_threads(struct game_threads *game)
  *
  */
 
+/*
+ * Inizializza i mutex dei segnali.
+ * @param game  La struttura game_threads.
+ */
 void init_game_mutexes(struct game_threads *game)
 {
     APPLY_TO_GAME_ARG_PTR(pthread_mutex_init, &game, mutex, NULL)
 }
 
+/*
+ * Blocca i mutex dei segnali.
+ * @param game  La struttura game_threads.
+ */
 void lock_game_mutexes(struct game_threads *game)
 {
     APPLY_TO_GAME_PTR(pthread_mutex_lock, &game, mutex)
 }
 
+/*
+ * Sblocca i mutex dei segnali.
+ * @param game  La struttura game_threads.
+ */
 void unlock_game_mutexes(struct game_threads *game)
 {
     APPLY_TO_GAME_PTR(pthread_mutex_unlock, &game, mutex)
 }
 
+/*
+ * Distrugge i mutex dei segnali.
+ * @param game  La struttura game_threads.
+ */
 void destroy_game_mutexes(struct game_threads *game)
 {
     APPLY_TO_GAME_PTR(pthread_mutex_destroy, &game, mutex)
@@ -213,6 +282,10 @@ void destroy_game_mutexes(struct game_threads *game)
  *
  */
 
+/*
+ * Inizializza i semafori.
+ * @param game  La struttura game_threads.
+ */
 void init_semaphores(struct game_threads *game)
 {
     struct comms *comms = game->comms;
@@ -222,6 +295,10 @@ void init_semaphores(struct game_threads *game)
     sem_init(&comms->sem_mutex, 0, 1);
 }
 
+/*
+ * Distrugge i semafori.
+ * @param game  La struttura game_threads.
+ */
 void destroy_semaphores(struct game_threads *game)
 {
     struct comms *comms = game->comms;
@@ -231,36 +308,64 @@ void destroy_semaphores(struct game_threads *game)
     sem_destroy(&comms->sem_mutex);
 }
 
+/*
+ * Esegue la wait del produttore.
+ * @param game  La struttura game_threads.
+ */
 void wait_producer(struct game_threads *game)
 {
     sem_wait(&game->comms->sem_free);
 }
 
+/*
+ * Esegue la signal del produttore.
+ * @param game  La struttura game_threads.
+ */
 void signal_producer(struct game_threads *game)
 {
     sem_post(&game->comms->sem_occupied);
 }
 
+/*
+ * Esegue la wait del consumatore.
+ * @param game  La struttura game_threads.
+ */
 void wait_consumer(struct game_threads *game)
 {
     sem_wait(&game->comms->sem_occupied);
 }
 
+/*
+ * Esegue la signal del consumatore.
+ * @param game  La struttura game_threads.
+ */
 void signal_consumer(struct game_threads *game)
 {
     sem_post(&game->comms->sem_free);
 }
 
+/*
+ * Esegue la wait del mutex per la scrittura su buffer.
+ * @param game  La struttura game_threads.
+ */
 void wait_mutex(struct game_threads *game)
 {
     sem_wait(&game->comms->sem_mutex);
 }
 
+/*
+ * Esegue la signal del mutex per la scrittura su buffer.
+ * @param game  La struttura game_threads.
+ */
 void signal_mutex(struct game_threads *game)
 {
     sem_post(&game->comms->sem_mutex);
 }
 
+/*
+ * Prende il valore del `sem_occupied`, ovvero degli elementi presenti nel buffer.
+ * @param game  La struttura game_threads.
+ */
 int await_cleanup_count(struct game_threads *game)
 {
     int count;
@@ -268,9 +373,13 @@ int await_cleanup_count(struct game_threads *game)
     return count;
 }
 
+/*
+ * Pulisce il buffer.
+ * @param game  La struttura game_threads.
+ */
 void cleanup_buffer(struct game_threads *game)
 {
-    DEBUG("still awaiting cleanup: %d elems\n", await_cleanup_count(game));
+    DEBUG("still awaiting cleanup: %d elements\n", await_cleanup_count(game));
     
     Packet **comms_buffer = (Packet **) game->comms->buffer;
     int buffer_size = game->comms->buffer_size;
