@@ -1,5 +1,11 @@
 #include "addons.h"
 
+/*
+ * Esegue il parsing degli argomenti passati al programma.
+ * @param argc  Il numero di argomenti.
+ * @param argv  Gli argomenti.
+ * @return      La struttura delle opzioni passate.
+ */
 struct program_args addons_parse_args(int argc, char *argv[])
 {
     struct program_args parsed_arguments = { };
@@ -38,6 +44,9 @@ struct program_args addons_parse_args(int argc, char *argv[])
     return parsed_arguments;
 }
 
+/*
+ * Mostra l'help dei comandi.
+ */
 void addons_args_help()
 {
     printf("Usage: frogger [options]\n");
@@ -49,7 +58,11 @@ void addons_args_help()
     printf("\t-rv, --replay_view\tViews the saved replays.");
 }
 
-void addons_args_save_stats(struct game_threads *game_threads)
+/*
+ * Salva le statistiche di gioco su file.
+ * @param game  La struttura del gioco.
+ */
+void addons_args_save_stats(struct game_threads *game)
 {
     FILE *file;
     
@@ -62,8 +75,6 @@ void addons_args_save_stats(struct game_threads *game_threads)
     snprintf(file_name, sizeof(file_name), "frogger_%s.txt", date);
 
     file = fopen(file_name, "w");
-
-    // todo: salvare ogni statistica di gioco
     
     fprintf(file, "Statistiche della partita di Frogger del `%s`\n\n", date);
 
@@ -71,7 +82,7 @@ void addons_args_save_stats(struct game_threads *game_threads)
     fprintf(file, "\t* ...\n");
 
     fprintf(file, "DETTAGLI TECNICI\n");
-    fprintf(file, "\t* Threads totali:%d\n", game_threads->total_threads);
+    fprintf(file, "\t* Threads totali:%d\n", game->total_threads);
     fprintf(file, "\t* ...\n");
 
     fclose(file); 

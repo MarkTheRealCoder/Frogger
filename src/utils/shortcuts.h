@@ -71,6 +71,5 @@ double calculate_percentage(int dividend, int divisor);
 
 bool str_eq(char *expected, char *toCompare);
 
-
 #endif // !FROGGER_SHORTCUTS_H
 

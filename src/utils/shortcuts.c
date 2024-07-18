@@ -60,12 +60,23 @@ double calculate_percentage(int dividend, int divisor)
     return ((double) dividend / divisor) * 100;
 }
 
+/*
+ * Esegue una sleep per un determinato periodo di tempo.
+ * @param quantity      La quantità di tempo.
+ * @param timeFrame     L'unità di misura del tempo.
+ */
 void sleepy(int quantity, TimeFrame timeFrame)
 {
     int multiplier = timeFrame == TIMEFRAME_MICROS ? 1 : timeFrame == TIMEFRAME_MILLIS ? 1000 : 1000000;
     usleep(multiplier * quantity);
 }
 
+/*
+ * Controlla se due stringhe sono uguali.
+ * @param expected      La stringa attesa.
+ * @param toCompare     La stringa da confrontare.
+ * @return              Se le due stringhe sono uguali.
+ */
 bool str_eq(char *expected, char *toCompare)
 {
     return strcmp(expected, toCompare) == 0;

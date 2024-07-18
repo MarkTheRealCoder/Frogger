@@ -51,17 +51,16 @@ typedef struct
 Packet *create_packet(void *data, int size, PacketType packetType, bool clone);
 void destroy_packet(Packet *packet);
 
+typedef struct
+{
+    unsigned int current_time;
+    unsigned int max_time;
+} TimerPacket;
+
 
 /*
  * Game threads & signals related.
  */
-
-
-/*
-          /----------\
-        ==
-          \----------/
-*/
 
 typedef enum 
 {

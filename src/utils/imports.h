@@ -8,3 +8,12 @@
 #include <stdatomic.h>
 #include <semaphore.h>
 
+#define TEST_MODE true
+#define DEBUG_MODE true
+
+// Stampa un messaggio se la modalità di debug è attiva.
+#define DEBUG(fmt, ...)             \
+    if (DEBUG_MODE)                 \
+    {                               \
+        printf(fmt, ##__VA_ARGS__); \
+    }
