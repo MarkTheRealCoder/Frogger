@@ -82,3 +82,28 @@ bool str_eq(char *expected, char *toCompare)
     return strcmp(expected, toCompare) == 0;
 }
 
+
+/*
+ * Concatena due o più stringhe in base al numero di stringhe specificato e alle stringhe specificate.
+ * @param n     Il numero di stringhe da concatenare.
+ * @param ...   Le stringhe in ordine di comparizione da concatenare.
+ * @return      L'unione di tutte le stringhe.
+ */
+
+char *concat(const int n, ...) {
+    char *output = CALLOC(char, 250);
+    va_list args;
+    va_start(args, n);
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        char *str = (char*) va_arg(args, char *);
+        int tlen = strlen(str);
+        for (int j = 0; j < tlen; count++, j++) {
+            output[count] = str[j];
+        }
+    }
+    va_end(args);
+    output[count+1] = 0;
+    output = REALLOC(char, output, strlen(output+1));
+    return output;
+}

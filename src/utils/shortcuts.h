@@ -63,6 +63,7 @@ int gen_num(int min, int max);
 int count_digits(int value);
 int divide_if_possible(int dividend, int divisor);
 double calculate_percentage(int dividend, int divisor);
+char *concat(const int n, ...);
 
 
 /*
