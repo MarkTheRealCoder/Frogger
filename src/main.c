@@ -1,11 +1,21 @@
 #include "game/core.h"
 #include "game/addons.h"
 #include "utils/shortcuts.h"
+#include "graphics/drawing.h"
 
 void test_threads(struct game_threads *game);
 
 int main(int argc, char *argv[])
 {
+    int output;
+    Screen scr;
+    init_screen(&scr);
+    
+    show(scr, PS_PAUSE_MENU, &output);
+    endwin();
+    printf("Output \t--- \t%i\n", output);
+
+    /*
     srand(time(NULL));
     struct program_args parsed_program_args = addons_parse_args(argc, argv); 
 
@@ -45,7 +55,7 @@ int main(int argc, char *argv[])
         cancel_threads(&game); 
         return EXIT_SUCCESS;
     }
-
+    */
     return EXIT_SUCCESS;
 }
 
@@ -65,4 +75,3 @@ void test_threads(struct game_threads *game)
     cancel_threads(game);
     destroy_packet(beginnerPacket);
 }
-

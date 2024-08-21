@@ -145,3 +145,44 @@ char *str_direction(Direction direction)
 
     return directions[direction];
 }
+
+/*
+ * Concatena due o più stringhe in base al numero di stringhe specificato e alle stringhe specificate.
+ * @param n     Il numero di stringhe da concatenare.
+ * @param ...   Le stringhe in ordine di comparizione da concatenare.
+ * @return      L'unione di tutte le stringhe.
+ */
+
+char *concat(const int n, ...) 
+{
+    char *output = NULL;
+
+    va_list args;
+    va_start(args, n);
+    
+    int count = 0;
+    
+    for (int i = 0; i < n; i++) 
+    {
+        char *str = (char*) va_arg(args, char *);
+        int tlen = strlen(str);
+
+        if (!output) 
+        {
+            output = CALLOC(char, tlen + 1);
+        }
+        else 
+        {
+            output = REALLOC(char, output, tlen + strlen(output) + 1);
+        }
+
+        for (int j = 0; j < tlen; count++, j++) 
+        {
+            output[count] = str[j];
+        }
+        output[count] = 0;
+    }
+
+    va_end(args);
+    return output;
+}
