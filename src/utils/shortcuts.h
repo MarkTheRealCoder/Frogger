@@ -2,6 +2,7 @@
 #define FROGGER_SHORTCUTS_H
 
 #include "imports.h"
+#include "../game/core.h"
 
 
 // malloc() - Alloca la memoria.
@@ -37,7 +38,7 @@
  */
 #define CRASH_IF_NULL(pointer)                  \
     if (!pointer) {                             \
-        perror("Could not allocate memory!\n"); \
+        perror("Cannot allocate memory!\n");    \
         exit(-1);                               \
     }
 
@@ -60,6 +61,7 @@ void sleepy(int quantity, TimeFrame timeFrame);
  */
 
 int gen_num(int min, int max);
+int choose_between(int count, ...);
 int count_digits(int value);
 int divide_if_possible(int dividend, int divisor);
 double calculate_percentage(int dividend, int divisor);
@@ -70,6 +72,8 @@ double calculate_percentage(int dividend, int divisor);
  */
 
 bool str_eq(char *expected, char *toCompare);
+char *str_packet_type(PacketType packetType);
+char *str_direction(Direction direction);
 
 #endif // !FROGGER_SHORTCUTS_H
 

@@ -1,4 +1,5 @@
 #include "addons.h"
+#include "../utils/shortcuts.h"
 
 /*
  * Esegue il parsing degli argomenti passati al programma.

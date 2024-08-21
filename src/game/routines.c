@@ -1,25 +1,7 @@
 #include "routines.h"
 #include "core.h"
-
-/*
- * Restituisce la stringa corrispondente al tipo di pacchetto.
- * @param packetType    Il tipo di pacchetto.
- * @return              La stringa corrispondente al tipo di pacchetto.
- */
-char *str_packet_type(PacketType packetType)
-{
-    switch (packetType)
-    {
-        case PACKET_TYPE__INT:
-            return "INT";
-        case PACKET_TYPE__GAMETHREADS:
-            return "GAMETHREADS";
-        case PACKET_TYPE__TIMER:
-            return "TIMER";
-        default:
-            return "VOID";
-    }
-}
+#include "entities.h"
+#include "../utils/shortcuts.h"
 
 void *example_routine() 
 {
@@ -27,48 +9,75 @@ void *example_routine()
     return NULL; 
 }
 
-void *example_producer(void *args)
+void move_on_direction(EntityMovePacket *entity_move_packet)
 {
-    Packet *packet = (Packet *) args;
+    struct entity *entity = &entity_move_packet->entity;
 
-    struct game_threads *game = (struct game_threads *) packet->data;
+    entity->x = 0;
+    entity->y = 0;
 
-    atomic_int *signal = &game->frog.signal;
-    pthread_mutex_t *mutex = &game->frog.mutex;
-
-    Packet **comms_buffer = (Packet **) game->comms->buffer;
-    int buffer_size = game->comms->buffer_size;
-
-    Packet *product;
-    int *index = &game->comms->next_prod_index;
-
-    while (true)
+    switch (entity->direction)
     {
-        wait_producer(game);
-
-        CHECK_SIGNAL(signal, mutex)
-     
-        /* generation of the packet with its contents */
-        int gen = gen_num(10, 99);
-        product = create_packet(&gen, 1, PACKET_TYPE__INT, true);
-        
-        /* writing in the communication buffer the created packet. */
-        wait_mutex(game);
-        comms_buffer[*index] = product;
-
-        DEBUG("Produced\t: index: %d\ttype: %s\n", *index, str_packet_type(product->type));
-        
-        *index = (*index + 1) % buffer_size;
-        signal_mutex(game);
-        
-        signal_producer(game);
-
-        sleepy(50, TIMEFRAME_MILLIS);
+        case DIRECTION_WEST:
+            entity->x -= CORE_GAME_FROG_JUMP;
+            break;
+        case DIRECTION_NORTH:
+            entity->y -= CORE_GAME_FROG_JUMP;
+            break;
+        case DIRECTION_EAST:
+            entity->x += CORE_GAME_FROG_JUMP;
+            break;
+        case DIRECTION_SOUTH:
+            entity->y += CORE_GAME_FROG_JUMP;
+            break;
     }
+}
 
-    DEBUG("exited from prod1\n");
+void handle_packet(struct game_threads *game, Packet *packet)
+{
+    switch (packet->type)
+    {
+        case PACKET_TYPE__ENTITYMOVE:
+            {
+                EntityMovePacket *entity_move_packet = (EntityMovePacket *) packet->data;
+                struct entity *packet_entity = &entity_move_packet->entity;
 
-    return NULL;
+                DEBUG("*** EntityMovePacket\t-> id: %d, x: %d, y: %d, direction: %s\n", 
+                      packet_entity->id, packet_entity->x,
+                      packet_entity->y, 
+                      str_direction(entity_move_packet->entity.direction));
+
+                struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
+
+                entity->x += packet_entity->x;
+                entity->y += packet_entity->y;
+                entity->direction = packet_entity->direction;
+
+                DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
+                      entity->id, entity->x, entity->y, str_direction(entity->direction));
+
+                // todo collision check 
+                // todo display on screen
+
+                break;
+            }
+        case PACKET_TYPE__TIMER:
+            {
+                TimerPacket *timer_packet = (TimerPacket *) packet->data;
+
+                DEBUG("*** TimerPacket\t-> current_time: %d, max_time: %d\n", 
+                      timer_packet->current_time, timer_packet->max_time);
+
+                if (timer_packet->current_time <= 0)
+                {
+                    DEBUG("^^^ TimerPacket\t-> time is up!\n");
+                }
+
+                break;
+            }
+        default:
+            break;
+    }
 }
 
 /*
@@ -77,19 +86,9 @@ void *example_producer(void *args)
  */
 void *master_routine(void *args)
 {
-    Packet *packet = (Packet *) args;
+    DEFAULT_ROUTINE_INIT(args)
+    DEFAULT_ROUTINE_CONSUMER_INIT
 
-    struct game_threads *game = (struct game_threads *) packet->data;
-
-    atomic_int *signal = &game->master.signal;
-    pthread_mutex_t *mutex = &game->master.mutex;
-
-    Packet **comms_buffer = (Packet **) game->comms->buffer;
-    int buffer_size = game->comms->buffer_size;
-
-    Packet *consumed_product;
-    int index = 0;
-    
     while (true)
     {
         wait_consumer(game);
@@ -97,12 +96,9 @@ void *master_routine(void *args)
         CHECK_SIGNAL(signal, mutex)
 
         /* consumption of the packet from the communication buffer. */
-        wait_mutex(game);
-        consumed_product = comms_buffer[index];
-        index = (index + 1) % buffer_size;
-        signal_mutex(game);
+        READ_FROM_COMMS_BUFFER(game, comms_buffer, index, consumed_product)
 
-        DEBUG("Read\t\t: index: %d\ttype: %s\n", index - 1, str_packet_type(consumed_product->type))
+        handle_packet(game, consumed_product);
         
         /* destruction of the now-consumed packet. */
         destroy_packet(consumed_product);
@@ -119,20 +115,10 @@ void *master_routine(void *args)
  * La routine dedicata alla modifica e comunicazione del tempo di gioco.
  * @param args  Il pacchetto contenente i dati del gioco.
  */
-void *run_timer(void *args) 
+void *timer_routine(void *args) 
 {
-    Packet *packet = (Packet *) args;
-
-    struct game_threads *game = (struct game_threads *) packet->data;
-
-    atomic_int *signal = &game->time.signal;
-    pthread_mutex_t *mutex = &game->time.mutex;
-
-    Packet **comms_buffer = (Packet **) game->comms->buffer;
-    int buffer_size = game->comms->buffer_size;
-
-    Packet *product;
-    int *index = &game->comms->next_prod_index;
+    DEFAULT_ROUTINE_INIT(args)
+    DEFAULT_ROUTINE_PRODUCER_INIT
 
     TimerPacket timer_packet = { };
     timer_packet.current_time = CORE_GAME_MANCHE_MAXTIME;
@@ -146,17 +132,11 @@ void *run_timer(void *args)
      
         /* generation of the packet with its contents */
         timer_packet.current_time -= CORE_GAME_MANCHE_FRACTION;
-        product = create_packet(&timer_packet, 1, PACKET_TYPE__TIMER, true);
+        product = create_packet(&timer_packet, 1, PACKET_TYPE__TIMER, false);
         
         /* writing in the communication buffer the created packet. */
-        wait_mutex(game);
-        comms_buffer[*index] = product;
+        WRITE_TO_COMMS_BUFFER(game, comms_buffer, index, product)
 
-        DEBUG("Produced\t: index: %d\ttype: %s\n", *index, str_packet_type(product->type));
-
-        *index = (*index + 1) % buffer_size;
-        signal_mutex(game);
-        
         signal_producer(game);
 
         sleepy(CORE_GAME_MANCHE_FRACTION, TIMEFRAME_SECONDS);
@@ -167,3 +147,69 @@ void *run_timer(void *args)
     return NULL;
 }
 
+void *frog_routine(void *args) 
+{
+    DEFAULT_ROUTINE_INIT(args)
+    DEFAULT_ROUTINE_PRODUCER_INIT
+    
+    struct entity *frog = entity_node_find_id(game->entity_node, ENTITIES_FROG_ID);
+
+    EntityMovePacket entity_move_packet = { };
+    entity_move_packet.entity = *frog; // local clone
+
+    while (true)
+    {
+        wait_producer(game);
+
+        CHECK_SIGNAL(signal, mutex)
+
+        /* generation of the packet with its contents */
+        entity_move_packet.entity.direction = gen_num(0, 3); // todo: getch()
+        move_on_direction(&entity_move_packet);
+        
+        product = create_packet(&entity_move_packet, 1, PACKET_TYPE__ENTITYMOVE, true);
+
+        /* writing in the communication buffer the created packet. */
+        WRITE_TO_COMMS_BUFFER(game, comms_buffer, index, product)
+        
+        signal_producer(game);
+      
+        sleepy(100, TIMEFRAME_MILLIS);
+    }
+
+    DEBUG("exited from frog\n");
+
+    return NULL;
+}
+
+/*
+ * La routine dedicata alla gestione dei proiettili della rana.
+ * @param args  Il pacchetto contenente i dati del gioco.
+ */
+void *frog_projectile_routine(void *args) 
+{
+    DEFAULT_ROUTINE_INIT(args)
+    DEFAULT_ROUTINE_PRODUCER_INIT
+
+    while (true)
+    {
+        wait_producer(game);
+
+        CHECK_SIGNAL(signal, mutex)
+     
+        int test = 0;
+        /* generation of the packet with its contents */
+        product = create_packet(&test, 1, PACKET_TYPE__INT, true);
+        
+        /* writing in the communication buffer the created packet. */
+        WRITE_TO_COMMS_BUFFER(game, comms_buffer, index, product)
+        
+        signal_producer(game);
+
+        sleepy(CORE_GAME_MANCHE_FRACTION, TIMEFRAME_SECONDS);
+    }
+
+    DEBUG("exited from frog projectile\n");
+
+    return NULL;
+}

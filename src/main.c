@@ -53,7 +53,6 @@ void test_threads(struct game_threads *game)
 {
     Packet *beginnerPacket = create_threads(game);
 
-    sleepy(500, TIMEFRAME_MILLIS);
     run_threads(game);
     
     sleepy(500, TIMEFRAME_MILLIS);

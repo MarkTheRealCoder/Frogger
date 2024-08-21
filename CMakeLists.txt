@@ -9,6 +9,7 @@ add_compile_options(-g -Og)
 add_executable(frogger  src/main.c
 
                         src/utils/imports.h
+
                         src/utils/shortcuts.c
                         src/utils/shortcuts.h
                         
@@ -20,6 +21,9 @@ add_executable(frogger  src/main.c
 
                         src/game/routines.c
                         src/game/routines.h
+
+                        src/game/entities.c
+                        src/game/entities.h
 )
 
 # utile per aggiungere math.h#pow() anche su gcc linux

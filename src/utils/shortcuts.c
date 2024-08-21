@@ -12,6 +12,35 @@ int gen_num(int min, int max)
 }
 
 /**
+ * Sceglie un valore tra quelli passati come argomenti.
+ * @param count Il numero di argomenti.
+ * @param ...   Gli argomenti.
+ * @return      Il valore scelto.
+ */
+int choose_between(int count, ...) 
+{
+    va_list args;
+    va_start(args, count);
+
+    int random_index = gen_num(0, count - 1);
+    int result;
+    
+    for (int i = 0; i < count; i++) 
+    {
+        int current = va_arg(args, int);
+        
+        if (i == random_index) 
+        {
+            result = current;
+        }
+    }
+
+    va_end(args);
+
+    return result;
+}
+
+/**
  * Conta il numero di cifre di un numero.
  * @param value Il numero.
  * @return      Il numero di cifre del numero.
@@ -82,3 +111,37 @@ bool str_eq(char *expected, char *toCompare)
     return strcmp(expected, toCompare) == 0;
 }
 
+/*
+ * Restituisce la stringa corrispondente al tipo di pacchetto.
+ * @param packetType    Il tipo di pacchetto.
+ * @return              La stringa corrispondente al tipo di pacchetto.
+ */
+char *str_packet_type(PacketType packetType)
+{
+    static char *packetTypes[] = {
+        "VOID",
+        "INT",
+        "TIMER",
+        "GAMETHREADS",
+        "ENTITYMOVE"
+    };
+
+    return packetTypes[packetType];
+}
+
+/**
+ * Restituisce la stringa corrispondente alla direzione.
+ * @param direction La direzione.
+ * @return          La stringa corrispondente alla direzione.
+ */
+char *str_direction(Direction direction)
+{
+    static char *directions[] = {
+        "NORTH",
+        "SOUTH",
+        "EAST",
+        "WEST",
+    };
+
+    return directions[direction];
+}

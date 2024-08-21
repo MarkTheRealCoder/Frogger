@@ -1,8 +1,20 @@
 #include "core.h"
 #include "routines.h"
+#include "../utils/shortcuts.h"
+
+void debug_entity_buffer(struct entity_node *entityBuffer)
+{
+    struct entity_node *currentEntity = entityBuffer;
+
+    while (currentEntity != NULL)
+    {
+        printf("Entity: %d\n", currentEntity->entity.id);
+        currentEntity = currentEntity->next;
+    }
+}
 
 /**
- * Inizializza la struttura game_threads.
+* Inizializza la struttura game_threads.
  * @param game_threads  La struttura da inizializzare.
  */
 void init_game_threads(struct game_threads *game)
@@ -11,10 +23,117 @@ void init_game_threads(struct game_threads *game)
     game->plants_num = 2;
     game->total_threads = CORE_THREADS + game->crocs_num + game->plants_num;
 
-    game->comms = MALLOC(struct comms, 1);
-    game->comms->buffer = MALLOC(Packet *, CORE_BUFFER_SIZE);
-    game->comms->buffer_size = CORE_BUFFER_SIZE;
-    game->comms->next_prod_index = 0;
+    init_entity_node(game);
+    init_comms(game, CORE_BUFFER_SIZE);
+}
+
+/**
+ * Inizializza la struttura comms.
+ * @param game  La struttura game_threads.
+ * @param size  La dimensione del buffer di comunicazione da creare.
+ */
+void init_comms(struct game_threads *game, int size)
+{
+    struct comms *comms = MALLOC(struct comms, 1);
+    CRASH_IF_NULL(comms)
+
+    comms->buffer = MALLOC(Packet *, size);
+    CRASH_IF_NULL(comms->buffer)
+    
+    comms->buffer_size = size;
+    comms->next_prod_index = 0;
+
+    game->comms = comms; 
+}
+
+void init_entity_node(struct game_threads *game)
+{
+    struct entity_node *buffer = entity_node_create();
+    game->entity_node = buffer;
+
+    int index = 0;
+
+    struct entity frog = entities_default_frog(&index);
+    entity_node_insert(buffer, frog);
+
+    for (int i = 0; i < CORE_GAME_PLANTS; i++) 
+    {
+        struct entity plant = entities_default_plant(&index);
+        entity_node_insert(buffer, plant);
+    }
+    
+    for (int i = 0; i < CORE_GAME_CROCS; i++) 
+    {
+        struct entity croc = entities_default_croc(&index);
+        entity_node_insert(buffer, croc);
+    }
+
+    debug_entity_buffer(buffer);
+}
+
+struct entity_node *entity_node_create()
+{
+    struct entity_node *new_entity_node = MALLOC(struct entity_node, 1);
+    CRASH_IF_NULL(new_entity_node)
+
+    new_entity_node->entity = (struct entity) { .id = -1 };
+    new_entity_node->next = NULL;
+
+    return new_entity_node;
+}
+
+void entity_node_insert(struct entity_node *head, struct entity entity)
+{
+    if (head == NULL)
+    {
+        head = entity_node_create();
+    }
+
+    if (head->entity.id == -1)
+    {
+        head->entity = entity;
+        return;
+    }
+
+    struct entity_node *new_entity_node = entity_node_create();
+    
+    while (head->next != NULL) 
+    {
+        head = head->next;
+    }
+    
+    head->next = new_entity_node;
+    new_entity_node->entity = entity;
+}
+
+void entity_node_destroy(struct entity_node *head)
+{
+    struct entity_node *current = head;
+    struct entity_node *next = NULL;
+
+    while (current != NULL)
+    {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+}
+
+struct entity *entity_node_find_id(struct entity_node *head, int id)
+{
+    struct entity_node *temp = head;
+
+    while (temp != NULL) 
+    {
+        if (temp->entity.id == id) 
+        {
+            return &temp->entity;
+        }
+
+        temp = temp->next;
+    }
+
+    return NULL;
 }
 
 /*
@@ -49,26 +168,14 @@ Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
 
     switch (packetType) 
     {
-        case PACKET_TYPE__INT:
-            {
-                ALLOC_PACKET_DATA(data, packet->data, int, size, clone)
-                break;
-            }
-        case PACKET_TYPE__GAMETHREADS:
-            {
-                ALLOC_PACKET_DATA(data, packet->data, GameThread, size, clone)
-                break;
-            }
-        case PACKET_TYPE__TIMER:
-            {
-                ALLOC_PACKET_DATA(data, packet->data, TimerPacket, size, clone)
-                break;
-            }
         default:
-            {
-                ALLOC_PACKET_DATA(data, packet->data, void, size, clone)
-                break;
-            }
+            ALLOC_PACKET_DATA(data, packet->data, void, size, clone)
+            break;
+        
+        CASE_PACKET_ALLOC(int,              PACKET_TYPE__INT,           data, packet->data, size, clone)
+        CASE_PACKET_ALLOC(TimerPacket,      PACKET_TYPE__TIMER,         data, packet->data, size, clone)
+        CASE_PACKET_ALLOC(GameThread,       PACKET_TYPE__GAMETHREADS,   data, packet->data, size, clone)
+        CASE_PACKET_ALLOC(EntityMovePacket, PACKET_TYPE__ENTITYMOVE,    data, packet->data, size, clone)
     }
 
     packet->type = packetType;
@@ -133,13 +240,13 @@ Packet *create_threads(struct game_threads *game)
     CRASH_IF_NULL(game->plants)
 
     init_signals(game);
-    halt_threads(game); 
+    halt_threads(game);
 
     pthread_create(&game->master.thread, NULL, master_routine, packet);
-    pthread_create(&game->frog.thread, NULL, example_producer, packet);
-    pthread_create(&game->time.thread, NULL, run_timer, packet);
+    pthread_create(&game->frog.thread, NULL, frog_routine, packet);
+    pthread_create(&game->time.thread, NULL, timer_routine, packet);
     pthread_create(&game->plants_projectile.thread, NULL, example_routine, packet);
-    pthread_create(&game->frog_projectile.thread, NULL, example_routine, packet);
+    pthread_create(&game->frog_projectile.thread, NULL, frog_projectile_routine, packet);
 
     for (int i = 0; i < crocs_num; i++) 
     {
@@ -219,8 +326,10 @@ void cancel_threads(struct game_threads *game)
     }
 
     join_threads(game);
-    
-    cleanup_buffer(game);
+
+    cleanup_comms_buffer(game);
+    free(game->comms->buffer);
+    free(game->comms);
 
     destroy_game_mutexes(game);
     destroy_semaphores(game);
@@ -228,9 +337,8 @@ void cancel_threads(struct game_threads *game)
     free(game->crocs);
     free(game->plants);
 
-    free(game->comms->buffer);
-    free(game->comms);
-
+    entity_node_destroy(game->entity_node);
+    
     DEBUG("shutdown completed!\n");
 }
 
@@ -374,10 +482,10 @@ int await_cleanup_count(struct game_threads *game)
 }
 
 /*
- * Pulisce il buffer.
+ * Pulisce il buffer di comunicazione.
  * @param game  La struttura game_threads.
  */
-void cleanup_buffer(struct game_threads *game)
+void cleanup_comms_buffer(struct game_threads *game)
 {
     DEBUG("still awaiting cleanup: %d elements\n", await_cleanup_count(game));
     

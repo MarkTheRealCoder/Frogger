@@ -1,7 +1,8 @@
 #ifndef FROGGER_CORE_H
 #define FROGGER_CORE_H
 
-#include "../utils/shortcuts.h"
+#include "../utils/imports.h"
+#include "entities.h"
 
 
 // Rispettivamente: master, frog, time, frog_projectile, plants_projectile threads.
@@ -9,6 +10,7 @@
 #define CORE_BUFFER_SIZE 64
 
 #define CORE_GAME_HIDEOUTS 5
+#define CORE_GAME_HIDEOUTS_SPACES_INBETWEEN 4
 #define CORE_GAME_MANCHE_MAXTIME 120 // in secondi
 #define CORE_GAME_MANCHE_FRACTION 1 // in secondi
 
@@ -21,9 +23,15 @@
 #define CORE_GAME_LAWN_BOTTOM_LANES 2
 #define CORE_GAME_RIVER_LANES 8
 
+#define CORE_GAME_MAP_WIDTH                                         \
+    (CORE_GAME_HIDEOUTS * CORE_GAME_ENTITY_SIZE) +                  \
+    (CORE_GAME_HIDEOUTS_SPACES_INBETWEEN * CORE_GAME_ENTITY_SIZE) + \
+    (2 * CORE_GAME_ENTITY_SIZE)
+
 #define CORE_GAME_PROJECTILE_WAIT 2 // in secondi
 
 #define CORE_GAME_PLANTS 3
+#define CORE_GAME_CROCS 2 * CORE_GAME_RIVER_LANES
 
 #define CORE_GAME_CROCS_MIN_WIDTH 2 * CORE_GAME_ENTITY_SIZE
 #define CORE_GAME_CROCS_MAX_WIDTH 3 * CORE_GAME_ENTITY_SIZE
@@ -38,7 +46,8 @@ typedef enum
     PACKET_TYPE__VOID,
     PACKET_TYPE__INT,
     PACKET_TYPE__TIMER,
-    PACKET_TYPE__GAMETHREADS
+    PACKET_TYPE__GAMETHREADS,
+    PACKET_TYPE__ENTITYMOVE
 } PacketType;
 
 typedef struct
@@ -57,6 +66,10 @@ typedef struct
     unsigned int max_time;
 } TimerPacket;
 
+typedef struct 
+{
+    struct entity entity;
+} EntityMovePacket;
 
 /*
  * Game threads & signals related.
@@ -92,6 +105,7 @@ struct game_threads
 
     int total_threads;
 
+    struct entity_node *entity_node; 
     struct comms *comms;
 };
 
@@ -108,6 +122,14 @@ struct comms
 };
 
 void init_game_threads(struct game_threads *game_threads);
+void init_comms(struct game_threads *game, int size);
+void init_entity_node(struct game_threads *game);
+
+struct entity_node *entity_node_create();
+void entity_node_insert(struct entity_node *head, struct entity entity);
+void entity_node_destroy(struct entity_node *entity_node);
+void debug_entity_buffer(struct entity_node *entityBuffer);
+struct entity *entity_node_find_id(struct entity_node *head, int id);
 
 Packet *create_threads(struct game_threads *game);
 
@@ -136,7 +158,12 @@ void wait_mutex(struct game_threads *game_threads);
 void signal_mutex(struct game_threads *game_threads);
 
 int await_cleanup_count(struct game_threads *game_threads);
-void cleanup_buffer(struct game_threads *game_threads);
+void cleanup_comms_buffer(struct game_threads *game);
+
+#define CASE_PACKET_ALLOC(structure, type, from, to, size, clone)   \
+    case type:                                                      \
+        ALLOC_PACKET_DATA(from, to, structure, size, clone)         \
+        break;
 
 #define APPLY_TO_GAME_ARG(func, game, target, arg)  \
     int crocs_num = game->crocs_num;                \
