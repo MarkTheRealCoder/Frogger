@@ -5,8 +5,6 @@
 #include "map.h"
 #include "../utils/shortcuts.h"
 
-#define JOLLY_PAIR 127
-
 /* COLOR CODES */
 
 enum color_codes {
@@ -27,6 +25,11 @@ enum color_codes {
     COLORCODES_FROG_ART_LOGO_QUIT,
     COLORCODES_FROG_ART_SELECTED
 };
+
+typedef struct {
+    unsigned int length;
+    char **art;
+} StringArt;
 
 typedef struct {
     int x;
@@ -93,25 +96,39 @@ static char *_FROGGER_LOGO[_FROGGER_LOGO_LENGTH] =
         "                 /____//____/             \n\n"
     };
 
-#define _MENU_CHOICES_LENGTH 4
-static char *_MENU_CHOICES[_MENU_CHOICES_LENGTH] =
+#define _FROGGER_PAUSE_LENGTH 8
+static char *_FROGGER_PAUSE_ART[_FROGGER_PAUSE_LENGTH] = {
+    "              _         _              ",
+    "  __   ___.--'_`.     .'_`--.___   __  ",
+    " ( _`.'. -   'o` )   ( 'o`   - .`.'_ ) ",
+    " _\\.'_'      _.-'     `-._      `_`./_ ",
+    "( \\`. )    //\\`         '/\\    ( .'/ )",
+    " \\_`-'`---'\\__,       ,__//`---'`-'_/ ",
+    "  \\`        `-\\         /-'        '/  ",
+    "   `                               '   "
+};
+
+#define _FROGGER_PAUSE_LOGO_LENGTH 6
+static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
     {
-        "Start new game\n",
-        "Open a saving\n",
-        "Create a new saving\n",
-        "Quit\n"
+        ".______        ___       __    __       _______. _______ ",
+        "|   _  \\      /   \\     |  |  |  |     /       ||   ____|",
+        "|  |_)  |    /  ^  \\    |  |  |  |    |   (----`|  |__   ",
+        "|   ___/    /  /_\\  \\   |  |  |  |     \\   \\    |   __|  ",
+        "|  |       /  _____  \\  |  `--'  | .----)   |   |  |____ ",
+        "| _|      /__/     \\__\\  \\______/  |_______/    |_______|"
     };
 
-#define FROG_ART_COLOR 0, 204, 0
-#define FROG_ART_LOGO_COLOR 255, 255, 51
-#define FROG_ART_LOGO_COLOR_Q 153, 0, 0
-#define FROG_ART_SELECTED_COLOR 255, 153, 51
+#define FROG_ART_COLOR 51, 255, 51 // 0 204 0
+#define FROG_ART_LOGO_COLOR 255, 255, 0 // 0 0 51
+#define FROG_ART_LOGO_COLOR_Q 255, 51, 51 // 153 0 0
+#define FROG_ART_SELECTED_COLOR 255, 124, 9 // 255 153 51
 
 void init_screen(Screen *scrn);
-unsigned int show(const Screen scr, const enum PS prog_state);
+void center_string_colored(char *string, int pair, int max, int cuy);
+unsigned int show(const Screen scr, const enum PS prog_state, int *output);
 
 #endif
-
 
 
 

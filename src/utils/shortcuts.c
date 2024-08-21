@@ -91,19 +91,20 @@ bool str_eq(char *expected, char *toCompare)
  */
 
 char *concat(const int n, ...) {
-    char *output = CALLOC(char, 250);
+    char *output = NULL;
     va_list args;
     va_start(args, n);
     int count = 0;
     for (int i = 0; i < n; i++) {
         char *str = (char*) va_arg(args, char *);
         int tlen = strlen(str);
+        if (!output) output = CALLOC(char, tlen+1);
+        else output = REALLOC(char, output, tlen+strlen(output)+1);
         for (int j = 0; j < tlen; count++, j++) {
             output[count] = str[j];
         }
+        output[count] = 0;
     }
     va_end(args);
-    output[count+1] = 0;
-    output = REALLOC(char, output, strlen(output+1));
     return output;
 }

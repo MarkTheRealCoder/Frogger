@@ -1,5 +1,4 @@
-#include "drawing.h"
-
+#include "../drawing.h"
 
 void init_screen(Screen *scrn) {
     initscr();
@@ -77,84 +76,18 @@ void move_entity(const enum entity_type type, const Position old, const Position
     refresh();
 }
 
-/**
- * Menu' di selezione della modalita' da utilizzare per il gioco.
- * @param max La larghezza della finestra.
- * @param may L'altezza della finestra.
- * @param current_choice L'indice corrente del menu'.
- */
-void send_menu(int may, int max, int current_choice)
-{
-    erase();
-
-    init_extended_pair(JOLLY_PAIR, COLORCODES_FROG_ART, COLOR_BLACK);
-    attroff(COLOR_PAIR(JOLLY_PAIR));
-    attron(COLOR_PAIR(JOLLY_PAIR) | A_BOLD);
-    for (size_t i = 0; i < _FROG_ART_LENGTH; i++)
-    {
-        center_string(_FROG_ART[i], max);
-    }
-    attroff(COLOR_PAIR(JOLLY_PAIR) | A_BOLD);
-
-    print_logo(COLORCODES_FROG_ART_LOGO, max);
-    // x0, y19
-    print_choices(current_choice, max);
-    refresh();
-}
-
-/**
- * Stampa il logo del gioco.
- * @param color Il colore da utilizzare.
- * @param max La larghezza della finestra
- */
-void print_logo(int color, int max)
-{
-    init_extended_pair(JOLLY_PAIR, color, COLOR_BLACK);
-    attroff(COLOR_PAIR(JOLLY_PAIR));
-    attron(COLOR_PAIR(JOLLY_PAIR) | A_BOLD);
-    for (size_t i = 0; i < _FROGGER_LOGO_LENGTH; i++)
-    {
-        center_string(_FROGGER_LOGO[i], max);
-    }
-    attroff(COLOR_PAIR(JOLLY_PAIR) | A_BOLD);
-    refresh();
-}
-
-/**
- * Stampa le scelte del menu'.
- * @param current_choice L'indice corrente del menu'.
- * @param max La larghezza della finestra.
- */
-void print_choices(int current_choice, int max)
-{
-    for (size_t i = 0; i < _MENU_CHOICES_LENGTH; i++)
-    {
-        if (current_choice == i)
-        {
-            char *tmp = concat(3, "> ", _MENU_CHOICES[i], " <");
-
-            sprint_colored(tmp, COLORCODES_FROG_ART_SELECTED, max);
-            free(tmp);
-            continue;
-        }
-
-        sprint_colored(_MENU_CHOICES[i], i == (_MENU_CHOICES_LENGTH - 1) ? COLORCODES_FROG_ART_LOGO_QUIT : COLORCODES_FROG_ART_LOGO, max);
-    }
-}
 
 /**
  * Stampa una stringa al centro del terminale.
  * @param string La stringa da stampare.
- * @param color Il colore da utilizzare.
+ * @param pair Il colore da utilizzare.
  * @param max La larghezza della finestra
  */
-void sprint_colored(char *string, int color, int max)
+void center_string_colored(char *string, int pair, int max, int cuy)
 {
-    init_extended_pair(JOLLY_PAIR, color, COLOR_BLACK);
-    attroff(COLOR_PAIR(JOLLY_PAIR));
-    attron(COLOR_PAIR(JOLLY_PAIR));
-    center_string(string, max);
-    attroff(COLOR_PAIR(JOLLY_PAIR));
+    attron(COLOR_PAIR(pair));
+    center_string(string, max, cuy);
+    attroff(COLOR_PAIR(pair));
     refresh();
 }
 
@@ -164,57 +97,13 @@ void sprint_colored(char *string, int color, int max)
  * @param str La stringa da stampare.
  * @param max La larghezza della finestra
  */
-void center_string(char str[], int max)
+void center_string(char str[], int max, int cuy)
 {
-    printf("%s\n", str);
     int sl = strlen(str);
     int total_size = (int)((max - sl) / 2);
-
-    for (int i = 0; i < total_size; i++)
-    {
-        addch(' ');
-    }
-
-    addstr(str);
-}
-
-void menu_listener(int *choice) {
-    wgetch(stdscr); //TODO: adapt this for the user's allowed keys.
-    *choice = -1;
-}
-
-void main_menu(const Screen scr) {
-    int choice = 1;
-    do {
-        send_menu(scr.y, scr.x, choice-1);
-        menu_listener(&choice);
-    } while(choice >= 1);
-    return (-choice) - 1;
-}
-
-void game(const Screen scr) {
-
-}
-
-void pause_menu(const Screen scr) {
-
-}
-
-
-unsigned int show(const Screen scr, const enum PS prog_state) {
-    switch (prog_state) {
-        case PS_MAIN_MENU: main_menu(scr);
-            break;
-
-        case PS_GAME: game(scr);
-            break;
-        
-        case PS_PAUSE_MENU: pause_menu(scr);
-            break;
-        
-        default: return 1;
-    }
-    return 0;
+    move(cuy, 0);
+    clrtoeol();
+    mvaddstr(cuy, total_size, str); 
 }
 
 

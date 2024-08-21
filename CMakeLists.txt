@@ -21,7 +21,8 @@ add_executable(frogger  src/main.c
                         src/game/routines.c
                         src/game/routines.h
 
-                        src/graphics/drawing.c
+                        src/graphics/drawings/drawing.c
+                        src/graphics/drawings/menus.c
                         src/graphics/drawing.h
                         src/graphics/map.h
                         src/graphics/entities.h

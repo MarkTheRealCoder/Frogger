@@ -7,11 +7,13 @@ void test_threads(struct game_threads *game);
 
 int main(int argc, char *argv[])
 {
+    int output;
     Screen scr;
     init_screen(&scr);
     
-    show(scr, PS_MAIN_MENU);
+    show(scr, PS_PAUSE_MENU, &output);
     endwin();
+    printf("Output \t--- \t%i\n", output);
     //show(PS_PAUSE_MENU);
     //show(PS_GAME);
 
@@ -76,4 +78,3 @@ void test_threads(struct game_threads *game)
     cancel_threads(game);
     destroy_packet(beginnerPacket);
 }
-
