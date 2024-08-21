@@ -5,6 +5,24 @@
 #include "map.h"
 #include "../utils/shortcuts.h"
 
+#define PERCENTAGE_MAP_X 50
+#define PERCENTAGE_MAP_Y 80
+
+#define PERCENTAGE_TIMER_X 10
+#define PERCENTAGE_TIMER_Y 5
+
+#define PERCENTAGE_TTIMER_X 10
+#define PERCENTAGE_TTIMER_Y 5
+
+#define PERCENTAGE_HPS_X 10
+#define PERCENTAGE_HPS_Y 5
+
+#define PERCENTAGE_ACHI_X 20
+#define PERCENTAGE_ACHI_Y 50
+
+
+#define JOLLY_PAIR 127
+
 /* COLOR CODES */
 
 enum color_codes {
@@ -30,6 +48,13 @@ typedef struct {
     unsigned int length;
     char **art;
 } StringArt;
+
+typedef struct {
+    int x_from;
+    int x_to;
+    int y_from;
+    int y_to;
+} Range;
 
 typedef struct {
     int x;

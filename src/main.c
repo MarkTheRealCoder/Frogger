@@ -14,8 +14,6 @@ int main(int argc, char *argv[])
     show(scr, PS_PAUSE_MENU, &output);
     endwin();
     printf("Output \t--- \t%i\n", output);
-    //show(PS_PAUSE_MENU);
-    //show(PS_GAME);
 
     /*
     srand(time(NULL));

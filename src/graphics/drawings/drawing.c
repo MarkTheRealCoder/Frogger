@@ -1,5 +1,11 @@
 #include "../drawing.h"
 
+static Range timer;
+static Range hps;
+static Range achievements;
+static Range trash_timers;
+static Range map;
+
 void init_screen(Screen *scrn) {
     initscr();
     noecho();
@@ -12,6 +18,11 @@ void init_screen(Screen *scrn) {
     init_extended_color(COLORCODES_FROG_ART_LOGO, FROG_ART_LOGO_COLOR);
     init_extended_color(COLORCODES_FROG_ART_LOGO_QUIT, FROG_ART_LOGO_COLOR_Q);
     init_extended_color(COLORCODES_FROG_ART_SELECTED, FROG_ART_SELECTED_COLOR);
+}
+
+
+void configure_screen(Screen scr) {
+    
 }
 
 enum color_codes getEntityColor(const enum entity_type type) {
@@ -105,6 +116,12 @@ void center_string(char str[], int max, int cuy)
     clrtoeol();
     mvaddstr(cuy, total_size, str); 
 }
+
+
+void display_clock(const int parts) {
+
+}
+
 
 
 

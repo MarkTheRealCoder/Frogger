@@ -85,7 +85,7 @@ int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt 
     int quit = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
     int choice = 0;
     int cuy = 1;
-    int last_logo_pair = MENU_FROG_LOGO_PAIR;
+    int last_logo_pair = standard;
     print_art(art, &cuy, scr.x);
     cuy++;
     int logo_cuy = cuy;
