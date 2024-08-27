@@ -7,6 +7,7 @@ static Range trash_timers;
 static Range map;
 
 void init_screen(Screen *scrn) {
+    setlocale(LC_ALL, "");
     initscr();
     noecho();
     curs_set(false);
@@ -159,6 +160,35 @@ void display_clock(const Position p, const short value, const short max) {
     refresh();
 }
 
+void print_hearts(int *x, int y, int curr, int max, int main_color, int lost_color) {
+    for (int i = 0, pair; i < max; i++) {
+        pair = (curr > i) ? main_color : lost_color;
+        attron(COLOR_PAIR(pair));
+        mvaddstr(y, *x, HEART);
+        attroff(COLOR_PAIR(pair));
+        (*x)++;
+        mvaddch(y, *x, ' ');
+        (*x)++;
+    }
+    refresh();
+}
+
+void display_hps(const Position p, const short mcurr, const short fcurr) {
+    int mpair = alloc_pair(COLOR_RED, COLOR_BLACK);
+    int fpair = alloc_pair(COLOR_GREEN, COLOR_BLACK);
+    int lost = alloc_pair(COLOR_BLACK, COLOR_BLACK);
+
+    int x = p.x;
+    attron(A_BOLD);
+    mvaddch(p.y, x, ' ');
+    x++;
+    print_hearts(&x, p.y, mcurr, MAIN_HPS, mpair, lost);
+    mvaddch(p.y, x, ' ');
+    x++;
+    print_hearts(&x, p.y, fcurr, FROG_HPS, fpair, lost);
+    attroff(A_BOLD);
+    refresh();
+}
 
 
 

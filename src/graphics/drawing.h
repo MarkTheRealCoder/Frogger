@@ -1,9 +1,13 @@
 #ifndef DRAWING_H
 #define DRAWING_H
 #include <ncurses.h>
+#include <locale.h>
 #include "entities.h"
 #include "map.h"
 #include "../utils/shortcuts.h"
+
+#define MAIN_HPS 3
+#define FROG_HPS 2
 
 #define PERCENTAGE_MAP_X 50
 #define PERCENTAGE_MAP_Y 80
@@ -144,6 +148,9 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
         "| _|      /__/     \\__\\  \\______/  |_______/    |_______|"
     };
 
+#define HEART "\xE2\x99\xA5"
+#define HEART1 "Y"
+
 #define FROG_ART_COLOR 51, 255, 51 // 0 204 0
 #define FROG_ART_LOGO_COLOR 255, 255, 0 // 0 0 51
 #define FROG_ART_LOGO_COLOR_Q 255, 51, 51 // 153 0 0
@@ -153,6 +160,7 @@ void init_screen(Screen *scrn);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(const Screen scr, const enum PS prog_state, int *output);
 void display_clock(const Position p, const short value, const short max);
+void display_hps(const Position p, const short mcurr, const short fcurr);
 
 #endif
 

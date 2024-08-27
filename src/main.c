@@ -11,12 +11,8 @@ int main(int argc, char *argv[])
     Screen scr;
     init_screen(&scr);
     //show(scr, PS_PAUSE_MENU, &output);
-    printf("x: %i - y: %i\n", scr.x, scr.y);
-    erase();
-    for (int i = 100; i > 0; i-=1) {
-        display_clock((Position){.x=3, .y=3}, i, 100);
-        usleep(150000);
-    }
+    display_hps((Position){.x=10, .y=10}, 3, 2);
+    wgetch(stdscr);
     endwin();
 
     /*
