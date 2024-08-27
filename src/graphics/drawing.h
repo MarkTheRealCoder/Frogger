@@ -53,6 +53,19 @@ typedef struct {
     char **art;
 } StringArt;
 
+typedef struct _string_node{
+    struct _string_node *next;
+    struct _string_node *prev;
+    char *string;
+    int color;
+    int length;
+} StringNode;
+
+typedef struct {
+    StringNode *last;
+    int nodes;
+} StringList;
+
 typedef struct {
     int x_from;
     int x_to;
@@ -149,7 +162,6 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
     };
 
 #define HEART "\xE2\x99\xA5"
-#define HEART1 "Y"
 
 #define FROG_ART_COLOR 51, 255, 51 // 0 204 0
 #define FROG_ART_LOGO_COLOR 255, 255, 0 // 0 0 51
@@ -161,6 +173,8 @@ void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(const Screen scr, const enum PS prog_state, int *output);
 void display_clock(const Position p, const short value, const short max);
 void display_hps(const Position p, const short mcurr, const short fcurr);
+void addStringToList(StringNode **list, int color, char *string);
+void display_achievements(const Position p, const short length, const short height, StringList list);
 
 #endif
 

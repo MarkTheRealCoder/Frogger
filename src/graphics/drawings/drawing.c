@@ -190,6 +190,54 @@ void display_hps(const Position p, const short mcurr, const short fcurr) {
     refresh();
 }
 
+void addStringToList(StringNode **list, int color, char *string) {
+    StringNode *new = CALLOC(StringNode, 1);
+    new->length = strlen(string);
+    new->color = color;
+    new->next = NULL;
+    new->prev = NULL;
+    new->string = string;
+
+    if (*list) {
+        (*list)->next = new;
+        new->prev = (*list);
+    }
+
+    *list = new;
+}
+
+void display_achievements(const Position p, const short length, const short height, StringList list) {
+    eraseFor(p, height, length);
+    StringNode *last = list.last;
+    for (int i = 0, lines = height; i < list.nodes; i++) {
+        lines -= (int)(last->length / length) + ((last->length % length) > 0);
+        if (lines == 0 || lines > 0) last = last->prev;
+        else {
+            last = last->next;
+            break;
+        }
+    }
+
+    if (last->next == NULL) return;
+
+    const int x = p.x;
+    int y = p.y;
+
+    do {
+        attron(COLOR_PAIR(last->color));
+        for (int i = 0, increment = 0; i + increment < last->length; i++) {
+            mvaddch(y, x+i, last->string[i + increment]);
+            if (i == length) {
+                increment = i-1;
+                i = 0;
+                y++;
+            }
+        }
+        attroff(COLOR_PAIR(last->color));
+        last = last->next;
+    } while (last);
+    refresh();
+}
 
 
 

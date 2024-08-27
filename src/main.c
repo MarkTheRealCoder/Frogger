@@ -11,7 +11,14 @@ int main(int argc, char *argv[])
     Screen scr;
     init_screen(&scr);
     //show(scr, PS_PAUSE_MENU, &output);
-    display_hps((Position){.x=10, .y=10}, 3, 2);
+    StringNode *last = NULL;
+    addStringToList(&last, alloc_pair(COLOR_RED, COLOR_BLACK), "Ciao bello come va?");
+    addStringToList(&last, alloc_pair(COLOR_GREEN, COLOR_BLACK), "Hey hey sei uno scozzese!");
+    addStringToList(&last, alloc_pair(COLOR_RED, COLOR_BLACK), "Cazzo culo cervello di gallina$$$");
+    addStringToList(&last, alloc_pair(COLOR_BLUE, COLOR_BLACK), "4 MILIARDI HHHHHHHHHHHHHHHHHHHHHHHHH");
+    addStringToList(&last, alloc_pair(COLOR_RED, COLOR_BLACK), "Ricordi che bello quell'iguana skibidi toilet?");
+    StringList list = {.nodes=5, .last=last};
+    display_achievements((Position){.x=10, .y=5}, 15, 10, list);
     wgetch(stdscr);
     endwin();
 
