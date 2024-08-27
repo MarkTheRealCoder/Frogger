@@ -152,6 +152,7 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
 void init_screen(Screen *scrn);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(const Screen scr, const enum PS prog_state, int *output);
+void display_clock(const Position p, const short value, const short max);
 
 #endif
 

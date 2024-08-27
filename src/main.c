@@ -10,10 +10,14 @@ int main(int argc, char *argv[])
     int output;
     Screen scr;
     init_screen(&scr);
-    
-    show(scr, PS_PAUSE_MENU, &output);
+    //show(scr, PS_PAUSE_MENU, &output);
+    printf("x: %i - y: %i\n", scr.x, scr.y);
+    erase();
+    for (int i = 100; i > 0; i-=1) {
+        display_clock((Position){.x=3, .y=3}, i, 100);
+        usleep(150000);
+    }
     endwin();
-    printf("Output \t--- \t%i\n", output);
 
     /*
     srand(time(NULL));

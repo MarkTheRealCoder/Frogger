@@ -117,9 +117,46 @@ void center_string(char str[], int max, int cuy)
     mvaddstr(cuy, total_size, str); 
 }
 
+void eraseFor(Position sp, short height, short length) {
+    int pair = alloc_pair(COLOR_BLACK, COLOR_BLACK);
 
-void display_clock(const int parts) {
+    attron(COLOR_PAIR(pair));
+    for (short i = 0; i < length; i++) {
+        for (short j = 0; j < height; j++) {
+            mvaddch(sp.y+j, sp.x+i, ' ');
+        }
+    }
+    attroff(COLOR_PAIR(pair));
+}
 
+
+void display_clock(const Position p, const short value, const short max) {
+    int main_color = alloc_pair(COLOR_BLACK, COLOR_WHITE);
+    int decaying_color = alloc_pair(COLOR_BLACK, COLOR_YELLOW);
+    int decaying_2_color = alloc_pair(COLOR_BLACK, COLOR_RED);
+
+    int parts_per_tick = (int) (max / 10);
+    int ticks = (int) (value / parts_per_tick), left = (int) (value % parts_per_tick);
+    int subticks = 0;
+    if (left) subticks = (left > (int) (parts_per_tick / 2)) + 1;
+    if (subticks == 2) left -= (int) (parts_per_tick / 2);
+
+    eraseFor(p, 2, 20);
+
+    for (int i = 0, color = 0; i < 20 && (!i || (int)(i/2) < ticks + (subticks > 0)); i+=2) {
+        if ((!i && ticks) || (i && (int)(i/2) < ticks)) color = main_color;
+        else if ((int)(left) > 2) color = decaying_color;
+        else color = decaying_2_color;
+        attron(COLOR_PAIR(color));
+        mvaddch(p.y, p.x+i, ' ');
+        mvaddch(p.y+1, p.x+i, ' ');
+        if (color == main_color || subticks == 2) {
+            mvaddch(p.y, p.x+i+1, ' ');
+            mvaddch(p.y+1, p.x+i+1, ' ');
+        }
+        attroff(COLOR_PAIR(color));
+    }
+    refresh();
 }
 
 
