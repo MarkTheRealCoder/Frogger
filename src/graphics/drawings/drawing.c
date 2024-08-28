@@ -118,16 +118,19 @@ void center_string(char str[], int max, int cuy)
     mvaddstr(cuy, total_size, str); 
 }
 
-void eraseFor(Position sp, short height, short length) {
-    int pair = alloc_pair(COLOR_BLACK, COLOR_BLACK);
-
+void replaceWith(int pair, Position sp, int height, int length, char c) {
     attron(COLOR_PAIR(pair));
     for (short i = 0; i < length; i++) {
         for (short j = 0; j < height; j++) {
-            mvaddch(sp.y+j, sp.x+i, ' ');
+            mvaddch(sp.y+j, sp.x+i, c);
         }
     }
     attroff(COLOR_PAIR(pair));
+}
+
+void eraseFor(Position sp, short height, short length) {
+    int pair = alloc_pair(COLOR_BLACK, COLOR_BLACK);
+    replaceWith(pair, sp, height, length, ' ');
 }
 
 
@@ -211,7 +214,10 @@ void display_achievements(const Position p, const short length, const short heig
     StringNode *last = list.last;
     for (int i = 0, lines = height; i < list.nodes; i++) {
         lines -= (int)(last->length / length) + ((last->length % length) > 0);
-        if (lines == 0 || lines > 0) last = last->prev;
+        if (lines == 0 || lines > 0) {
+            if (last->prev) last = last->prev;
+            else break;
+        }
         else {
             last = last->next;
             break;
@@ -227,15 +233,43 @@ void display_achievements(const Position p, const short length, const short heig
         attron(COLOR_PAIR(last->color));
         for (int i = 0, increment = 0; i + increment < last->length; i++) {
             mvaddch(y, x+i, last->string[i + increment]);
-            if (i == length) {
-                increment = i-1;
-                i = 0;
+            if (i + 1 == length) {
+                increment += i + 1;
+                i = -1;
                 y++;
             }
         }
+        y++;
         attroff(COLOR_PAIR(last->color));
         last = last->next;
     } while (last);
+    refresh();
+}
+
+void display_entity(const int bg, const int fg, const StringArt art, const Position curr, const Position last) {
+    const int pair = alloc_pair(bg, fg);
+    const int old_pair = alloc_pair(COLOR_BLACK, COLOR_BLACK)/*getZoneColor(last)*/;
+    const int length = strlen(art.art[0]);
+    const int height = art.length; 
+
+    attron(COLOR_PAIR(old_pair));
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < length; j++) {
+            if (WITHIN_BOUNDARIES(1) /*ADAPT WITH MAP BOUNDARIES*/) {
+                mvaddch(last.y+i, last.x+j, ' ');
+            }
+        }
+    }
+    attroff(COLOR_PAIR(old_pair));
+    attron(COLOR_PAIR(pair));
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < length; j++) {
+            if (WITHIN_BOUNDARIES(1) /*ADAPT WITH MAP BOUNDARIES*/) {
+                mvaddch(curr.y+i, curr.x+j, art.art[i][j]);
+            }
+        }
+    }
+    attroff(COLOR_PAIR(pair));
     refresh();
 }
 

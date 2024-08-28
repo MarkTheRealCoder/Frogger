@@ -2,6 +2,7 @@
 #define DRAWING_H
 #include <ncurses.h>
 #include <locale.h>
+#include <string.h>
 #include "entities.h"
 #include "map.h"
 #include "../utils/shortcuts.h"
@@ -26,6 +27,8 @@
 
 
 #define JOLLY_PAIR 127
+
+#define WITHIN_BOUNDARIES(x) (x) > 0
 
 /* COLOR CODES */
 
@@ -175,6 +178,7 @@ void display_clock(const Position p, const short value, const short max);
 void display_hps(const Position p, const short mcurr, const short fcurr);
 void addStringToList(StringNode **list, int color, char *string);
 void display_achievements(const Position p, const short length, const short height, StringList list);
+void display_entity(const int bg, const int fg, const StringArt art, const Position curr, const Position last);
 
 #endif
 

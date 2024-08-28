@@ -74,6 +74,7 @@ struct frog {
 // suggestion: add a field to the entity struct to bind a display function for the specific entity.
 
 
+
 struct entity entities_default_frog(int *index);
 struct entity entities_default_plant(int *index);
 struct entity entities_default_croc(int *index);
