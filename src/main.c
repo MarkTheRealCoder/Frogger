@@ -11,10 +11,7 @@ int main(int argc, char *argv[])
     Screen scr;
     init_screen(&scr);
     //show(scr, PS_PAUSE_MENU, &output);
-    for (int i = 0; i < 50; i++) {
-        display_entity(COLOR_GREEN, COLOR_BLACK, (StringArt){.art=_FROG_PLAY_ART, .length=3}, (Position){.x=10+i+1, .y=20}, (Position){.x=10+i, .y=20});
-        usleep(150000);
-    }
+    MapSkeleton map = display_map((Position){.x=10,.y=5}, 100, NULL);
     wgetch(stdscr);
     endwin();
 

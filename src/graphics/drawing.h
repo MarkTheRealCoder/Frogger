@@ -78,13 +78,20 @@ typedef struct {
 
 typedef struct {
     int x;
-    unsigned int y;
+    int y;
 } Position;
 
 typedef struct {
     enum entity_type type;
     Position pos;       // UP-LEFT CORNER
 } Drawing;
+
+typedef struct {
+    Position *hideouts;
+    Position sidewalk;
+    Position river;
+    Position garden;
+} MapSkeleton;
 
 typedef struct {
     unsigned int x;
@@ -179,6 +186,7 @@ void display_hps(const Position p, const short mcurr, const short fcurr);
 void addStringToList(StringNode **list, int color, char *string);
 void display_achievements(const Position p, const short length, const short height, StringList list);
 void display_entity(const int bg, const int fg, const StringArt art, const Position curr, const Position last);
+MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map);
 
 #endif
 

@@ -19,6 +19,11 @@ void init_screen(Screen *scrn) {
     init_extended_color(COLORCODES_FROG_ART_LOGO, FROG_ART_LOGO_COLOR);
     init_extended_color(COLORCODES_FROG_ART_LOGO_QUIT, FROG_ART_LOGO_COLOR_Q);
     init_extended_color(COLORCODES_FROG_ART_SELECTED, FROG_ART_SELECTED_COLOR);
+
+    init_extended_color(COLORCODES_GRASS, GRASS_COLOR);
+    init_extended_color(COLORCODES_SIDEWALK, SIDEWALK_COLOR);
+    init_extended_color(COLORCODES_WATER, WATER_COLOR);
+    init_extended_color(COLORCODES_HIDEOUT, HIDEOUT_COLOR);
 }
 
 
@@ -49,44 +54,16 @@ enum color_codes getEntityColor(const enum entity_type type) {
     return color;
 }
 
-enum areas getAreaFromPos(const Position pos) {
-    
+int getAreaFromY(const int y) {
+    int areaColor = COLOR_BLACK;
+    if (y < 3) areaColor = COLORCODES_GRASS;
+    else if (y < 6) areaColor = COLORCODES_HIDEOUT;
+    else if (y < 12) areaColor = COLORCODES_GRASS;
+    else if (y < 36) areaColor = COLORCODES_WATER;
+    else if (y < 39) areaColor = COLORCODES_SIDEWALK;
+    return areaColor;
 }
 
-void eraseOldPosition(const enum color_codes areaColor, const Position old, const unsigned int length) {
-    init_extended_pair(JOLLY_PAIR, 0, areaColor);
-    attron(COLOR_PAIR(JOLLY_PAIR));
-    for (int i = 0; i < length; i++) {
-        mvaddch(old.y, old.x + i, ' ');
-        mvaddch(old.y+1, old.x + i, ' ');
-        mvaddch(old.y+2, old.x + i, ' ');
-    }
-    attroff(COLOR_PAIR(JOLLY_PAIR));
-}
-
-EntityObject getEntityObject(const enum entity_type type) {
-    return (EntityObject){.top = NULL, .middle = NULL, .bottom = NULL};
-}
-
-void drawNewEntity(const enum entity_type type, const enum color_codes areaColor, const Position new, const unsigned int length) {
-    init_extended_pair(JOLLY_PAIR, getEntityColor(type), areaColor);
-    EntityObject obj = getEntityObject(type);
-    attron(COLOR_PAIR(JOLLY_PAIR));
-    //todo Replace following
-    mvaddstr(new.y, new.x, obj.top);
-    mvaddstr(new.y+1, new.x, obj.middle);
-    mvaddstr(new.y+2, new.x, obj.bottom);
-    //
-    attroff(COLOR_PAIR(JOLLY_PAIR));
-}
-
-void move_entity(const enum entity_type type, const Position old, const Position current, const unsigned int length) {
-    enum areas oldArea = getAreaFromPos(old);
-    enum areas newArea = getAreaFromPos(current);
-    eraseOldPosition((enum color_codes)oldArea, old, length);
-    drawNewEntity(type, (enum color_codes)newArea, current, length);
-    refresh();
-}
 
 
 /**
@@ -247,7 +224,7 @@ void display_achievements(const Position p, const short length, const short heig
 }
 
 void display_entity(const int bg, const int fg, const StringArt art, const Position curr, const Position last) {
-    const int pair = alloc_pair(bg, fg);
+    const int pair = alloc_pair(fg, bg);
     const int old_pair = alloc_pair(COLOR_BLACK, COLOR_BLACK)/*getZoneColor(last)*/;
     const int length = strlen(art.art[0]);
     const int height = art.length; 
@@ -271,6 +248,84 @@ void display_entity(const int bg, const int fg, const StringArt art, const Posit
     }
     attroff(COLOR_PAIR(pair));
     refresh();
+}
+
+
+/* * * * * * */
+
+void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
+    int hideouts = HIDEOUTS;
+    while (!(width > hideouts * FROG_WIDTH)) hideouts--;
+    map->hideouts = CALLOC(Position, hideouts + 1);
+    int total_left = width - hideouts * FROG_WIDTH;
+    int spaces = hideouts + 1;
+    int left_per_space = (int) (total_left / spaces);
+    int extra_left = total_left % spaces;
+    extra_left = extra_left % 2 == 0 ? extra_left : extra_left - 1;
+    spaces = spaces % 2 == 0;
+    for (int i = 0, spacing = 0; i < hideouts; i++) {
+        map->hideouts[i].y = sp.y + FROG_HEIGHT; 
+        spacing += left_per_space;
+        if (extra_left) {
+            if (spaces && i + 1 == ((int) (hideouts / 2)) + 1) spacing += extra_left;
+            else if (i + 1 == ((int) (hideouts / 2)) + 1 || i + 1 == ((int) (hideouts / 2)) + 2) spacing += (int) (extra_left / 2);
+        }
+        map->hideouts[i].x = sp.x + spacing;
+        spacing += FROG_WIDTH;
+    }
+    map->hideouts[hideouts].y = map->hideouts[hideouts].x = -1;
+
+
+    map->garden.x = map->sidewalk.x = map->river.x = sp.x;
+    map->garden.y = map->hideouts[0].y + FROG_HEIGHT;
+    map->river.y = map->garden.y + FROG_HEIGHT * 2;
+    map->sidewalk.y = map->river.y + FROG_HEIGHT * 8;
+}
+
+MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
+    int current_pair = -1;
+    MapSkeleton _map; 
+
+    if (!map) make_MapSkeleton(&_map, sp, width);
+    else _map = *map;
+
+    for (int i = 0, current_bg = -1, tmp_bg = -1, tmp_pair = 0; i < MAP_HEIGHT; i++) {
+        tmp_bg = getAreaFromY(i);
+
+        if (tmp_bg != current_bg && (i < 3 || i > 5)) {
+            current_bg = tmp_bg;
+            if (current_pair != -1) attroff(COLOR_PAIR(current_pair));
+            current_pair = alloc_pair(COLOR_BLACK, current_bg);
+            attron(COLOR_PAIR(current_pair));
+        }
+        else if (tmp_bg != current_bg) {
+            tmp_pair = alloc_pair(COLOR_BLACK, tmp_bg);
+        }
+        
+        
+        for (int j = 0, k = 0; j < width; j++) {
+            if (sp.y + i >= _map.hideouts[0].y && sp.y + i < _map.hideouts[0].y + FROG_HEIGHT) {
+                bool ho = false;
+                if (sp.x + j >= _map.hideouts[k].x && sp.x + j < _map.hideouts[k].x + FROG_WIDTH) {
+                    ho = true;
+                    if (sp.x + j == _map.hideouts[k].x + FROG_WIDTH - 1) k++;
+                }
+                if (ho) {
+                    attroff(COLOR_PAIR(current_pair));
+                    attron(COLOR_PAIR(tmp_pair));
+                }
+                else {
+                    attroff(COLOR_PAIR(tmp_pair));
+                    attron(COLOR_PAIR(current_pair));
+                }
+            }
+            mvaddch(sp.y + i, sp.x + j, ' ');
+        }
+    }
+    attroff(COLOR_PAIR(current_pair));
+    refresh();
+
+    return _map;
 }
 
 
