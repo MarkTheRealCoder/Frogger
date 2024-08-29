@@ -236,9 +236,9 @@ void display_achievements(const Position p, const short length, const short heig
     refresh();
 }
 
-void display_entity(const int bg, const int fg, const StringArt art, const Position curr, const Position last) {
-    const int pair = alloc_pair(fg, bg);
-    const int old_pair = alloc_pair(COLOR_BLACK, COLOR_BLACK)/*getZoneColor(last)*/;
+void display_entity(const int fg, const StringArt art, const Position curr, const Position last) {
+    const int pair = alloc_pair(fg, getAreaFromY(curr.y));
+    const int old_pair = alloc_pair(COLOR_BLACK, getAreaFromY(last.y));
     const int length = strlen(art.art[0]);
     const int height = art.length; 
 

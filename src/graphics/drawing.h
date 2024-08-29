@@ -185,7 +185,7 @@ void display_clock(const Position p, const short value, const short max);
 void display_hps(const Position p, const short mcurr, const short fcurr);
 void addStringToList(StringNode **list, int color, char *string);
 void display_achievements(const Position p, const short length, const short height, StringList list);
-void display_entity(const int bg, const int fg, const StringArt art, const Position curr, const Position last);
+void display_entity(const int fg, const StringArt art, const Position curr, const Position last);
 MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map);
 void center_string(char str[], int max, int cuy);
 

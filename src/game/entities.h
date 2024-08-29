@@ -73,6 +73,13 @@ struct frog {
 
 // suggestion: add a field to the entity struct to bind a display function for the specific entity.
 
+typedef struct {
+    EntityType e1;
+    EntityType e2;
+    int e1_priority;
+    int e2_priority;
+    enum {OVERLAPPING, DAMAGING} collision_type;
+} CollisionPacket;
 
 
 struct entity entities_default_frog(int *index);

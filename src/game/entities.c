@@ -90,3 +90,8 @@ struct entity entities_default_croc(int *index)
     return croc;
 }
 
+
+CollisionPacket areColliding(struct entity e1, struct entity e2) {
+    
+}
+
