@@ -6,7 +6,8 @@ static Range achievements;
 static Range trash_timers;
 static Range map;
 
-void init_screen(Screen *scrn) {
+void init_screen(Screen *scrn) 
+{
     setlocale(LC_ALL, "");
     initscr();
     noecho();
@@ -31,26 +32,38 @@ void configure_screen(Screen scr) {
     
 }
 
-enum color_codes getEntityColor(const enum entity_type type) {
+enum color_codes getEntityColor(const enum entity_type type) 
+{
     enum color_codes color;
-    switch (type) {
-        case CROC_TYPE: color = COLORCODES_CROC_B;
+
+    switch (type) 
+    {
+        case CROC_TYPE:
+            color = COLORCODES_CROC_B;
             break;
-        case CROC_ANGRY_TYPE: color = COLORCODES_CROC_A;
+        case CROC_ANGRY_TYPE: 
+            color = COLORCODES_CROC_A;
             break;
-        case FLOWER_TYPE: color = COLORCODES_FLOWER_B;
+        case FLOWER_TYPE:
+            color = COLORCODES_FLOWER_B;
             break;
-        case FLOWER_HARMED_TYPE: color = COLORCODES_FLOWER_A;
+        case FLOWER_HARMED_TYPE: 
+            color = COLORCODES_FLOWER_A;
             break;
-        case FROG_TYPE: color = COLORCODES_FROG_B;
+        case FROG_TYPE: 
+            color = COLORCODES_FROG_B;
             break;
-        case FROG_HARMED_TYPE: color = COLORCODES_FROG_A;
+        case FROG_HARMED_TYPE:
+            color = COLORCODES_FROG_A;
             break;
-        case PROJ_FROG_TYPE: color = COLORCODES_PROJECTILE_F;
+        case PROJ_FROG_TYPE: 
+            color = COLORCODES_PROJECTILE_F;
             break;
-        case PROJ_FLOWER_TYPE: color = COLORCODES_PROJECTILE_FL;
+        case PROJ_FLOWER_TYPE: 
+            color = COLORCODES_PROJECTILE_FL;
             break;
     }
+
     return color;
 }
 

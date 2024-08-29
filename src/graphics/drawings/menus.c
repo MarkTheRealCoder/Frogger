@@ -56,31 +56,41 @@ void print_choices(char **choices, int choices_num, int current_choice, int max,
     refresh();
 }
 
-bool menu_listener(int *choice, int choices_num) {
+bool menu_listener(int *choice, int choices_num)
+{
     int c = wgetch(stdscr);
     bool not_exit = true;
-    switch (c) {
+
+    switch (c)
+    {
         case KEY_DOWN:
         case 's':
-            if (*choice < choices_num - 1) (*choice)++;
+            if (*choice < choices_num - 1)
+            {
+                (*choice)++;
+            }
             break;
         case KEY_UP:
         case 'w':
-            if (*choice) (*choice)--;
+            if (*choice)
+            {
+                (*choice)--;
+            }
             break;
         case KEY_ENTER:
         case '\r':
-        case '\n': {
-                not_exit = false;
-            }
+        case '\n':
+            not_exit = false;
             break;
     }
+
     return not_exit;
-    
 }
 
-int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt art) {
+int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt art) 
+{
     erase();
+
     int standard = alloc_pair(COLORCODES_FROG_ART_LOGO, COLOR_BLACK);
     int quit = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
     int choice = 0;
@@ -89,16 +99,20 @@ int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt 
     print_art(art, &cuy, scr.x);
     cuy++;
     int logo_cuy = cuy;
-    do {
+
+    do 
+    {
         cuy = logo_cuy;
         print_logo(logo, choice == choices.length - 1 ? quit : standard, scr.x, &cuy);
         cuy += 4;
         print_choices(choices.art, choices.length, choice, scr.x, &cuy);
     } while(menu_listener(&choice, choices.length));
+
     return choice;
 }
 
-int main_menu(const Screen scr) {
+int main_menu(const Screen scr) 
+{
     #define MM_LEN 4
     const char *choices[MM_LEN] = {
         "Start new game",
@@ -106,13 +120,15 @@ int main_menu(const Screen scr) {
         "Create a new saving",
         "Quit"
     };
+
     return generic_menu(scr, 
         (StringArt){.art=choices, .length=MM_LEN}, 
         (StringArt){.art=_FROGGER_LOGO, .length=_FROGGER_LOGO_LENGTH}, 
         (StringArt){.art=_FROG_ART, .length=_FROG_ART_LENGTH});
 }
 
-int pause_menu(const Screen scr) {
+int pause_menu(const Screen scr) 
+{
     #define PM_LEN 6
     const char *choices[PM_LEN] = {
         "Resume",
@@ -122,19 +138,26 @@ int pause_menu(const Screen scr) {
         "Save & Quit",
         "Quit"
     };
+
     return generic_menu(scr, 
         (StringArt){.art=choices, .length=PM_LEN}, 
         (StringArt){.art=_FROGGER_PAUSE_LOGO, .length=_FROGGER_PAUSE_LOGO_LENGTH}, 
         (StringArt){.art=_FROGGER_PAUSE_ART, .length=_FROGGER_PAUSE_LENGTH});
 }
 
-unsigned int show(const Screen scr, const enum PS prog_state,  int *output) {
-    switch (prog_state) {
-        case PS_MAIN_MENU: *output = main_menu(scr);
+unsigned int show(const Screen scr, const enum PS prog_state,  int *output) 
+{
+    switch (prog_state) 
+    {
+        case PS_MAIN_MENU: 
+            *output = main_menu(scr);
             break;
-        case PS_PAUSE_MENU: *output = pause_menu(scr);
+        case PS_PAUSE_MENU: 
+            *output = pause_menu(scr);
             break;
-        default: return 1;
+        default: 
+            return 1;
     }
+
     return 0;
 }
