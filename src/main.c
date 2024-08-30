@@ -73,16 +73,7 @@ void test_threads(struct game_threads *game)
 
     run_threads(game);
 
-    for (int i = 0; i < 100; i++) {
-        sleepy(500, TIMEFRAME_MILLIS);
-        char s[100];
-        fprintf(s, "Dio cane bastardo simone down %i\n", node->entity.direction);
-        mvaddstr(10, 10, s);
-
-    }
-
-
-    sleepy(500, TIMEFRAME_MILLIS);
+    sleepy(500, TIMEFRAME_SECONDS);
     cancel_threads(game);
     destroy_packet(beginnerPacket);
 }

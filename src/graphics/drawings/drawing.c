@@ -14,6 +14,7 @@ void init_screen(Screen *scrn)
     noecho();
     curs_set(false);
     keypad(stdscr, true);
+    timeout(100);
     start_color();
     getmaxyx(stdscr, scrn->y, scrn->x);
 

@@ -1,4 +1,5 @@
 #include "../drawing.h"
+#include "../../utils/shortcuts.h"
 
 void print_art(StringArt art, int *cuy, int max) {
     int pair = alloc_pair(COLORCODES_FROG_ART, COLOR_BLACK);

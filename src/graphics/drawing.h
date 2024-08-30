@@ -187,5 +187,6 @@ void display_achievements(const Position p, const short length, const short heig
 void display_entity(const int fg, const StringArt art, const Position curr, const Position last);
 MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map);
 void center_string(char str[], int max, int cuy);
+void eraseFor(Position sp, short height, short length);
 
 #endif

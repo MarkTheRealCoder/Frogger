@@ -1,6 +1,7 @@
 #include "routines.h"
 #include "core.h"
 #include "entities.h"
+#include "../graphics/drawing.h"
 #include "../utils/shortcuts.h"
 
 void *example_routine() 
@@ -58,6 +59,12 @@ void handle_packet(struct game_threads *game, Packet *packet)
 
                 // todo collision check 
                 // todo display on screen
+
+                eraseFor((Position) { 10, 10 }, 1, 30);
+
+                char *s = concat(2, "DIRECTION: ", str_direction(entity->direction));
+                mvaddstr(10, 10, s);
+                free(s);
 
                 break;
             }
@@ -157,34 +164,43 @@ void *frog_routine(void *args)
     EntityMovePacket entity_move_packet = { };
     entity_move_packet.entity = *frog; // local clone
 
+    Direction dir = -1;
+
     while (true)
     {
         wait_producer(game);
 
-        CHECK_SIGNAL(signal, mutex)
-
         /* generation of the packet with its contents */
 
-        Direction dir = -1;
-
-        switch (wgetch(stdscr)) {
+        switch (wgetch(stdscr)) 
+        {
             case 'w':
             case 'W':
-            case KEY_UP: dir = DIRECTION_NORTH;
+            case KEY_UP: 
+                dir = DIRECTION_NORTH;
                 break;
             case 's':
             case 'S':
-            case KEY_DOWN: dir = DIRECTION_SOUTH;
+            case KEY_DOWN: 
+                dir = DIRECTION_SOUTH;
                 break;
             case 'a':
             case 'A':
-            case KEY_LEFT: dir = DIRECTION_WEST;
+            case KEY_LEFT:
+                dir = DIRECTION_WEST;
                 break;
             case 'd':
             case 'D':
-            case KEY_RIGHT: dir = DIRECTION_EAST;
+            case KEY_RIGHT: 
+                dir = DIRECTION_EAST;
+                break;
+            case 'p':
+            case 'P':
+                halt_threads(game);
                 break;
         }
+
+        CHECK_SIGNAL(signal, mutex)
 
         entity_move_packet.entity.direction = dir;
         move_on_direction(&entity_move_packet);
@@ -195,7 +211,6 @@ void *frog_routine(void *args)
         WRITE_TO_COMMS_BUFFER(game, comms_buffer, index, product)
         
         signal_producer(game);
-      
     }
 
     DEBUG("exited from frog\n");

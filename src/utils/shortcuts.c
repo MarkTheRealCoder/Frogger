@@ -118,6 +118,13 @@ bool str_eq(char *expected, char *toCompare)
  */
 char *str_packet_type(PacketType packetType)
 {
+    #define PACKET_TYPE_COUNT 5
+
+    if (packetType < 0 || packetType > PACKET_TYPE_COUNT - 1)
+    {
+        return "INVALID";
+    }
+
     static char *packetTypes[] = {
         "VOID",
         "INT",
@@ -136,6 +143,13 @@ char *str_packet_type(PacketType packetType)
  */
 char *str_direction(Direction direction)
 {
+    #define DIRECTION_COUNT 4
+
+    if (direction < 0 || direction > DIRECTION_COUNT - 1)
+    {
+        return "INVALID";
+    }
+
     static char *directions[] = {
         "NORTH",
         "SOUTH",
@@ -185,4 +199,13 @@ char *concat(const int n, ...)
 
     va_end(args);
     return output;
+}
+
+long long timeInMilliseconds(void) 
+{
+    struct timeval tv;
+
+    gettimeofday(&tv,NULL);
+
+    return (((long long) tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }

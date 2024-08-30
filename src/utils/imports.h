@@ -9,6 +9,7 @@
 #include <time.h>
 #include <stdatomic.h>
 #include <semaphore.h>
+#include<sys/time.h>
 
 #define TEST_MODE true
 #define DEBUG_MODE true
