@@ -2,6 +2,7 @@
 #define FROGGER_ENTITIES_H
 
 #include "../utils/imports.h"
+#include "../graphics/drawing.h"
 
 #define ENTITIES_FROG_ID 0
 
@@ -14,6 +15,9 @@
 #define ENTITIES_PROJECTILE_PLANT_ID_START 21
 #define ENTITIES_PROJECTILE_PLANT_ID_END 24
 
+#define ENTITY_FROG_HEIGHT 3
+#define ENTITY_FROG_WIDTH 3
+
 typedef enum {
     DIRECTION_NORTH,
     DIRECTION_SOUTH,
@@ -22,11 +26,11 @@ typedef enum {
 } Direction;
 
 typedef enum {
-    ENTITY_TYPE__EMPTY,
-    ENTITY_TYPE__FROG,
-    ENTITY_TYPE__CROC,
-    ENTITY_TYPE__PLANT,
-    ENTITY_TYPE__PROJECTILE
+    ENTITY_TYPE__EMPTY = 0,
+    ENTITY_TYPE__FROG = 3,
+    ENTITY_TYPE__CROC = 4,
+    ENTITY_TYPE__PLANT = 11,
+    ENTITY_TYPE__PROJECTILE = 35
 } EntityType;
 
 typedef int entity_id_t;
@@ -74,16 +78,22 @@ struct frog {
 // suggestion: add a field to the entity struct to bind a display function for the specific entity.
 
 typedef struct {
+    Position leftcorner;
+    Position rightcorner;
+} Cuboid;
+
+typedef struct {
     EntityType e1;
     EntityType e2;
     int e1_priority;
     int e2_priority;
-    enum {OVERLAPPING, DAMAGING} collision_type;
+    enum {COLLISION_OVERLAPPING, COLLISION_DAMAGING, COLLISION_AVOIDED} collision_type;
 } CollisionPacket;
 
 
 struct entity entities_default_frog(int *index);
 struct entity entities_default_plant(int *index);
 struct entity entities_default_croc(int *index);
+CollisionPacket areColliding(struct entity e1, struct entity e2);
 
 #endif // !FROGGER_ENTITIES_H
