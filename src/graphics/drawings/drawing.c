@@ -1,4 +1,5 @@
 #include "../drawing.h"
+#include "../../utils/shortcuts.h"
 
 static Range timer;
 static Range hps;

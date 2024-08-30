@@ -5,7 +5,6 @@
 #include <string.h>
 #include "entities.h"
 #include "map.h"
-#include "../utils/shortcuts.h"
 
 #define MAIN_HPS 3
 #define FROG_HPS 2

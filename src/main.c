@@ -1,5 +1,6 @@
 #include "game/core.h"
 #include "game/addons.h"
+#include "game/routines.h"
 #include "utils/shortcuts.h"
 #include "graphics/drawing.h"
 
@@ -11,11 +12,10 @@ int main(int argc, char *argv[])
     Screen scr;
     init_screen(&scr);
     //show(scr, PS_PAUSE_MENU, &output);
-    MapSkeleton map = display_map((Position){.x=10,.y=5}, 100, NULL);
-    wgetch(stdscr);
-    endwin();
+    //MapSkeleton map = display_map((Position){.x=10,.y=5}, 100, NULL);
+    
+    //wgetch(stdscr);
 
-    /*
     srand(time(NULL));
     struct program_args parsed_program_args = addons_parse_args(argc, argv); 
 
@@ -55,7 +55,9 @@ int main(int argc, char *argv[])
         cancel_threads(&game); 
         return EXIT_SUCCESS;
     }
-    */
+    endwin();
+
+    
     return EXIT_SUCCESS;
 }
 
@@ -63,13 +65,22 @@ void test_threads(struct game_threads *game)
 {
     Packet *beginnerPacket = create_threads(game);
 
+    struct entity_node *node = game->entity_node;
+    while (node != NULL) {
+        if (node->entity.type == ENTITY_TYPE__FROG) break;
+        node = node->next;
+    }
+
     run_threads(game);
-    
-    sleepy(500, TIMEFRAME_MILLIS);
-    halt_threads(game);
-    
-    sleepy(500, TIMEFRAME_MILLIS);
-    run_threads(game);
+
+    for (int i = 0; i < 100; i++) {
+        sleepy(500, TIMEFRAME_MILLIS);
+        char s[100];
+        fprintf(s, "Dio cane bastardo simone down %i\n", node->entity.direction);
+        mvaddstr(10, 10, s);
+
+    }
+
 
     sleepy(500, TIMEFRAME_MILLIS);
     cancel_threads(game);

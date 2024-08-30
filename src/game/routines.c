@@ -42,10 +42,10 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 EntityMovePacket *entity_move_packet = (EntityMovePacket *) packet->data;
                 struct entity *packet_entity = &entity_move_packet->entity;
 
-                DEBUG("*** EntityMovePacket\t-> id: %d, x: %d, y: %d, direction: %s\n", 
+                /*DEBUG("*** EntityMovePacket\t-> id: %d, x: %d, y: %d, direction: %s\n", 
                       packet_entity->id, packet_entity->x,
                       packet_entity->y, 
-                      str_direction(entity_move_packet->entity.direction));
+                      str_direction(entity_move_packet->entity.direction));*/
 
                 struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
 
@@ -53,8 +53,8 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 entity->y += packet_entity->y;
                 entity->direction = packet_entity->direction;
 
-                DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
-                      entity->id, entity->x, entity->y, str_direction(entity->direction));
+                //DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
+                      //entity->id, entity->x, entity->y, str_direction(entity->direction));
 
                 // todo collision check 
                 // todo display on screen
@@ -65,12 +65,12 @@ void handle_packet(struct game_threads *game, Packet *packet)
             {
                 TimerPacket *timer_packet = (TimerPacket *) packet->data;
 
-                DEBUG("*** TimerPacket\t-> current_time: %d, max_time: %d\n", 
-                      timer_packet->current_time, timer_packet->max_time);
+                /*DEBUG("*** TimerPacket\t-> current_time: %d, max_time: %d\n", 
+                      timer_packet->current_time, timer_packet->max_time);*/
 
                 if (timer_packet->current_time <= 0)
                 {
-                    DEBUG("^^^ TimerPacket\t-> time is up!\n");
+                    //DEBUG("^^^ TimerPacket\t-> time is up!\n");
                 }
 
                 break;
@@ -164,7 +164,29 @@ void *frog_routine(void *args)
         CHECK_SIGNAL(signal, mutex)
 
         /* generation of the packet with its contents */
-        entity_move_packet.entity.direction = gen_num(0, 3); // todo: getch()
+
+        Direction dir = -1;
+
+        switch (wgetch(stdscr)) {
+            case 'w':
+            case 'W':
+            case KEY_UP: dir = DIRECTION_NORTH;
+                break;
+            case 's':
+            case 'S':
+            case KEY_DOWN: dir = DIRECTION_SOUTH;
+                break;
+            case 'a':
+            case 'A':
+            case KEY_LEFT: dir = DIRECTION_WEST;
+                break;
+            case 'd':
+            case 'D':
+            case KEY_RIGHT: dir = DIRECTION_EAST;
+                break;
+        }
+
+        entity_move_packet.entity.direction = dir;
         move_on_direction(&entity_move_packet);
         
         product = create_packet(&entity_move_packet, 1, PACKET_TYPE__ENTITYMOVE, true);
@@ -174,7 +196,6 @@ void *frog_routine(void *args)
         
         signal_producer(game);
       
-        sleepy(100, TIMEFRAME_MILLIS);
     }
 
     DEBUG("exited from frog\n");

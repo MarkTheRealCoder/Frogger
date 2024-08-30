@@ -50,21 +50,21 @@ struct entity entities_default_croc(int *index)
     {
         direction = choose_between(2, DIRECTION_WEST, DIRECTION_EAST);
     }
-    DEBUG("chosen direction: %s\n", str_direction(direction));
+    //DEBUG("chosen direction: %s\n", str_direction(direction));
    
     int delay = choose_between(3, CORE_GAME_ENTITY_SIZE, CORE_GAME_ENTITY_SIZE * 2, CORE_GAME_ENTITY_SIZE * 3);
-    DEBUG("chosen delay: %d\n", delay);
+    //DEBUG("chosen delay: %d\n", delay);
 
     bool is_west = direction == DIRECTION_WEST;
     
     int croc_x = is_west ? CORE_GAME_MAP_WIDTH : 0;
-    DEBUG("first croc_x: %d\n", croc_x);
+    //DEBUG("first croc_x: %d\n", croc_x);
 
     croc_x += is_west ? width + delay : -(width + delay);
-    DEBUG("second croc_x: %d\n", croc_x);
+    //DEBUG("second croc_x: %d\n", croc_x);
 
     croc_x += is_west ? old_width : -old_width;
-    DEBUG("third croc_x: %d\n", croc_x);
+    //DEBUG("third croc_x: %d\n", croc_x);
 
     struct entity croc = {
         .id = (*index)++,
@@ -85,7 +85,7 @@ struct entity entities_default_croc(int *index)
         croc_y += CORE_GAME_FROG_JUMP;
     }
 
-    DEBUG("GENERATED CROC -> x: %d, y: %d, width: %d, direction: %s\n", croc.x, croc.y, croc.width, str_direction(direction));
+    //DEBUG("GENERATED CROC -> x: %d, y: %d, width: %d, direction: %s\n", croc.x, croc.y, croc.width, str_direction(direction));
 
     return croc;
 }
@@ -129,7 +129,7 @@ bool compareCuboids(Cuboid c1, Cuboid c2) {
 }
 
 CollisionPacket areColliding(struct entity e1, struct entity e2) {
-    CollisionPacket p = {.e1=e1.type, .e2=e2.type, .e1_priority=getPriorityByType(e1.type), .e2_priority=getPriorityByEntityType(e2.type)};
+    CollisionPacket p = {.e1=e1.type, .e2=e2.type, .e1_priority=getPriorityByEntityType(e1.type), .e2_priority=getPriorityByEntityType(e2.type)};
     int e1_height = getHeightByEntityType(e1.type);
     int e2_height = getHeightByEntityType(e2.type);
     if (!compareCuboids(createCuboid((Position){.x=e1.x, .y=e1.y}, e1.width, e1_height), 
@@ -141,4 +141,3 @@ CollisionPacket areColliding(struct entity e1, struct entity e2) {
     }
     return p;
 }
-
