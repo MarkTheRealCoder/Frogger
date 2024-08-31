@@ -27,7 +27,9 @@
 
 #define JOLLY_PAIR 127
 
-#define WITHIN_BOUNDARIES(x) (x) > 0
+#define GET_MAP_Y(_y, map) (_y) - (map.hideouts[0].y - 3)
+
+#define WITHIN_BOUNDARIES(_x, _y, map) ((map.sidewalk.x) <= (_x) && ((_x) < ((map.sidewalk.x) + (map.width)))) && ((map.hideouts[0].y) <= (_y) && ((_y) < ((map.sidewalk.y) + (3))))
 
 /* COLOR CODES */
 
@@ -44,6 +46,7 @@ enum color_codes {
     COLORCODES_GRASS,
     COLORCODES_HIDEOUT,
     COLORCODES_SIDEWALK,
+    COLORCODES_BLOCKED,
     COLORCODES_FROG_ART,
     COLORCODES_FROG_ART_LOGO,
     COLORCODES_FROG_ART_LOGO_QUIT,
@@ -90,6 +93,7 @@ typedef struct {
     Position sidewalk;
     Position river;
     Position garden;
+    int width;
 } MapSkeleton;
 
 typedef struct {
@@ -185,7 +189,7 @@ void display_hps(const Position p, const short mcurr, const short fcurr);
 void addStringToList(StringNode **list, int color, char *string);
 void display_string(const Position position, const int color, const char *string, int length);
 void display_achievements(const Position p, const short length, const short height, StringList list);
-void display_entity(const int fg, const StringArt art, const Position curr, const Position last);
+void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map);
 MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map);
 void center_string(char str[], int max, int cuy);
 void eraseFor(Position sp, short height, short length);

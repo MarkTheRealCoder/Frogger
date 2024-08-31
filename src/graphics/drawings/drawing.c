@@ -28,9 +28,19 @@ void init_screen(Screen *scrn)
     init_extended_color(COLORCODES_FROG_ART_SELECTED, FROG_ART_SELECTED_COLOR);
 
     init_extended_color(COLORCODES_GRASS, GRASS_COLOR);
+    init_extended_color(COLORCODES_BLOCKED, BLOCKED_COLOR);
     init_extended_color(COLORCODES_SIDEWALK, SIDEWALK_COLOR);
     init_extended_color(COLORCODES_WATER, WATER_COLOR);
     init_extended_color(COLORCODES_HIDEOUT, HIDEOUT_COLOR);
+
+    init_extended_color(COLORCODES_CROC_B, CROC_B_COLOR);
+    init_extended_color(COLORCODES_CROC_A, CROC_A_COLOR);
+    init_extended_color(COLORCODES_FROG_B, FROG_B_COLOR);
+    init_extended_color(COLORCODES_FROG_A, FROG_A_COLOR);
+    init_extended_color(COLORCODES_FLOWER_B, FLOWER_B_COLOR);
+    init_extended_color(COLORCODES_FLOWER_A, FLOWER_A_COLOR);
+    init_extended_color(COLORCODES_PROJECTILE_F, PROJECTILE_F_COLOR);
+    init_extended_color(COLORCODES_PROJECTILE_FL, PROJECTILE_FL_COLOR);
 }
 
 /**
@@ -117,7 +127,7 @@ int getAreaFromY(const int y)
 {
     int areaColor = COLOR_BLACK;
 
-    if (y < 3) areaColor = COLORCODES_GRASS;
+    if (y < 3) areaColor = COLORCODES_BLOCKED;
     else if (y < 6) areaColor = COLORCODES_HIDEOUT;
     else if (y < 12) areaColor = COLORCODES_GRASS;
     else if (y < 36) areaColor = COLORCODES_WATER;
@@ -376,16 +386,16 @@ void display_achievements(const Position p, const short length, const short heig
     refresh();
 }
 
-void display_entity(const int fg, const StringArt art, const Position curr, const Position last) {
-    const int pair = alloc_pair(fg, getAreaFromY(curr.y));
-    const int old_pair = alloc_pair(COLOR_BLACK, getAreaFromY(last.y));
+void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map) {
+    const int pair = alloc_pair(fg, getAreaFromY(GET_MAP_Y(curr.y, map)));
+    const int old_pair = alloc_pair(COLOR_BLACK, getAreaFromY(GET_MAP_Y(last.y, map)));
     const int length = strlen(art.art[0]);
     const int height = art.length; 
 
     attron(COLOR_PAIR(old_pair));
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < length; j++) {
-            if (WITHIN_BOUNDARIES(1) /*ADAPT WITH MAP BOUNDARIES*/) {
+            if (WITHIN_BOUNDARIES(last.x+j, last.y+i, map)) {
                 mvaddch(last.y+i, last.x+j, ' ');
             }
         }
@@ -394,7 +404,7 @@ void display_entity(const int fg, const StringArt art, const Position curr, cons
     attron(COLOR_PAIR(pair));
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < length; j++) {
-            if (WITHIN_BOUNDARIES(1) /*ADAPT WITH MAP BOUNDARIES*/) {
+            if (WITHIN_BOUNDARIES(curr.x+j, curr.y+i, map)) {
                 mvaddch(curr.y+i, curr.x+j, art.art[i][j]);
             }
         }
@@ -433,6 +443,7 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
     map->garden.y = map->hideouts[0].y + FROG_HEIGHT;
     map->river.y = map->garden.y + FROG_HEIGHT * 2;
     map->sidewalk.y = map->river.y + FROG_HEIGHT * 8;
+    map->width = width;
 }
 
 MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {

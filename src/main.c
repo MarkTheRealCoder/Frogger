@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
     struct game_threads game = { };
     init_game_threads(&game);
-
+    
     int output;
     show(screen, PS_PAUSE_MENU, &output);
 
@@ -44,6 +44,12 @@ int main(int argc, char *argv[])
     Position map_position = { getCenteredX(map_width), 5 };
 
     MapSkeleton map = display_map(map_position, map_width, NULL);
+    
+    for (int i = 0, counter = 0; i < 10; i++) {
+        display_entity(COLORCODES_FROG_B, (StringArt){.art=_FROG_PLAY_ART, .length=FROG_PLAY_ART_LENGTH}, (Position){map_position.x + (int)(map_width/2), map.sidewalk.y + counter}, (Position){map_position.x + (int)(map_width/2), map.sidewalk.y + FROG_HEIGHT + counter}, map);
+        sleep(1);
+        counter -= 3;
+    }
     wgetch(stdscr);
     
     if (TEST_MODE)
@@ -87,12 +93,6 @@ void terminate()
 void test_threads(struct game_threads *game)
 {
     Packet *beginnerPacket = create_threads(game);
-
-    struct entity_node *node = game->entity_node;
-    while (node != NULL) {
-        if (node->entity.type == ENTITY_TYPE__FROG) break;
-        node = node->next;
-    }
 
     run_threads(game);
 

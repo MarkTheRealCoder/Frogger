@@ -28,13 +28,14 @@ enum entity_type {
 
 #define CROC_B_COLOR 51, 102, 0
 #define CROC_A_COLOR 102, 0, 0
-#define FROG_B_COLOR 153, 255, 51
+#define FROG_B_COLOR 153, 255, 51       // 90, 247, 22
 #define FROG_A_COLOR 255, 51, 51
 #define FLOWER_B_COLOR 255, 255, 102
 #define FLOWER_A_COLOR 255, 102, 102
 
 #define PROJECTILE_F_COLOR 0, 51, 25 // FROG
 #define PROJECTILE_FL_COLOR 255, 255, 204 // FLOWER
+
 
 #define FROG_PLAY_ART_LENGTH 3
 static char *_FROG_PLAY_ART[FROG_PLAY_ART_LENGTH] = {
