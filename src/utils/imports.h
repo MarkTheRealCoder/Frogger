@@ -12,6 +12,9 @@
 #include <sys/time.h>
 #include <signal.h>
 
+#include <fcntl.h>    // For O_* constants
+#include <sys/mman.h> // For shm_open, mmap, PROT_* constants
+
 #define TEST_MODE true
 #define DEBUG_MODE false
 

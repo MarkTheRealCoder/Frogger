@@ -123,8 +123,8 @@ int main_menu(const Screen scr)
     };
 
     return generic_menu(scr, 
-        (StringArt){.art=choices, .length=MM_LEN}, 
-        (StringArt){.art=_FROGGER_LOGO, .length=_FROGGER_LOGO_LENGTH}, 
+        (StringArt){.art=choices, .length=MM_LEN},
+        (StringArt){.art=_FROGGER_LOGO, .length=_FROGGER_LOGO_LENGTH},
         (StringArt){.art=_FROG_ART, .length=_FROG_ART_LENGTH});
 }
 

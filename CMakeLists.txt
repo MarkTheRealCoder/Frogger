@@ -30,6 +30,9 @@ add_executable(frogger  src/main.c
                         src/graphics/drawing.h
                         src/graphics/map.h
                         src/graphics/entities.h
+
+                        src/processes/processes.c
+                        src/processes/processes.h
 )
 
 # utile per aggiungere math.h#pow() anche su gcc linux

@@ -5,6 +5,18 @@
 #include "../game/core.h"
 
 
+// Il valore di terminatore di stringa. ("\0")
+#define TERM 1
+
+
+// Esegue lo sleep per un numero di microsecondi.
+#define SLEEP_MICROS(quantity) usleep(quantity)
+// Esegue lo sleep per un numero di millisecondi.
+#define SLEEP_MILLIS(quantity) usleep(quantity * 1000)
+// Esegue lo sleep per un numero di secondi.
+#define SLEEP_SECONDS(quantity) sleep(quantity)
+
+
 // malloc() - Alloca la memoria.
 #define MALLOC(type, size) (type *)malloc(sizeof(type) * (size))
 
@@ -16,6 +28,15 @@
 
 // memcpy() - Copia la memoria da una parte a un'altra.
 #define MEMCPY(from, to, type, size) memcpy(to, from, sizeof(type) * (size))
+
+
+// Alloca la memoria (malloc()) con terminatore.
+#define MALLOC_TERM(type, size) (type *)malloc(sizeof(type) * (size + TERM))
+// Alloca la memoria (calloc()) con terminatore.
+#define CALLOC_TERM(type, size) (type *)calloc((size + TERM), sizeof(type))
+// Rialloca la memoria (realloc()) con terminatore.
+#define REALLOC_TERM(type, arr, size) (type *)realloc(arr, (sizeof(type) * size) + TERM)
+
 
 /*
  * Alloca la `packet->data`. 
