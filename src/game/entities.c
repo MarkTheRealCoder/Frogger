@@ -50,21 +50,21 @@ struct entity entities_default_croc(int *index)
     {
         direction = choose_between(2, DIRECTION_WEST, DIRECTION_EAST);
     }
-    //DEBUG("chosen direction: %s\n", str_direction(direction));
+    DEBUG("chosen direction: %s\n", str_direction(direction));
    
     int delay = choose_between(3, CORE_GAME_ENTITY_SIZE, CORE_GAME_ENTITY_SIZE * 2, CORE_GAME_ENTITY_SIZE * 3);
-    //DEBUG("chosen delay: %d\n", delay);
+    DEBUG("chosen delay: %d\n", delay);
 
     bool is_west = direction == DIRECTION_WEST;
     
     int croc_x = is_west ? CORE_GAME_MAP_WIDTH : 0;
-    //DEBUG("first croc_x: %d\n", croc_x);
+    DEBUG("first croc_x: %d\n", croc_x);
 
     croc_x += is_west ? width + delay : -(width + delay);
-    //DEBUG("second croc_x: %d\n", croc_x);
+    DEBUG("second croc_x: %d\n", croc_x);
 
     croc_x += is_west ? old_width : -old_width;
-    //DEBUG("third croc_x: %d\n", croc_x);
+    DEBUG("third croc_x: %d\n", croc_x);
 
     struct entity croc = {
         .id = (*index)++,
@@ -85,59 +85,144 @@ struct entity entities_default_croc(int *index)
         croc_y += CORE_GAME_FROG_JUMP;
     }
 
-    //DEBUG("GENERATED CROC -> x: %d, y: %d, width: %d, direction: %s\n", croc.x, croc.y, croc.width, str_direction(direction));
+    DEBUG("GENERATED CROC -> x: %d, y: %d, width: %d, direction: %s\n", croc.x, croc.y, croc.width, str_direction(direction));
 
     return croc;
 }
 
-
-int getHeightByEntityType(EntityType t) {
-    int height = ENTITY_FROG_HEIGHT;
-    if (t == ENTITY_TYPE__PROJECTILE) height = 1;
-    return height;
+/**
+ * Ritorna l'altezza dell'entita' in base al suo tipo.
+ * @param entityType Il tipo dell'entita'.
+ */ 
+int getHeightByEntityType(EntityType entityType) 
+{
+    return entityType == ENTITY_TYPE__PROJECTILE ? 1 : ENTITY_FROG_HEIGHT;
 }
 
-int getPriorityByEntityType(EntityType t) {
+/**
+ * Ritorna la priorita' dell'entita' in base al suo tipo.
+ * @param entityType Il tipo dell'entita'.
+ */
+int getPriorityByEntityType(EntityType entityType) 
+{
     int prio = 0; 
-    switch (t) {
-        case ENTITY_TYPE__PLANT: prio = 3;
+
+    switch (entityType) 
+    {
+        case ENTITY_TYPE__PLANT: 
+            prio = 3;
             break;
-        case ENTITY_TYPE__PROJECTILE: prio = 4;
+        case ENTITY_TYPE__PROJECTILE: 
+            prio = 4;
             break;
-        case ENTITY_TYPE__CROC: prio = 1;
+        case ENTITY_TYPE__CROC: 
+            prio = 1;
             break;
-        case ENTITY_TYPE__FROG: prio = 2;
+        case ENTITY_TYPE__FROG: 
+            prio = 2;
             break;
-        case ENTITY_TYPE__EMPTY: prio = 0;
+        case ENTITY_TYPE__EMPTY: 
+            prio = 0;
             break;
     }
+
     return prio;
 }
 
-Cuboid createCuboid(Position leftcorner, int width, int height) {
-    return (Cuboid){.leftcorner=leftcorner, .rightcorner={.x=leftcorner.x+width-1, .y=leftcorner.y+height-1}};
+/**
+ * Crea un cuboide a partire da una posizione, una larghezza e un'altezza.
+ * @param leftcorner La posizione dell'angolo in basso a sinistra del cuboide.
+ * @param width La larghezza del cuboide.
+ * @param height L'altezza del cuboide.
+ */
+Cuboid createCuboid(Position leftcorner, int width, int height) 
+{
+    Cuboid cuboid = {
+        .leftcorner = leftcorner,
+        .rightcorner = {
+            .x = leftcorner.x + width - 1,
+            .y = leftcorner.y + height - 1
+        }
+    };
+
+    return cuboid;
 }
 
-bool compareCuboids(Cuboid c1, Cuboid c2) {
-    for (int x = c2.leftcorner.x; x <= c2.rightcorner.x; x++) {
-        if (c1.leftcorner.x <= x && x <= c1.rightcorner.x)
-            for (int y = c2.leftcorner.y; y <= c2.rightcorner.y; y++) {
-                if (c1.leftcorner.y <= y && y <= c1.rightcorner.y) return true;
+/**
+ * Confronta due cuboidi e ritorna true se si sovrappongono, false altrimenti.
+ * @param c1 Il primo cuboide.
+ * @param c2 Il secondo cuboide.
+ */
+bool compareCuboids(Cuboid c1, Cuboid c2) 
+{
+    for (int x = c2.leftcorner.x; x <= c2.rightcorner.x; x++)
+    {
+        if (!(c1.leftcorner.x <= x && x <= c1.rightcorner.x))
+        {
+            continue;
+        }
+
+        for (int y = c2.leftcorner.y; y <= c2.rightcorner.y; y++) 
+        {
+            if (c1.leftcorner.y <= y && y <= c1.rightcorner.y) 
+            {
+                return true;
             }
+        }
     }
+
     return false;
 }
 
-CollisionPacket areColliding(struct entity e1, struct entity e2) {
-    CollisionPacket p = {.e1=e1.type, .e2=e2.type, .e1_priority=getPriorityByEntityType(e1.type), .e2_priority=getPriorityByEntityType(e2.type)};
-    int e1_height = getHeightByEntityType(e1.type);
-    int e2_height = getHeightByEntityType(e2.type);
-    if (!compareCuboids(createCuboid((Position){.x=e1.x, .y=e1.y}, e1.width, e1_height), 
-                        createCuboid((Position){.x=e2.x, .y=e2.y}, e2.width, e2_height))) {
-        p.collision_type = COLLISION_AVOIDED;
-    }
-    else {
-        p.collision_type = ((e1.type & e2.type) == 3) ? COLLISION_DAMAGING : COLLISION_OVERLAPPING;
-    }
-    return p;
+/**
+ * Crea una posizione a partire da una struct entity.
+ * @param e L'entita' da cui estrarre la posizione.
+ */
+Position getPositionFromEntity(struct entity e) 
+{
+    Position position = {
+        .x = e.x,
+        .y = e.y
+    };
+
+    return position;
 }
+
+/**
+ * Crea un cuboide a partire da una struct entity.
+ * @param e L'entita' da cui estrarre il cuboide.
+ */
+Cuboid getCuboidFromEntity(struct entity e) 
+{
+    return createCuboid(getPositionFromEntity(e), e.width, getHeightByEntityType(e.type));
+}
+
+/**
+ * Controlla se due entita' stanno collidendo.
+ * @param e1 La prima entita'.
+ * @param e2 La seconda entita'.
+ */
+CollisionPacket areColliding(struct entity e1, struct entity e2) 
+{
+    CollisionPacket collisionPacket = {
+        .e1 = e1.type,
+        .e2 = e2.type,
+        .e1_priority = getPriorityByEntityType(e1.type),
+        .e2_priority = getPriorityByEntityType(e2.type)
+    };
+
+    Cuboid c1 = getCuboidFromEntity(e1);
+    Cuboid c2 = getCuboidFromEntity(e2);
+
+    if (!compareCuboids(c1, c2)) 
+    {
+        collisionPacket.collision_type = COLLISION_AVOIDED;
+    }
+    else 
+    {
+        collisionPacket.collision_type = ((e1.type & e2.type) == 3) ? COLLISION_DAMAGING : COLLISION_OVERLAPPING;
+    }
+
+    return collisionPacket;
+}
+

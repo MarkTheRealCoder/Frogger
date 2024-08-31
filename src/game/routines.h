@@ -80,13 +80,11 @@
         wait_mutex(game);                                                   \
         consumed_product = comms_buffer[index];                             \
                                                                             \
+        DEBUG("Read\t\t: index: %d\ttype: %s\n",                            \
+                index, str_packet_type(consumed_product->type))             \
                                                                             \
         index = (index + 1) % buffer_size;                                  \
         signal_mutex(game);
-
-/*
-        DEBUG("Read\t\t: index: %d\ttype: %s\n",                            \
-                index, str_packet_type(consumed_product->type))             \*/
 
 /*
  * Scrive un prodotto nel buffer di comunicazione.
@@ -96,14 +94,11 @@
     wait_mutex(game);                                               \
     comms_buffer[*index] = product;                                 \
                                                                     \
+    DEBUG("Produced\t: index: %d\ttype: %s\n",                      \
+            *index, str_packet_type(product->type));                \
                                                                     \
     *index = (*index + 1) % buffer_size;                            \
     signal_mutex(game);
-
-/*
-    DEBUG("Produced\t: index: %d\ttype: %s\n",                      \
-            *index, str_packet_type(product->type));                \
-            */
 
 void *example_routine();
 void *master_routine(void *args);

@@ -66,6 +66,7 @@ int count_digits(int value);
 int divide_if_possible(int dividend, int divisor);
 double calculate_percentage(int dividend, int divisor);
 
+
 /*
  * String utils.
  */
@@ -74,6 +75,13 @@ char *concat(const int n, ...);
 bool str_eq(char *expected, char *toCompare);
 char *str_packet_type(PacketType packetType);
 char *str_direction(Direction direction);
+
+
+int *get_screen_size();
+void setScreenValidity(bool value);
+bool isScreenValid();
+int getCenteredX(int height);
+int getCenteredY(int height);
 
 #endif // !FROGGER_SHORTCUTS_H
 

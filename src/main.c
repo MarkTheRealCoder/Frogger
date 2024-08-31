@@ -5,33 +5,51 @@
 #include "graphics/drawing.h"
 
 void test_threads(struct game_threads *game);
+void terminate();
 
 int main(int argc, char *argv[])
 {
-    int output;
-    Screen scr;
-    init_screen(&scr);
-    //show(scr, PS_PAUSE_MENU, &output);
-    //MapSkeleton map = display_map((Position){.x=10,.y=5}, 100, NULL);
-    
-    //wgetch(stdscr);
-
-    srand(time(NULL));
     struct program_args parsed_program_args = addons_parse_args(argc, argv); 
 
     if (parsed_program_args.help)
     {
         addons_args_help(); 
-        return EXIT_SUCCESS;
+        terminate(); 
+    }
+
+    srand(time(NULL));
+
+    Screen screen;
+    init_screen(&screen);
+    
+    handle_screen_resize();
+    signal(SIGWINCH, handle_screen_resize);
+
+    if (!isScreenValid())
+    {
+        endwin();
+        printf("Screen size is too small to play Frogger! :(\n");
+        exit(EXIT_FAILURE);
     }
 
     struct game_threads game = { };
-    init_game_threads(&game); 
+    init_game_threads(&game);
 
+    int output;
+    show(screen, PS_PAUSE_MENU, &output);
+
+    erase();
+
+    int map_width = 100;
+    Position map_position = { getCenteredX(map_width), 5 };
+
+    MapSkeleton map = display_map(map_position, map_width, NULL);
+    wgetch(stdscr);
+    
     if (TEST_MODE)
     {
         test_threads(&game);
-        return EXIT_SUCCESS;
+        terminate();
     }
     
     // da eseguire all'inizio di ogni partita
@@ -53,12 +71,17 @@ int main(int argc, char *argv[])
     if (parsed_program_args.quit_on_win)
     {
         cancel_threads(&game); 
-        return EXIT_SUCCESS;
+        terminate();
     }
-    endwin();
 
-    
+    endwin();
     return EXIT_SUCCESS;
+}
+
+void terminate()
+{
+    endwin();
+    exit(EXIT_SUCCESS);
 }
 
 void test_threads(struct game_threads *game)

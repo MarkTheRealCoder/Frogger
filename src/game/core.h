@@ -4,6 +4,7 @@
 #include "../utils/imports.h"
 #include "entities.h"
 
+static bool __SCREEN_INVALID_SIZE = false;
 
 // Rispettivamente: master, frog, time, frog_projectile, plants_projectile threads.
 #define CORE_THREADS 5 
@@ -107,6 +108,9 @@ struct game_threads
 
     struct entity_node *entity_node; 
     struct comms *comms;
+
+    StringList *packet_logs;
+    StringList *achievements;
 };
 
 struct comms 

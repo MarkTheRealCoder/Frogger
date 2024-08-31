@@ -8,7 +8,7 @@ void debug_entity_buffer(struct entity_node *entityBuffer)
 
     while (currentEntity != NULL)
     {
-        printf("Entity: %d\n", currentEntity->entity.id);
+        DEBUG("Entity: %d\n", currentEntity->entity.id);
         currentEntity = currentEntity->next;
     }
 }
@@ -25,6 +25,15 @@ void init_game_threads(struct game_threads *game)
 
     init_entity_node(game);
     init_comms(game, CORE_BUFFER_SIZE);
+
+    game->achievements = MALLOC(StringList, 1);
+    CRASH_IF_NULL(game->achievements)
+
+    game->packet_logs = MALLOC(StringList, 1);
+    CRASH_IF_NULL(game->packet_logs)
+    
+    game->achievements->nodes = 25;
+    game->packet_logs->nodes = 25;
 }
 
 /**

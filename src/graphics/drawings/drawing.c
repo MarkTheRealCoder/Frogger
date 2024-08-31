@@ -7,6 +7,10 @@ static Range achievements;
 static Range trash_timers;
 static Range map;
 
+/**
+ * Inizializza lo schermo insieme ai colori.
+ * @param scrn Lo schermo da inizializzare.
+ */
 void init_screen(Screen *scrn) 
 {
     setlocale(LC_ALL, "");
@@ -29,11 +33,46 @@ void init_screen(Screen *scrn)
     init_extended_color(COLORCODES_HIDEOUT, HIDEOUT_COLOR);
 }
 
-
-void configure_screen(Screen scr) {
+/**
+ * Confirura lo schermo.
+ * @param scr Lo schermo da configurare.
+ */
+void configure_screen(Screen screen) 
+{
     
 }
 
+/**
+ * Controlla la dimensione dello schermo ogni volta che viene ridimensionato.
+ */
+void handle_screen_resize() 
+{
+    #define MIN_ROWS 40
+    #define MIN_COLS 100
+
+    endwin();
+    refresh();
+    clear();
+    
+    int *xy = get_screen_size();
+    int rows = xy[0], cols = xy[1];
+
+    setScreenValidity(rows < MIN_ROWS || cols < MIN_COLS);
+
+    if (!isScreenValid())
+    {
+        mvprintw(0, 0, "Screen size is too small to play Frogger! :(");
+        mvprintw(1, 0, "Please resize the screen to at least 40rows x 100cols.");
+    }
+    
+    refresh();
+}
+
+/**
+ * Trova il colore corrispondente al tipo di entità.
+ * @param type Il tipo di entità.
+ * @return Il colore corrispondente.
+ */
 enum color_codes getEntityColor(const enum entity_type type) 
 {
     enum color_codes color;
@@ -69,17 +108,23 @@ enum color_codes getEntityColor(const enum entity_type type)
     return color;
 }
 
-int getAreaFromY(const int y) {
+/**
+ * Trova il colore dell'area della riga basandosi sulla coordinata Y.
+ * @param y La coordinata Y.
+ * @return Il colore corrispondente.
+ */
+int getAreaFromY(const int y) 
+{
     int areaColor = COLOR_BLACK;
+
     if (y < 3) areaColor = COLORCODES_GRASS;
     else if (y < 6) areaColor = COLORCODES_HIDEOUT;
     else if (y < 12) areaColor = COLORCODES_GRASS;
     else if (y < 36) areaColor = COLORCODES_WATER;
     else if (y < 39) areaColor = COLORCODES_SIDEWALK;
+
     return areaColor;
 }
-
-
 
 /**
  * Stampa una stringa al centro del terminale.
@@ -95,7 +140,6 @@ void center_string_colored(char *string, int pair, int max, int cuy)
     refresh();
 }
 
-
 /**
  * Stampa una stringa al centro del terminale.
  * @param str La stringa da stampare.
@@ -110,23 +154,49 @@ void center_string(char str[], int max, int cuy)
     mvaddstr(cuy, total_size, str); 
 }
 
-void replaceWith(int pair, Position sp, int height, int length, char c) {
+/**
+ * Rimpiazza un'area dello schermo con un carattere.
+ * @param pair Il colore da utilizzare.
+ * @param sp La posizione iniziale.
+ * @param height L'altezza dell'area.
+ * @param length La lunghezza dell'area.
+ * @param c Il carattere da stampare.
+ */
+void replaceWith(int pair, Position sp, int height, int length, char c) 
+{
     attron(COLOR_PAIR(pair));
-    for (short i = 0; i < length; i++) {
-        for (short j = 0; j < height; j++) {
-            mvaddch(sp.y+j, sp.x+i, c);
+
+    for (short i = 0; i < length; i++) 
+    {
+        for (short j = 0; j < height; j++) 
+        {
+            mvaddch(sp.y + j, sp.x + i, c);
         }
     }
+
     attroff(COLOR_PAIR(pair));
 }
 
-void eraseFor(Position sp, short height, short length) {
+/**
+ * Pulisce un'area dello schermo.
+ * @param sp La posizione iniziale.
+ * @param height L'altezza dell'area.
+ * @param length La lunghezza dell'area.
+ */
+void eraseFor(Position sp, short height, short length) 
+{
     int pair = alloc_pair(COLOR_BLACK, COLOR_BLACK);
     replaceWith(pair, sp, height, length, ' ');
 }
 
-
-void display_clock(const Position p, const short value, const short max) {
+/**
+ * Stampa a schermo il tempo rimanente.
+ * @param p La posizione in cui stampare.
+ * @param value Il valore da stampare.
+ * @param max Il valore massimo.
+ */
+void display_clock(const Position p, const short value, const short max) 
+{
     int main_color = alloc_pair(COLOR_BLACK, COLOR_WHITE);
     int decaying_color = alloc_pair(COLOR_BLACK, COLOR_YELLOW);
     int decaying_2_color = alloc_pair(COLOR_BLACK, COLOR_RED);
@@ -134,41 +204,88 @@ void display_clock(const Position p, const short value, const short max) {
     int parts_per_tick = (int) (max / 10);
     int ticks = (int) (value / parts_per_tick), left = (int) (value % parts_per_tick);
     int subticks = 0;
-    if (left) subticks = (left > (int) (parts_per_tick / 2)) + 1;
-    if (subticks == 2) left -= (int) (parts_per_tick / 2);
+
+    if (left) 
+    {
+        subticks = (left > (int) (parts_per_tick / 2)) + 1;
+    }
+
+    if (subticks == 2) 
+    {
+        left -= (int) (parts_per_tick / 2);
+    }
 
     eraseFor(p, 2, 20);
 
-    for (int i = 0, color = 0; i < 20 && (!i || (int)(i/2) < ticks + (subticks > 0)); i+=2) {
-        if ((!i && ticks) || (i && (int)(i/2) < ticks)) color = main_color;
-        else if ((int)(left) > 2) color = decaying_color;
-        else color = decaying_2_color;
-        attron(COLOR_PAIR(color));
-        mvaddch(p.y, p.x+i, ' ');
-        mvaddch(p.y+1, p.x+i, ' ');
-        if (color == main_color || subticks == 2) {
-            mvaddch(p.y, p.x+i+1, ' ');
-            mvaddch(p.y+1, p.x+i+1, ' ');
+    for (int i = 0, color = 0; i < 20 && (!i || (int)(i / 2) < ticks + (subticks > 0)); i += 2) 
+    {
+        if ((!i && ticks) || (i && (int)(i / 2) < ticks)) 
+        {
+            color = main_color;
         }
+        else if ((int)(left) > 2)
+        {
+            color = decaying_color;
+        }
+        else 
+        {
+            color = decaying_2_color;
+        }
+
+        attron(COLOR_PAIR(color));
+
+        int tempX = p.x + i;
+
+        mvaddch(p.y, tempX, ' ');
+        mvaddch(p.y + 1, tempX, ' ');
+        
+        if (color == main_color || subticks == 2) 
+        {
+            mvaddch(p.y, tempX + 1, ' ');
+            mvaddch(p.y + 1, tempX + 1, ' ');
+        }
+        
         attroff(COLOR_PAIR(color));
     }
+
     refresh();
 }
 
-void print_hearts(int *x, int y, int curr, int max, int main_color, int lost_color) {
-    for (int i = 0, pair; i < max; i++) {
+/**
+ * Stampa a schermo i cuori.
+ * @param x La posizione X in cui stampare.
+ * @param y La posizione Y in cui stampare.
+ * @param curr Il valore attuale.
+ * @param max Il valore massimo.
+ * @param main_color Il colore principale.
+ * @param lost_color Il colore per i cuori persi.
+ */
+void print_hearts(int *x, int y, int curr, int max, int main_color, int lost_color)
+{
+    for (int i = 0, pair; i < max; i++)
+    {
         pair = (curr > i) ? main_color : lost_color;
+        
         attron(COLOR_PAIR(pair));
         mvaddstr(y, *x, HEART);
         attroff(COLOR_PAIR(pair));
+
         (*x)++;
         mvaddch(y, *x, ' ');
         (*x)++;
     }
+
     refresh();
 }
 
-void display_hps(const Position p, const short mcurr, const short fcurr) {
+/**
+ * Stampa a schermo i cuori per i punti vita.
+ * @param p La posizione in cui stampare.
+ * @param mcurr I punti vita attuali del giocatore.
+ * @param fcurr I punti vita attuali della rana.
+ */
+void display_hps(const Position p, const short mcurr, const short fcurr) 
+{
     int mpair = alloc_pair(COLOR_RED, COLOR_BLACK);
     int fpair = alloc_pair(COLOR_GREEN, COLOR_BLACK);
     int lost = alloc_pair(COLOR_BLACK, COLOR_BLACK);
@@ -185,7 +302,14 @@ void display_hps(const Position p, const short mcurr, const short fcurr) {
     refresh();
 }
 
-void addStringToList(StringNode **list, int color, char *string) {
+/**
+ * Aggiunge una stringa alla lista.
+ * @param list La lista.
+ * @param color Il colore della stringa.
+ * @param string La stringa da aggiungere.
+ */
+void addStringToList(StringNode **list, int color, char *string) 
+{
     StringNode *new = CALLOC(StringNode, 1);
     new->length = strlen(string);
     new->color = color;
@@ -193,12 +317,26 @@ void addStringToList(StringNode **list, int color, char *string) {
     new->prev = NULL;
     new->string = string;
 
-    if (*list) {
+    if (*list) 
+    {
         (*list)->next = new;
         new->prev = (*list);
     }
 
     *list = new;
+}
+
+void display_string(const Position position, const int color, const char *string, int length)
+{
+    eraseFor(position, 1, length);
+    
+    int pair = alloc_pair(color, getAreaFromY(position.y));
+
+    attron(COLOR_PAIR(pair));
+    mvaddstr(position.y, position.x, string);
+    attroff(COLOR_PAIR(pair));
+    
+    refresh();
 }
 
 void display_achievements(const Position p, const short length, const short height, StringList list) {
@@ -342,7 +480,4 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
 
     return _map;
 }
-
-
-
 

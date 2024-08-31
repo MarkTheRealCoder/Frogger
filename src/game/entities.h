@@ -94,6 +94,9 @@ typedef struct {
 struct entity entities_default_frog(int *index);
 struct entity entities_default_plant(int *index);
 struct entity entities_default_croc(int *index);
+
+Position getPositionFromEntity(struct entity e);
+Cuboid getCuboidFromEntity(struct entity e);
 CollisionPacket areColliding(struct entity e1, struct entity e2);
 
 #endif // !FROGGER_ENTITIES_H

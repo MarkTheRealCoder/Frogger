@@ -166,7 +166,6 @@ char *str_direction(Direction direction)
  * @param ...   Le stringhe in ordine di comparizione da concatenare.
  * @return      L'unione di tutte le stringhe.
  */
-
 char *concat(const int n, ...) 
 {
     char *output = NULL;
@@ -201,11 +200,55 @@ char *concat(const int n, ...)
     return output;
 }
 
-long long timeInMilliseconds(void) 
+/**
+ * Prende la dimensione attuale del terminale.
+ * @return  Un array di due interi [x, y] contenente le dimensioni del terminale.
+ */
+int *get_screen_size()
 {
-    struct timeval tv;
+    int rows, cols;
 
-    gettimeofday(&tv,NULL);
+    getmaxyx(stdscr, rows, cols); 
 
-    return (((long long) tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
+    return (int[]) { rows, cols };
+}
+
+/**
+ * Imposta la validità dello schermo.
+ * @param value Il valore da impostare.
+ */
+void setScreenValidity(bool value)
+{
+    __SCREEN_INVALID_SIZE = value;
+}
+
+/**
+ * Controlla se lo schermo è valido.
+ * @return  Se lo schermo è valido.
+ */
+bool isScreenValid()
+{
+    return !__SCREEN_INVALID_SIZE;
+}
+
+/**
+ * Restituisce la posizione centrata sull'asse X.
+ * @param width La larghezza dell'elemento.
+ * @return      La posizione centrata sull'asse X.
+ */
+int getCenteredX(int width)
+{
+    int x = get_screen_size()[1];
+    return (x / 2) - (width / 2);
+}
+
+/**
+ * Restituisce la posizione centrata sull'asse Y.
+ * @param height    L'altezza dell'elemento.
+ * @return          La posizione centrata sull'asse Y.
+ */
+int getCenteredY(int height)
+{
+    int y = get_screen_size()[0];
+    return (y / 2) - (height / 2);
 }

@@ -43,10 +43,10 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 EntityMovePacket *entity_move_packet = (EntityMovePacket *) packet->data;
                 struct entity *packet_entity = &entity_move_packet->entity;
 
-                /*DEBUG("*** EntityMovePacket\t-> id: %d, x: %d, y: %d, direction: %s\n", 
+                DEBUG("*** EntityMovePacket\t-> id: %d, x: %d, y: %d, direction: %s\n", 
                       packet_entity->id, packet_entity->x,
                       packet_entity->y, 
-                      str_direction(entity_move_packet->entity.direction));*/
+                      str_direction(entity_move_packet->entity.direction));
 
                 struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
 
@@ -54,17 +54,11 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 entity->y += packet_entity->y;
                 entity->direction = packet_entity->direction;
 
-                //DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
-                      //entity->id, entity->x, entity->y, str_direction(entity->direction));
+                DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
+                      entity->id, entity->x, entity->y, str_direction(entity->direction));
 
                 // todo collision check 
-                // todo display on screen
 
-                eraseFor((Position) { 10, 10 }, 1, 30);
-
-                char *s = concat(2, "DIRECTION: ", str_direction(entity->direction));
-                mvaddstr(10, 10, s);
-                free(s);
 
                 break;
             }
@@ -72,19 +66,42 @@ void handle_packet(struct game_threads *game, Packet *packet)
             {
                 TimerPacket *timer_packet = (TimerPacket *) packet->data;
 
-                /*DEBUG("*** TimerPacket\t-> current_time: %d, max_time: %d\n", 
-                      timer_packet->current_time, timer_packet->max_time);*/
+                DEBUG("*** TimerPacket\t-> current_time: %d, max_time: %d\n", 
+                      timer_packet->current_time, timer_packet->max_time);
 
                 if (timer_packet->current_time <= 0)
                 {
-                    //DEBUG("^^^ TimerPacket\t-> time is up!\n");
+                    DEBUG("^^^ TimerPacket\t-> time is up!\n");
+                    // TODO end manche 
                 }
+                
+                Position timerPosition = { getCenteredX(0) + 25, 2 };
+
+                eraseFor(timerPosition, 1, 40);
+                display_clock(timerPosition, timer_packet->current_time, timer_packet->max_time);
 
                 break;
             }
         default:
             break;
     }
+    
+    Position achievementTitlePosition = { getCenteredX(12) + 72, getCenteredY(25) - 2 };
+    Position achievementPosition = { getCenteredX(30) + 75, getCenteredY(25) };
+
+    Position packetLogsTitlePosition = { getCenteredX(10) - 75, getCenteredY(25) - 2 };
+    Position packetLogsPosition = { getCenteredX(10) - 75, getCenteredY(25) };
+
+    Position hpsPosition = { getCenteredX(10) - 75, getCenteredY(25) + 5 };
+
+    display_string(packetLogsTitlePosition, COLOR_RED, "Packet Logs", 11);
+    display_string(achievementTitlePosition, COLOR_RED, "Achievements", 12);
+
+    //addStringToList(&game->achievements->last, COLOR_YELLOW, str_packet_type(packet->type));
+    //display_achievements(achievementPosition, 25, 25, *game->achievements);
+    
+    addStringToList(&game->packet_logs->last, COLOR_YELLOW, str_packet_type(packet->type));
+    display_achievements(packetLogsPosition, 25, 25, *game->packet_logs);
 }
 
 /*

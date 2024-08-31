@@ -146,7 +146,7 @@ int pause_menu(const Screen scr)
         (StringArt){.art=_FROGGER_PAUSE_ART, .length=_FROGGER_PAUSE_LENGTH});
 }
 
-unsigned int show(const Screen scr, const enum PS prog_state,  int *output) 
+unsigned int show(const Screen scr, const enum PS prog_state, int *output) 
 {
     switch (prog_state) 
     {

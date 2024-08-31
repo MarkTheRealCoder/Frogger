@@ -9,10 +9,11 @@
 #include <time.h>
 #include <stdatomic.h>
 #include <semaphore.h>
-#include<sys/time.h>
+#include <sys/time.h>
+#include <signal.h>
 
 #define TEST_MODE true
-#define DEBUG_MODE true
+#define DEBUG_MODE false
 
 // Stampa un messaggio se la modalità di debug è attiva.
 #define DEBUG(fmt, ...)             \

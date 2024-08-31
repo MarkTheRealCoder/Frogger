@@ -183,10 +183,13 @@ unsigned int show(const Screen scr, const enum PS prog_state, int *output);
 void display_clock(const Position p, const short value, const short max);
 void display_hps(const Position p, const short mcurr, const short fcurr);
 void addStringToList(StringNode **list, int color, char *string);
+void display_string(const Position position, const int color, const char *string, int length);
 void display_achievements(const Position p, const short length, const short height, StringList list);
 void display_entity(const int fg, const StringArt art, const Position curr, const Position last);
 MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map);
 void center_string(char str[], int max, int cuy);
 void eraseFor(Position sp, short height, short length);
+
+void handle_screen_resize();
 
 #endif
