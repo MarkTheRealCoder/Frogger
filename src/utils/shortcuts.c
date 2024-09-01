@@ -194,7 +194,7 @@ char *str_entity_type(EntityType entityType)
  */
 char *str_coords(struct entity *entity)
 {
-    char *xy = MALLOC(char, 10);
+    char *xy = CALLOC(char, 20);
 
     sprintf(xy, "x=%d y=%d", entity->x, entity->y);
 

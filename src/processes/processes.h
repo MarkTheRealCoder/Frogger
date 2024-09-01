@@ -41,7 +41,7 @@ static struct timeval tv = {.tv_sec = 0, .tv_usec = 50};
 {                                       \
     int copy = ids, count = 0;          \
                                         \
-    while (copy)                        \
+    while (copy & 1)                    \
     {                                   \
         count++;                        \
         copy = copy >> 1;               \

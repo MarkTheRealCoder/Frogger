@@ -4,7 +4,7 @@
 struct entity entities_default_frog(int *index)
 {
     int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
-    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 19;
+    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15;
 
     struct entity frog = {
         .id = (*index)++,
@@ -84,7 +84,7 @@ struct entity entities_default_croc(int *index)
     {
         in_row = 0;
         old_width = 0;
-        croc_y += CORE_GAME_FROG_JUMP;
+        croc_y += CORE_GAME_FROG_JUMP_Y;
     }
 
     DEBUG("GENERATED CROC -> x: %d, y: %d, width: %d, direction: %s\n", croc.x, croc.y, croc.width, str_direction(direction));

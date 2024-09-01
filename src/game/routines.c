@@ -20,16 +20,16 @@ void move_on_direction(EntityMovePacket *entity_move_packet)
     switch (entity->direction)
     {
         case DIRECTION_WEST:
-            entity->x -= CORE_GAME_FROG_JUMP;
+            entity->x -= CORE_GAME_FROG_JUMP_X;
             break;
         case DIRECTION_NORTH:
-            entity->y -= CORE_GAME_FROG_JUMP;
+            entity->y -= CORE_GAME_FROG_JUMP_Y;
             break;
         case DIRECTION_EAST:
-            entity->x += CORE_GAME_FROG_JUMP;
+            entity->x += CORE_GAME_FROG_JUMP_X;
             break;
         case DIRECTION_SOUTH:
-            entity->y += CORE_GAME_FROG_JUMP;
+            entity->y += CORE_GAME_FROG_JUMP_Y;
             break;
         case DIRECTION_STILL:
             break;
@@ -62,10 +62,10 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 switch (entity->type)
                 {
                     case ENTITY_TYPE__FROG:
-                        display_entity(COLORCODES_FROG_B, art, currentEntityPosition, newEntityPosition, game->map);
+                        display_entity(COLORCODES_FROG_B, art, newEntityPosition, currentEntityPosition, game->map);
                         break;
                     case ENTITY_TYPE__CROC:
-                        display_entity(COLORCODES_CROC_B, art, currentEntityPosition, newEntityPosition, game->map);
+                        display_entity(COLORCODES_CROC_B, art, newEntityPosition, currentEntityPosition, game->map);
                         break;
                     default:
                         break;
@@ -119,6 +119,7 @@ void handle_packet(struct game_threads *game, Packet *packet)
     }
 
     addStringToList(&game->packet_logs->last, COLOR_YELLOW, log_message);
+    game->packet_logs->nodes++;
     display_achievements(packetLogsPosition, 34, 25, *game->packet_logs);
 
     display_hps(hpsPosition, 0, 5);

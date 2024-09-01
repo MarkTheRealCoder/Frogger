@@ -32,8 +32,8 @@ void init_game_threads(struct game_threads *game)
     game->packet_logs = MALLOC(StringList, 1);
     CRASH_IF_NULL(game->packet_logs)
     
-    game->achievements->nodes = 25;
-    game->packet_logs->nodes = 25;
+    game->achievements->nodes = 0;
+    game->packet_logs->nodes = 0;
 }
 
 /**

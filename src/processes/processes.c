@@ -121,6 +121,10 @@ int create_message(pMessages action, int receivers) {
     return (int) action + (receivers << 4);
 }
 
+int send_message(int message, void *service_mem) {
+    memcpy(service_mem, &message, sizeof(int));
+}
+
 pMessages check_for_comms(int id, void * service_mem) {
     int message = MESSAGE_NONE;
     memcpy(&message, service_mem, sizeof(int));
@@ -175,7 +179,9 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
 }
 
 
+
 int process_main(int argc, char **argv) {
+    int processes = 0;
     int service_comms = shm_open(SERVICE_NAME, O_CREAT | O_RDWR, 0666);
     HANDLE_ERROR(service_comms);
     HANDLE_ERROR(lseek(service_comms, SERVICE_SIZE - 1, SEEK_SET));
@@ -204,4 +210,37 @@ int process_main(int argc, char **argv) {
     //endwin();
     munmap(service_mem, SERVICE_SIZE);
     close(service_comms);
+}
+
+void draw(struct entity_node *es, MapSkeleton *map, TimerPacket timer, StringList *achievements, int score, bool drawAll) {
+    /*Draw Map if not already drawn*/
+    const static Position map_position = { getCenteredX(MAP_WIDTH), 5 };
+    if (drawAll) *map = display_map(map_position, MAP_WIDTH, NULL);
+
+    /*Draw timer*/
+    display_clock((Position){ getCenteredX(0) + 25, 2 };, timer.current_time, timer.max_time);
+
+    /*Draw achievements*/
+    const static Position achievementTitlePosition = { getCenteredX(12) + 72, getCenteredY(25) - 2 };
+    const static Position achievementPosition = { getCenteredX(30) + 75, getCenteredY(25) };
+    if (drawAll) display_string(achievementTitlePosition, COLOR_RED, "Achievements", 12);
+    display_achievements(achievementPosition, 34, 25, *achievements);
+
+    /*Draw SCORE and HPS*/
+    const static Position hpsPosition = { getCenteredX(FROG_HPS) - 45, 3 };
+    const static Position scorePosition = { getCenteredX(12), 3 };
+
+    display_hps(hpsPosition, 3, 2);
+    display_string(scorePosition, COLOR_RED, "Score: XXXXX", 12);
+
+    for (int i = 0; i < 5; i++) {
+        struct entity_node *ec = es;
+        while (ec != NULL) {
+            if (getPriorityByEntityType(ec->entity.type) == i) {
+                /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
+                display_entity(COLORCODES_CROC_A, getArt(&ec->entity), (Position){ec->entity.x, ec->entity.y}, (Position){ec->entity.x, ec->entity.y}, *map);
+            }
+            ec = ec->next;
+        }
+    }
 }
