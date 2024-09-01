@@ -47,7 +47,7 @@ static struct timeval tv = {.tv_sec = 0, .tv_usec = 50};
         copy = copy >> 1;               \
     }                                   \
                                         \
-    result = 1 << (count + 1);          \
+    result = 1 << (count);              \
     ids = ids | result;                 \
 }
 

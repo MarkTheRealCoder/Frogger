@@ -8,31 +8,31 @@ add_compile_options(-g -Og)
 
 add_executable(frogger  src/main.c
 
-                        src/utils/globals.c
-                        src/utils/globals.h
-
+                        # src/utils/globals.c
+                        # src/utils/globals.h
+# 
                         src/utils/imports.h
-
-                        src/utils/shortcuts.c
-                        src/utils/shortcuts.h
-                        
-                        src/game/addons.c
-                        src/game/addons.h
-
-                        src/game/core.c
-                        src/game/core.h
-
-                        src/game/routines.c
-                        src/game/routines.h
-
-                        src/game/entities.c
-                        src/game/entities.h
-                        
-                        src/graphics/drawings/drawing.c
-                        src/graphics/drawings/menus.c
-                        src/graphics/drawing.h
-                        src/graphics/map.h
-                        src/graphics/entities.h
+# 
+                        # src/utils/shortcuts.c
+                        # src/utils/shortcuts.h
+                        # 
+                        # src/game/addons.c
+                        # src/game/addons.h
+# 
+                        # src/game/core.c
+                        # src/game/core.h
+# 
+                        # src/game/routines.c
+                        # src/game/routines.h
+# 
+                        # src/game/entities.c
+                        # src/game/entities.h
+                        # 
+                        # src/graphics/drawings/drawing.c
+                        # src/graphics/drawings/menus.c
+                        # src/graphics/drawing.h
+                        # src/graphics/map.h
+                        # src/graphics/entities.h
                         #
                         # src/processes/processes.c
                         # src/processes/processes.h
