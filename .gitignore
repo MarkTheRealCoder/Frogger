@@ -9,3 +9,7 @@ frogger
 cmake_install.cmake
 debug.log
 vgcore.*
+.ninja_log
+.ninja_deps
+build.ninja
+/.cmake/
