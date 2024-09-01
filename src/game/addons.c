@@ -1,7 +1,7 @@
 #include "addons.h"
 #include "../utils/shortcuts.h"
 
-/*
+/**
  * Esegue il parsing degli argomenti passati al programma.
  * @param argc  Il numero di argomenti.
  * @param argv  Gli argomenti.
@@ -45,7 +45,7 @@ struct program_args addons_parse_args(int argc, char *argv[])
     return parsed_arguments;
 }
 
-/*
+/**
  * Mostra l'help dei comandi.
  */
 void addons_args_help()
@@ -59,7 +59,7 @@ void addons_args_help()
     printf("\t-rv, --replay_view\tViews the saved replays.");
 }
 
-/*
+/**
  * Salva le statistiche di gioco su file.
  * @param game  La struttura del gioco.
  */
@@ -88,4 +88,3 @@ void addons_args_save_stats(struct game_threads *game)
 
     fclose(file); 
 }
-

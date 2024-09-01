@@ -3,7 +3,7 @@
 
 #include "../game/core.h"
 
-/*
+/**
  * Program arguments.
  */
 

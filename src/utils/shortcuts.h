@@ -38,10 +38,10 @@
 #define REALLOC_TERM(type, arr, size) (type *)realloc(arr, (sizeof(type) * size) + TERM)
 
 
-/*
+/**
  * Alloca la `packet->data`. 
  * Se `data` vive nello stack si deve eseguire una clonazione `clone = true`.
- * Se `data` vive nell'heap non e' necessario eseguire una clonazione `clone = false`.
+ * Se `data` vive nell'heap non è necessario eseguire una clonazione `clone = false`.
  */
 #define ALLOC_PACKET_DATA(from, to, type, size, clone)  \
     if (clone)                                          \
@@ -53,7 +53,7 @@
     else                                                \
         to = from;
 
-/*
+/**
  * Crasha il programma se `pointer = NULL`.
  * Da utilizzare sempre dopo l'allocazione dinamica.
  */
@@ -63,7 +63,7 @@
         exit(-1);                               \
     }
 
-/*
+/**
  * Sleep function.
  */
 
@@ -77,7 +77,7 @@ typedef enum
 void sleepy(int quantity, TimeFrame timeFrame);
 
 
-/*
+/**
  * Number utils.
  */
 
@@ -88,11 +88,11 @@ int divide_if_possible(int dividend, int divisor);
 double calculate_percentage(int dividend, int divisor);
 
 
-/*
+/**
  * String utils.
  */
 
-char *concat(const int n, ...);
+char *concat(int n, ...);
 bool str_eq(char *expected, char *toCompare);
 char *str_packet_type(PacketType packetType);
 char *str_direction(Direction direction);
@@ -101,7 +101,6 @@ char *str_coords(struct entity *entity);
 
 
 int *get_screen_size();
-void setScreenValidity(bool value);
 bool isScreenValid();
 int getCenteredX(int height);
 int getCenteredY(int height);
@@ -109,4 +108,3 @@ int getCenteredY(int height);
 StringArt getArt(struct entity *entity);
 
 #endif // !FROGGER_SHORTCUTS_H
-

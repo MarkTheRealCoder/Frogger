@@ -4,8 +4,6 @@
 #include "../utils/imports.h"
 #include "entities.h"
 
-static bool __SCREEN_INVALID_SIZE = false;
-
 // Rispettivamente: master, frog, time, frog_projectile, plants_projectile threads.
 #define CORE_THREADS 5 
 #define CORE_BUFFER_SIZE 64
@@ -26,20 +24,20 @@ static bool __SCREEN_INVALID_SIZE = false;
 #define CORE_GAME_RIVER_LANES 8
 
 #define CORE_GAME_MAP_WIDTH                                         \
-    (CORE_GAME_HIDEOUTS * CORE_GAME_ENTITY_SIZE) +                  \
+    ((CORE_GAME_HIDEOUTS * CORE_GAME_ENTITY_SIZE) +                 \
     (CORE_GAME_HIDEOUTS_SPACES_INBETWEEN * CORE_GAME_ENTITY_SIZE) + \
-    (2 * CORE_GAME_ENTITY_SIZE)
+    (2 * CORE_GAME_ENTITY_SIZE))
 
 #define CORE_GAME_PROJECTILE_WAIT 2 // in secondi
 
 #define CORE_GAME_PLANTS 3
-#define CORE_GAME_CROCS 2 * CORE_GAME_RIVER_LANES
+#define CORE_GAME_CROCS (2 * CORE_GAME_RIVER_LANES)
 
-#define CORE_GAME_CROCS_MIN_WIDTH 2 * CORE_GAME_ENTITY_SIZE
-#define CORE_GAME_CROCS_MAX_WIDTH 3 * CORE_GAME_ENTITY_SIZE
+#define CORE_GAME_CROCS_MIN_WIDTH (2 * CORE_GAME_ENTITY_SIZE)
+#define CORE_GAME_CROCS_MAX_WIDTH (3 * CORE_GAME_ENTITY_SIZE)
 
 
-/*
+/**
  * Packets related.
  */
 
@@ -73,7 +71,7 @@ typedef struct
     struct entity entity;
 } EntityMovePacket;
 
-/*
+/**
  * Game threads & signals related.
  */
 
@@ -97,13 +95,13 @@ struct game_threads
     GameThread frog;
     GameThread time;
 
-    GameThread frog_projectile;
-    GameThread plants_projectile;
-
     GameThread *crocs;
     GameThread *plants;
     int crocs_num;
     int plants_num;
+
+    GameThread frog_projectile;
+    GameThread plants_projectile;
 
     int total_threads;
 

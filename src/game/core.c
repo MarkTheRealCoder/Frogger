@@ -1,16 +1,17 @@
 #include "core.h"
 #include "routines.h"
+#include "../utils/globals.h"
 #include "../utils/shortcuts.h"
 
-void debug_entity_buffer(struct entity_node *entityBuffer)
+/**
+ * Esegue il setup della mappa.
+ * @param game  La struttura game_threads.
+ * @param width La larghezza della mappa.
+ */
+void setup_map(struct game_threads *game)
 {
-    struct entity_node *currentEntity = entityBuffer;
-
-    while (currentEntity != NULL)
-    {
-        DEBUG("Entity: %d\n", currentEntity->entity.id);
-        currentEntity = currentEntity->next;
-    }
+    Position map_position = { getCenteredX(MAP_WIDTH), 5 };
+    game->map = display_map(map_position, MAP_WIDTH, NULL);
 }
 
 /**
@@ -19,8 +20,8 @@ void debug_entity_buffer(struct entity_node *entityBuffer)
  */
 void init_game_threads(struct game_threads *game)
 {
-    game->crocs_num = 2;
-    game->plants_num = 2;
+    game->crocs_num = CORE_GAME_CROCS;
+    game->plants_num = CORE_GAME_PLANTS;
     game->total_threads = CORE_THREADS + game->crocs_num + game->plants_num;
 
     init_entity_node(game);
@@ -32,6 +33,9 @@ void init_game_threads(struct game_threads *game)
     game->packet_logs = MALLOC(StringList, 1);
     CRASH_IF_NULL(game->packet_logs)
     
+    game->achievements->last = NULL;
+    game->packet_logs->last = NULL;
+
     game->achievements->nodes = 0;
     game->packet_logs->nodes = 0;
 }
@@ -55,6 +59,10 @@ void init_comms(struct game_threads *game, int size)
     game->comms = comms; 
 }
 
+/**
+ * Inizializza la lista delle entità.
+ * @param game La struttura game_threads.
+ */
 void init_entity_node(struct game_threads *game)
 {
     struct entity_node *buffer = entity_node_create();
@@ -76,10 +84,12 @@ void init_entity_node(struct game_threads *game)
         struct entity croc = entities_default_croc(&index);
         entity_node_insert(buffer, croc);
     }
-
-    debug_entity_buffer(buffer);
 }
 
+/**
+ * Crea un nodo di entità.
+ * @return  Il nodo creato.
+ */
 struct entity_node *entity_node_create()
 {
     struct entity_node *new_entity_node = MALLOC(struct entity_node, 1);
@@ -91,6 +101,11 @@ struct entity_node *entity_node_create()
     return new_entity_node;
 }
 
+/**
+ * Inserisce un'entità in un nodo.
+ * @param head      Il nodo in cui inserire l'entità.
+ * @param entity    L'entità da inserire.
+ */
 void entity_node_insert(struct entity_node *head, struct entity entity)
 {
     if (head == NULL)
@@ -115,6 +130,10 @@ void entity_node_insert(struct entity_node *head, struct entity entity)
     new_entity_node->entity = entity;
 }
 
+/**
+ * Distrugge un nodo di entità.
+ * @param head  Il nodo da distruggere.
+ */
 void entity_node_destroy(struct entity_node *head)
 {
     struct entity_node *current = head;
@@ -128,6 +147,12 @@ void entity_node_destroy(struct entity_node *head)
     }
 }
 
+/**
+ * Trova un'entità per ID.
+ * @param head  Il nodo in cui cercare l'entità.
+ * @param id    L'ID dell'entità da cercare.
+ * @return      L'entità trovata.
+ */
 struct entity *entity_node_find_id(struct entity_node *head, int id)
 {
     struct entity_node *temp = head;
@@ -145,7 +170,7 @@ struct entity *entity_node_find_id(struct entity_node *head, int id)
     return NULL;
 }
 
-/*
+/**
  * Calcola i punti della manche.
  * @param frog_lives        Le vite della rana.
  * @param plants_alive      Le piante ancora vive.
@@ -162,7 +187,7 @@ int calculate_manche_points(int frog_lives, int plants_alive, int time_remaining
     return points;
 }
 
-/*
+/**
  * Crea un pacchetto.
  * @param data          I dati da inserire nel pacchetto.
  * @param size          La dimensione dei dati.
@@ -193,7 +218,7 @@ Packet *create_packet(void *data, int size, PacketType packetType, bool clone)
     return packet;
 }
 
-/*
+/**
  * Distrugge un pacchetto.
  * @param packet    Il pacchetto da distruggere.
  */
@@ -207,7 +232,7 @@ void destroy_packet(Packet *packet)
     free(packet);
 }
 
-/*
+/**
  * Segnala un nuovo segnale a tutti i thread.
  * @param game          La struttura game_threads.
  * @param newSignal     Il nuovo segnale.
@@ -218,7 +243,7 @@ void broadcast_signal(struct game_threads *game, GameSignal newSignal)
     APPLY_TO_GAME_ARG_PTR(atomic_store, &game, signal, newSignal)
 }
 
-/*
+/**
  * Inizializza i segnali.
  * @param game  La struttura game_threads.
  */
@@ -230,7 +255,7 @@ void init_signals(struct game_threads *game)
     init_semaphores(game);
 }
 
-/*
+/**
  * Crea i thread di gioco.
  * @param game  La struttura game_threads.
  * @return      Il pacchetto iniziale.
@@ -270,7 +295,7 @@ Packet *create_threads(struct game_threads *game)
     return packet; 
 }
 
-/*
+/**
  * Esegue il JOIN dei thread di gioco.
  * @param game  La struttura game_threads.
  */
@@ -279,13 +304,13 @@ void join_threads(struct game_threads *game)
     APPLY_TO_GAME_ARG(pthread_join, game, thread, NULL)
 }
 
-/*
+/**
  *
  * Signals related.
  *
  */
 
-/*
+/**
  * Segnala ai thread di riprendere l'esecuzione.
  * @param game  La struttura game_threads.
  */
@@ -295,7 +320,7 @@ void run_threads(struct game_threads *game)
     unlock_game_mutexes(game);
 }
 
-/*
+/**
  * Segnala ai thread di fermare temporaneamente l'esecuzione.
  * @param game  La struttura game_threads.
  */
@@ -305,7 +330,7 @@ void halt_threads(struct game_threads *game)
     lock_game_mutexes(game);
 }
 
-/*
+/**
  * Segnala ai thread di fermare definitivamente l'esecuzione.
  * @param game  La struttura game_threads.
  */
@@ -313,9 +338,10 @@ void stop_threads(struct game_threads *game)
 {
     broadcast_signal(game, GAMESIGNAL_STOP);
     unlock_game_mutexes(game);
+    unlockMancheEndedMutex();
 }
 
-/*
+/**
  * Cancella i thread di gioco.
  * @param game  La struttura game_threads.
  */
@@ -347,6 +373,8 @@ void cancel_threads(struct game_threads *game)
     free(game->plants);
 
     entity_node_destroy(game->entity_node);
+
+    unlockMancheEndedMutex();
     
     DEBUG("shutdown completed!\n");
 }
@@ -357,7 +385,7 @@ void cancel_threads(struct game_threads *game)
  *
  */
 
-/*
+/**
  * Inizializza i mutex dei segnali.
  * @param game  La struttura game_threads.
  */
@@ -366,7 +394,7 @@ void init_game_mutexes(struct game_threads *game)
     APPLY_TO_GAME_ARG_PTR(pthread_mutex_init, &game, mutex, NULL)
 }
 
-/*
+/**
  * Blocca i mutex dei segnali.
  * @param game  La struttura game_threads.
  */
@@ -375,7 +403,7 @@ void lock_game_mutexes(struct game_threads *game)
     APPLY_TO_GAME_PTR(pthread_mutex_lock, &game, mutex)
 }
 
-/*
+/**
  * Sblocca i mutex dei segnali.
  * @param game  La struttura game_threads.
  */
@@ -384,7 +412,7 @@ void unlock_game_mutexes(struct game_threads *game)
     APPLY_TO_GAME_PTR(pthread_mutex_unlock, &game, mutex)
 }
 
-/*
+/**
  * Distrugge i mutex dei segnali.
  * @param game  La struttura game_threads.
  */
@@ -393,13 +421,13 @@ void destroy_game_mutexes(struct game_threads *game)
     APPLY_TO_GAME_PTR(pthread_mutex_destroy, &game, mutex)
 }
 
-/*
+/**
  * 
  * Semaphores & producer/consumer related.
  *
  */
 
-/*
+/**
  * Inizializza i semafori.
  * @param game  La struttura game_threads.
  */
@@ -412,7 +440,7 @@ void init_semaphores(struct game_threads *game)
     sem_init(&comms->sem_mutex, 0, 1);
 }
 
-/*
+/**
  * Distrugge i semafori.
  * @param game  La struttura game_threads.
  */
@@ -425,7 +453,7 @@ void destroy_semaphores(struct game_threads *game)
     sem_destroy(&comms->sem_mutex);
 }
 
-/*
+/**
  * Esegue la wait del produttore.
  * @param game  La struttura game_threads.
  */
@@ -434,7 +462,7 @@ void wait_producer(struct game_threads *game)
     sem_wait(&game->comms->sem_free);
 }
 
-/*
+/**
  * Esegue la signal del produttore.
  * @param game  La struttura game_threads.
  */
@@ -443,7 +471,7 @@ void signal_producer(struct game_threads *game)
     sem_post(&game->comms->sem_occupied);
 }
 
-/*
+/**
  * Esegue la wait del consumatore.
  * @param game  La struttura game_threads.
  */
@@ -452,7 +480,7 @@ void wait_consumer(struct game_threads *game)
     sem_wait(&game->comms->sem_occupied);
 }
 
-/*
+/**
  * Esegue la signal del consumatore.
  * @param game  La struttura game_threads.
  */
@@ -461,7 +489,7 @@ void signal_consumer(struct game_threads *game)
     sem_post(&game->comms->sem_free);
 }
 
-/*
+/**
  * Esegue la wait del mutex per la scrittura su buffer.
  * @param game  La struttura game_threads.
  */
@@ -470,7 +498,7 @@ void wait_mutex(struct game_threads *game)
     sem_wait(&game->comms->sem_mutex);
 }
 
-/*
+/**
  * Esegue la signal del mutex per la scrittura su buffer.
  * @param game  La struttura game_threads.
  */
@@ -479,7 +507,7 @@ void signal_mutex(struct game_threads *game)
     sem_post(&game->comms->sem_mutex);
 }
 
-/*
+/**
  * Prende il valore del `sem_occupied`, ovvero degli elementi presenti nel buffer.
  * @param game  La struttura game_threads.
  */
@@ -490,7 +518,7 @@ int await_cleanup_count(struct game_threads *game)
     return count;
 }
 
-/*
+/**
  * Pulisce il buffer di comunicazione.
  * @param game  La struttura game_threads.
  */
@@ -517,13 +545,3 @@ void cleanup_comms_buffer(struct game_threads *game)
     signal_mutex(game);
 }
 
-/**
- * Esegue il setup della mappa.
- * @param game  La struttura game_threads.
- * @param width La larghezza della mappa.
- */
-void setup_map(struct game_threads *game)
-{
-    Position map_position = { getCenteredX(MAP_WIDTH), 5 };
-    game->map = display_map(map_position, MAP_WIDTH, NULL);
-}

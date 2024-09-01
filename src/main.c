@@ -3,9 +3,14 @@
 #include "game/routines.h"
 #include "utils/shortcuts.h"
 #include "graphics/drawing.h"
+#include "utils/globals.h"
 
-void test_threads(struct game_threads *game);
-void terminate();
+void cleanup()
+{
+    endwin();
+    printf("SIGSEGV occured!\n");
+    exit(EXIT_FAILURE);
+}
 
 int main(int argc, char *argv[])
 {
@@ -14,81 +19,72 @@ int main(int argc, char *argv[])
     if (parsed_program_args.help)
     {
         addons_args_help(); 
-        terminate(); 
+        return EXIT_SUCCESS;
     }
 
     srand(time(NULL));
-
+    
     Screen screen;
     init_screen(&screen);
-  
-    /* Se il terminale e' troppo piccolo, comunica a schermo. */
+
+    /* Se il terminale è troppo piccolo, comunica a schermo. */
     handle_screen_resize();
     signal(SIGWINCH, handle_screen_resize);
-
+    signal(SIGSEGV, cleanup);
+    
     /* Impedisce di giocare a Frogger con il terminale troppo piccolo. */
     if (!isScreenValid())
     {
         endwin();
         printf("Screen size is too small to play Frogger! :(\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
+
+    int menuOutput = -1;
+
+    do {
+        show(screen, PS_MAIN_MENU, &menuOutput);
+
+        switch (menuOutput) 
+        {
+            case MMO_OPEN_SAVING: 
+                {
+                    show(screen, PS_SAVINGS, &menuOutput);
+                    // getGameData(output, &game);
+                }
+                break;
+            case MMO_CREATE_SAVING: 
+                {
+                    show(screen, PS_CREATE_SAVING, &menuOutput);
+                    menuOutput = -1;
+                }
+                break;
+            case MMO_QUIT:
+                endwin();
+                return EXIT_SUCCESS;
+            default:
+                break;
+        }
+    } while (menuOutput == -1);
+
 
     struct game_threads game = { };
+    setup_map(&game);
     init_game_threads(&game);
 
-    int output;
-    show(screen, PS_PAUSE_MENU, &output);
 
-    erase();
+    Packet *startupPacket = NULL;
 
-    setup_map(&game);
-
-    if (TEST_MODE)
+    do 
     {
-        test_threads(&game);
-        terminate();
-    }
-    
-    // da eseguire all'inizio di ogni partita
-    create_threads(&game);
+        startupPacket = create_threads(&game);
+        lockMancheEndedMutex();
+        run_threads(&game);
 
-    // da eseguire alla pausa della partita
-    halt_threads(&game);
+        lockMancheEndedMutex();
+        destroy_packet(startupPacket);
+        unlockMancheEndedMutex();
+    } while (isGameEnded());
 
-    // da eseguire alla fine di ogni partita
-    cancel_threads(&game);
-
-    // da eseguire alla fine di ogni partita
-    if (parsed_program_args.save_game_stats)
-    {
-        addons_args_save_stats(&game);
-    }
-
-    // da eseguire alla fine di ogni partita, dopo il save_game_stats
-    if (parsed_program_args.quit_on_win)
-    {
-        cancel_threads(&game); 
-        terminate();
-    }
-
-    endwin();
     return EXIT_SUCCESS;
-}
-
-void terminate()
-{
-    endwin();
-    exit(EXIT_SUCCESS);
-}
-
-void test_threads(struct game_threads *game)
-{
-    Packet *beginnerPacket = create_threads(game);
-
-    run_threads(game);
-
-    sleepy(500, TIMEFRAME_SECONDS);
-    cancel_threads(game);
-    destroy_packet(beginnerPacket);
 }

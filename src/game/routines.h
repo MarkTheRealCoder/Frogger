@@ -3,6 +3,7 @@
 
 #include "core.h"
 
+static pthread_mutex_t mancheEndMutex;
 
 // Se il segnale è GAMESIGNAL_STOP, esce dal ciclo di esecuzione.
 #define IF_SIGNAL_STOP(signal)                  \
@@ -24,7 +25,7 @@
     IF_SIGNAL_HALT(signal, mutex)   \
     IF_SIGNAL_STOP(signal)
 
-/*
+/**
  * Inizializzazione di ogni routine.
  *
  * Le seguenti variabili saranno esposte dopo l'evocazione di questa macro:
@@ -48,7 +49,7 @@
     Packet **comms_buffer = (Packet **) game->comms->buffer;            \
     int buffer_size = game->comms->buffer_size;
 
-/*
+/**
  * Termina l'inizializzazione di ogni routine consumatore.
  *
  * Le seguenti variabili saranno esposte dopo l'evocazione di questa macro:
@@ -60,7 +61,7 @@
     Packet *consumed_product;                   \
     int index = 0;
 
-/*
+/**
  * Termina l'inizializzazione di ogni routine produttore.
  *
  * Le seguenti variabili saranno esposte dopo l'evocazione di questa macro:
@@ -72,7 +73,7 @@
     Packet *product;                            \
     int *index = &game->comms->next_prod_index;
 
-/*
+/**
  * Legge un prodotto dal buffer di comunicazione.
  * Esegue il blocco del mutex prima di leggere e lo sblocca dopo aver letto
  */
@@ -86,7 +87,7 @@
         index = (index + 1) % buffer_size;                                  \
         signal_mutex(game);
 
-/*
+/**
  * Scrive un prodotto nel buffer di comunicazione.
  * Esegue il blocco del mutex prima di scrivere e lo sblocca dopo aver scritto.
  */

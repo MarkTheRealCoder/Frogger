@@ -109,6 +109,8 @@ int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt 
         print_choices(choices.art, choices.length, choice, scr.x, &cuy);
     } while(menu_listener(&choice, choices.length));
 
+    erase();
+
     return choice;
 }
 

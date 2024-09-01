@@ -203,17 +203,21 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
 
 void init_screen(Screen *scrn);
 void center_string_colored(char *string, int pair, int max, int cuy);
-unsigned int show(const Screen scr, const enum PS prog_state, int *output);
-void display_clock(const Position p, const short value, const short max);
-void display_hps(const Position p, const short mcurr, const short fcurr);
+unsigned int show(Screen scr, enum PS prog_state, int *output);
+void display_clock(Position p, short value, short max);
+void display_hps(Position p, short mcurr, short fcurr);
 void addStringToList(StringNode **list, int color, char *string);
+
 void display_string(const Position position, const int color, const char *string, int length);
-void display_achievements(const Position p, const short length, const short height, StringList list);
-void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map);
-MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map);
+void display_achievements(Position p, short length, short height, StringList list);
+void display_entity(int fg, StringArt art, Position curr, Position last, MapSkeleton map);
+MapSkeleton display_map(Position sp, int width, MapSkeleton* map);
+
 void center_string(char str[], int max, int cuy);
 void eraseFor(Position sp, short height, short length);
 
 void handle_screen_resize();
+
+enum color_codes getEntityColor(enum entity_type type);
 
 #endif

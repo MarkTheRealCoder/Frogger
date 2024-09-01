@@ -1,5 +1,6 @@
 #include "../drawing.h"
 #include "../../utils/shortcuts.h"
+#include "../../utils/globals.h"
 
 static Range timer;
 static Range hps;
@@ -41,15 +42,6 @@ void init_screen(Screen *scrn)
     init_extended_color(COLORCODES_FLOWER_A, FLOWER_A_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_F, PROJECTILE_F_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_FL, PROJECTILE_FL_COLOR);
-}
-
-/**
- * Confirura lo schermo.
- * @param scr Lo schermo da configurare.
- */
-void configure_screen(Screen screen) 
-{
-    
 }
 
 /**

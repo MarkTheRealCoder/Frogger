@@ -3,10 +3,11 @@
 #include "entities.h"
 #include "../graphics/drawing.h"
 #include "../utils/shortcuts.h"
+#include "../utils/globals.h"
 
 void *example_routine() 
 {
-    sleepy(1, TIMEFRAME_SECONDS);
+    sleepy(10000, TIMEFRAME_SECONDS);
     return NULL; 
 }
 
@@ -36,96 +37,132 @@ void move_on_direction(EntityMovePacket *entity_move_packet)
     }
 }
 
+bool frog_wgetch(Direction *direction, bool *firstIteration)
+{
+    switch (wgetch(stdscr))
+    {
+        case 'w':
+        case 'W':
+        case KEY_UP:
+            *direction = DIRECTION_NORTH;
+            break;
+        case 's':
+        case 'S':
+        case KEY_DOWN:
+            *direction = DIRECTION_SOUTH;
+            break;
+        case 'a':
+        case 'A':
+        case KEY_LEFT:
+            *direction = DIRECTION_WEST;
+            break;
+        case 'd':
+        case 'D':
+        case KEY_RIGHT:
+            *direction = DIRECTION_EAST;
+            break;
+        case 'p':
+        case 'P':
+            setGamePaused(true);
+            break;
+        case 'f':
+        case 'F':
+            // todo fire projectile
+        default:
+            if (*firstIteration)
+            {
+                /*
+                 * Movimento in direzione STILL in modo tale da stampare
+                 * a schermo la rana nella posizione iniziale.
+                 */
+                *firstIteration = false;
+                break;
+            }
+            return true;
+    }
+
+    return false;
+}
+
+void handle_packet_entityMove(struct game_threads *game, Packet *packet)
+{
+    EntityMovePacket *entity_move_packet = (EntityMovePacket *) packet->data;
+
+    struct entity *packet_entity = &entity_move_packet->entity;
+    struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
+
+    Position currentEntityPosition = getPositionFromEntity(*entity);
+
+    entity->x += packet_entity->x;
+    entity->y += packet_entity->y;
+    entity->direction = packet_entity->direction;
+
+    Position newEntityPosition = getPositionFromEntity(*entity);
+
+    bool isFrog = entity->type == ENTITY_TYPE__FROG;
+
+    if (isFrog)
+    {
+        // achievement "So it begins..."
+
+        if (entity->y <= 25)
+        {
+            // achievement "Halfway there"
+        }
+    }
+
+    StringArt art = getArt(entity);
+    enum color_codes color = getEntityColor(entity->trueType);
+
+    display_entity(color, art, currentEntityPosition, newEntityPosition, game->map);
+}
+
+void handle_packet_timer(struct game_threads *game, Packet *packet)
+{
+    TimerPacket *timer_packet = (TimerPacket *) packet->data;
+
+    if (timer_packet->current_time <= 0)
+    {
+        // TODO end game
+    }
+
+    Position timerPosition = { getCenteredX(0) + 25, 2 };
+
+    eraseFor(timerPosition, 1, 40);
+    display_clock(timerPosition, timer_packet->current_time, timer_packet->max_time);
+}
+
 void handle_packet(struct game_threads *game, Packet *packet)
 {
-    char *log_message = NULL;
-
     switch (packet->type)
     {
         case PACKET_TYPE__ENTITYMOVE:
-            {
-                EntityMovePacket *entity_move_packet = (EntityMovePacket *) packet->data;
-
-                struct entity *packet_entity = &entity_move_packet->entity;
-                struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
-
-                Position currentEntityPosition = getPositionFromEntity(*entity);
-
-                entity->x += packet_entity->x;
-                entity->y += packet_entity->y;
-                entity->direction = packet_entity->direction;
-
-                Position newEntityPosition = getPositionFromEntity(*entity);
-                
-                StringArt art = getArt(entity);
-
-                switch (entity->type)
-                {
-                    case ENTITY_TYPE__FROG:
-                        display_entity(COLORCODES_FROG_B, art, newEntityPosition, currentEntityPosition, game->map);
-                        break;
-                    case ENTITY_TYPE__CROC:
-                        display_entity(COLORCODES_CROC_B, art, newEntityPosition, currentEntityPosition, game->map);
-                        break;
-                    default:
-                        break;
-                }
-
-                log_message = concat(5, str_entity_type(entity->type), ": ",
-                                        str_packet_type(packet->type), " at ", 
-                                        str_coords(entity));
-                break;
-            }
+            handle_packet_entityMove(game, packet);
+            break;
         case PACKET_TYPE__TIMER:
-            {
-                TimerPacket *timer_packet = (TimerPacket *) packet->data;
-
-                if (timer_packet->current_time <= 0)
-                {
-                    // TODO end manche 
-                }
-                
-                Position timerPosition = { getCenteredX(0) + 25, 2 };
-
-                eraseFor(timerPosition, 1, 40);
-                display_clock(timerPosition, timer_packet->current_time, timer_packet->max_time);
-
-                break;
-            }
+            handle_packet_timer(game, packet);
+            break;
         default:
             break;
     }
-    
+
     Position achievementTitlePosition = { getCenteredX(12) + 72, getCenteredY(25) - 2 };
     Position achievementPosition = { getCenteredX(30) + 75, getCenteredY(25) };
-
-    Position packetLogsTitlePosition = { getCenteredX(11) - 75, getCenteredY(25) - 2 };
-    Position packetLogsPosition = { getCenteredX(34) - 75, getCenteredY(25) };
 
     Position hpsPosition = { getCenteredX(FROG_HPS) - 45, 3 };
     Position scorePosition = { getCenteredX(12), 3 };
 
     display_string(achievementTitlePosition, COLOR_RED, "Achievements", 12);
-    display_string(packetLogsTitlePosition, COLOR_RED, "Packet Logs", 11);
 
     display_string(scorePosition, COLOR_RED, "Score: XXXXX", 12);
 
     //addStringToList(&game->achievements->last, COLOR_YELLOW, str_packet_type(packet->type));
     //display_achievements(achievementPosition, 25, 25, *game->achievements);
-    
-    if (log_message == NULL)
-    {
-        log_message = str_packet_type(packet->type);
-    }
-
-    addStringToList(&game->packet_logs->last, COLOR_YELLOW, log_message);
-    game->packet_logs->nodes++;
-    display_achievements(packetLogsPosition, 34, 25, *game->packet_logs);
 
     display_hps(hpsPosition, 0, 5);
 }
 
-/*
+/**
  * La routine dedicata alla gestione del gioco.
  * @param args  Il pacchetto contenente i dati del gioco.
  */
@@ -136,6 +173,11 @@ void *master_routine(void *args)
 
     while (true)
     {
+        if (isGamePaused())
+        {
+            halt_threads(game);
+        }
+
         wait_consumer(game);
         
         CHECK_SIGNAL(signal, mutex)
@@ -156,7 +198,7 @@ void *master_routine(void *args)
     return NULL;
 }
 
-/*
+/**
  * La routine dedicata alla modifica e comunicazione del tempo di gioco.
  * @param args  Il pacchetto contenente i dati del gioco.
  */
@@ -202,60 +244,21 @@ void *frog_routine(void *args)
     EntityMovePacket entity_move_packet = { };
     entity_move_packet.entity = *frog; // local clone
 
-    Direction dir = -1;
-
+    Direction direction = DIRECTION_STILL;
     bool firstIteration = true;
 
     while (true)
     {
-        switch (wgetch(stdscr)) 
+        if (frog_wgetch(&direction, &firstIteration))
         {
-            case 'w':
-            case 'W':
-            case KEY_UP: 
-                dir = DIRECTION_NORTH;
-                break;
-            case 's':
-            case 'S':
-            case KEY_DOWN: 
-                dir = DIRECTION_SOUTH;
-                break;
-            case 'a':
-            case 'A':
-            case KEY_LEFT:
-                dir = DIRECTION_WEST;
-                break;
-            case 'd':
-            case 'D':
-            case KEY_RIGHT: 
-                dir = DIRECTION_EAST;
-                break;
-            case 'p':
-            case 'P':
-                halt_threads(game);
-                break;
-            default:
-                if (firstIteration)
-                {
-                    /* 
-                     * Movimento in direzione STILL in modo tale da stampare
-                     * a schermo la rana nella posizione iniziale.
-                     */
-                    dir = DIRECTION_STILL;
-                    firstIteration = false;
-                    break;
-                }
-                else
-                {
-                    continue;
-                }
+            continue;
         }
 
         wait_producer(game);
 
         CHECK_SIGNAL(signal, mutex)
 
-        entity_move_packet.entity.direction = dir;
+        entity_move_packet.entity.direction = direction;
         move_on_direction(&entity_move_packet);
         
         product = create_packet(&entity_move_packet, 1, PACKET_TYPE__ENTITYMOVE, true);
@@ -265,7 +268,7 @@ void *frog_routine(void *args)
         
         signal_producer(game);
 
-        dir = -1;
+        direction = -1;
     }
 
     DEBUG("exited from frog\n");
@@ -273,7 +276,7 @@ void *frog_routine(void *args)
     return NULL;
 }
 
-/*
+/**
  * La routine dedicata alla gestione dei proiettili della rana.
  * @param args  Il pacchetto contenente i dati del gioco.
  */
@@ -305,7 +308,7 @@ void *frog_projectile_routine(void *args)
     return NULL;
 }
 
-/*
+/**
  * La routine dedicata alla gestione dei coccodrilli.
  * @param args  Il pacchetto contenente i dati del gioco.
  */ 

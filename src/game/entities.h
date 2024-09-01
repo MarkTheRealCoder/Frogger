@@ -38,7 +38,9 @@ typedef int entity_id_t;
 
 struct entity {
     entity_id_t id;
-    EntityType type;
+
+    EntityType type; // rappresenta il tipo generico dell'entità
+    enum entity_type trueType; // rappresenta il tipo specifico dell'entità
 
     unsigned int width;
 
@@ -67,16 +69,12 @@ struct plant {
 struct projectile {
     entity_id_t id;
     entity_id_t shooter;
-    //todo many attributes if we want to implement different types of projectiles.
 };
 
 struct frog {
     entity_id_t id;
     int lives;
-    //todo let's see later what we can add...
 };
-
-// suggestion: add a field to the entity struct to bind a display function for the specific entity.
 
 typedef struct {
     Position leftcorner;
