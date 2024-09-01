@@ -111,7 +111,26 @@ typedef struct {
 enum PS {
     PS_MAIN_MENU,
     PS_PAUSE_MENU,
-    PS_GAME
+    PS_SAVINGS,
+    PS_CREATE_SAVING,
+    PS_LOST,
+    PS_WIN
+};
+
+enum MainMenuOptions {
+    MMO_START_NEW,
+    MMO_OPEN_SAVING,
+    MMO_CREATE_SAVING,
+    MMO_QUIT
+};
+
+enum PauseMenuOptions {
+    PMO_RESUME,
+    PMO_SAVE_CURRENT,
+    PMO_SAVE_REPLAY,
+    PMO_CREATE_SAVING,
+    PMO_SAVE_AND_QUIT,
+    PMO_QUIT
 };
 
 

@@ -181,7 +181,30 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
 
 
 int process_main(int argc, char **argv) {
+    // ADD A GAME STRUCT FOR FAST LOADING DATA
     int processes = 0;
+    Screen scr;
+    init_screen(&scr);
+
+    /*MAIN MENU*/
+    do {
+        int output = -1;
+        show(scr, PS_MAIN_MENU, &output);
+        switch (output) {
+            case MMO_OPEN_SAVING: {
+                show(scr, PS_SAVINGS, &output);
+                // getGameData(output, &game);
+            }
+                break;
+            case MMO_CREATE_SAVING: {
+                show(scr, PS_CREATE_SAVING, &output);
+                output = -1;
+            }
+                break;
+            case MMO_QUIT: return 0;
+        }
+    } while (output == -1);
+
     int service_comms = shm_open(SERVICE_NAME, O_CREAT | O_RDWR, 0666);
     HANDLE_ERROR(service_comms);
     HANDLE_ERROR(lseek(service_comms, SERVICE_SIZE - 1, SEEK_SET));
@@ -192,14 +215,8 @@ int process_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    //Screen scr;
-    //init_screen(&scr);
-
-
-    /*MAIN MENU*/
-    while (true) {
-
-    }
+    Position map_position = { getCenteredX(MAP_WIDTH), 5 };
+    MapSkeleton map = display_map(map_position, MAP_WIDTH, NULL)
 
     /*GAME*/
     while (true) {
@@ -215,7 +232,7 @@ int process_main(int argc, char **argv) {
 void draw(struct entity_node *es, MapSkeleton *map, TimerPacket timer, StringList *achievements, int score, bool drawAll) {
     /*Draw Map if not already drawn*/
     const static Position map_position = { getCenteredX(MAP_WIDTH), 5 };
-    if (drawAll) *map = display_map(map_position, MAP_WIDTH, NULL);
+    if (drawAll) display_map(map_position, MAP_WIDTH, map);
 
     /*Draw timer*/
     display_clock((Position){ getCenteredX(0) + 25, 2 };, timer.current_time, timer.max_time);
