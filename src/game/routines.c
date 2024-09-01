@@ -57,8 +57,22 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
                       entity->id, entity->x, entity->y, str_direction(entity->direction));
 
-                // todo collision check 
+                StringArt art = getArt(entity);
 
+                Position currentEntityPosition = { entity->x, entity->y };
+                Position previousEntityPosition = { entity->x - packet_entity->x, entity->y - packet_entity->y };
+
+                eraseFor((Position) { getCenteredX(0) + 25, 1 }, 1, 15);
+                display_string((Position) { getCenteredX(0) + 25, 1 }, COLOR_RED, str_direction(entity->direction), 15);
+
+                char *coords = str_coords(entity);
+
+                eraseFor((Position) { getCenteredX(0), 1 }, 1, 15);
+                display_string((Position) { getCenteredX(0), 1 }, COLOR_RED, coords, 15);
+
+                free(coords);
+
+                display_entity(COLORCODES_FROG_B, art, previousEntityPosition, currentEntityPosition, game->map);
 
                 break;
             }
@@ -92,16 +106,21 @@ void handle_packet(struct game_threads *game, Packet *packet)
     Position packetLogsTitlePosition = { getCenteredX(10) - 75, getCenteredY(25) - 2 };
     Position packetLogsPosition = { getCenteredX(10) - 75, getCenteredY(25) };
 
-    Position hpsPosition = { getCenteredX(10) - 75, getCenteredY(25) + 5 };
+    Position hpsPosition = { getCenteredX(FROG_HPS) - 45, 3 };
+    Position scorePosition = { getCenteredX(12), 3 };
 
     display_string(packetLogsTitlePosition, COLOR_RED, "Packet Logs", 11);
     display_string(achievementTitlePosition, COLOR_RED, "Achievements", 12);
+
+    display_string(scorePosition, COLOR_RED, "Score: XXXXX", 12);
 
     //addStringToList(&game->achievements->last, COLOR_YELLOW, str_packet_type(packet->type));
     //display_achievements(achievementPosition, 25, 25, *game->achievements);
     
     addStringToList(&game->packet_logs->last, COLOR_YELLOW, str_packet_type(packet->type));
     display_achievements(packetLogsPosition, 25, 25, *game->packet_logs);
+
+    display_hps(hpsPosition, 0, 5);
 }
 
 /*
@@ -228,6 +247,8 @@ void *frog_routine(void *args)
         WRITE_TO_COMMS_BUFFER(game, comms_buffer, index, product)
         
         signal_producer(game);
+
+        dir = -1;
     }
 
     DEBUG("exited from frog\n");

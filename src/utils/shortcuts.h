@@ -96,6 +96,7 @@ char *concat(const int n, ...);
 bool str_eq(char *expected, char *toCompare);
 char *str_packet_type(PacketType packetType);
 char *str_direction(Direction direction);
+char *str_coords(struct entity *entity);
 
 
 int *get_screen_size();
@@ -103,6 +104,8 @@ void setScreenValidity(bool value);
 bool isScreenValid();
 int getCenteredX(int height);
 int getCenteredY(int height);
+
+StringArt getArt(struct entity *entity);
 
 #endif // !FROGGER_SHORTCUTS_H
 

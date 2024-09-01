@@ -160,6 +160,15 @@ char *str_direction(Direction direction)
     return directions[direction];
 }
 
+char *str_coords(struct entity *entity)
+{
+    char *xy = MALLOC(char, 10);
+
+    sprintf(xy, "x=%d y=%d", entity->x, entity->y);
+
+    return xy;
+}
+
 /*
  * Concatena due o più stringhe in base al numero di stringhe specificato e alle stringhe specificate.
  * @param n     Il numero di stringhe da concatenare.
@@ -251,4 +260,33 @@ int getCenteredY(int height)
 {
     int y = get_screen_size()[0];
     return (y / 2) - (height / 2);
+}
+
+/**
+ * Restituisce l'icona corrispondente all'entita'.
+ * @param entity    L'entita'. 
+ * @return          L'icona corrispondente all'entita'.
+ */ 
+StringArt getArt(struct entity *entity)
+{
+    StringArt result = { };
+
+    result.length = ART_OF_LENGTH_3;
+
+    switch (entity->type)
+    {
+        case ENTITY_TYPE__CROC:
+            result.art = _CROC_X3_PLAY_ART;
+            break;
+        case ENTITY_TYPE__FROG:
+            result.art = _FROG_PLAY_ART;
+            break;
+        case ENTITY_TYPE__PLANT:
+            result.art = _PLANT_PLAY_ART;
+            break;
+        default:
+            break;
+    }
+
+    return result;
 }

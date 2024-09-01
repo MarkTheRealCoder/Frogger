@@ -85,9 +85,15 @@ typedef struct {
 typedef struct {
     EntityType e1;
     EntityType e2;
+
     int e1_priority;
     int e2_priority;
-    enum {COLLISION_OVERLAPPING, COLLISION_DAMAGING, COLLISION_AVOIDED} collision_type;
+
+    enum {
+        COLLISION_OVERLAPPING, 
+        COLLISION_DAMAGING,
+        COLLISION_AVOIDED
+    } collision_type;
 } CollisionPacket;
 
 

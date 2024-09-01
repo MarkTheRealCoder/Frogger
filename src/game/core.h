@@ -111,6 +111,8 @@ struct game_threads
 
     StringList *packet_logs;
     StringList *achievements;
+
+    MapSkeleton map;
 };
 
 struct comms 
@@ -163,6 +165,8 @@ void signal_mutex(struct game_threads *game_threads);
 
 int await_cleanup_count(struct game_threads *game_threads);
 void cleanup_comms_buffer(struct game_threads *game);
+
+void setup_map(struct game_threads *game);
 
 #define CASE_PACKET_ALLOC(structure, type, from, to, size, clone)   \
     case type:                                                      \

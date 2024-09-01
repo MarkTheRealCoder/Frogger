@@ -7,7 +7,8 @@
 #include "map.h"
 
 #define MAIN_HPS 3
-#define FROG_HPS 2
+#define FROG_HPS 5
+#define MAP_WIDTH 100
 
 #define PERCENTAGE_MAP_X 50
 #define PERCENTAGE_MAP_Y 80

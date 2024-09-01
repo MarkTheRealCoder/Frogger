@@ -21,10 +21,12 @@ int main(int argc, char *argv[])
 
     Screen screen;
     init_screen(&screen);
-    
+  
+    /* Se il terminale e' troppo piccolo, comunica a schermo. */
     handle_screen_resize();
     signal(SIGWINCH, handle_screen_resize);
 
+    /* Impedisce di giocare a Frogger con il terminale troppo piccolo. */
     if (!isScreenValid())
     {
         endwin();
@@ -34,24 +36,14 @@ int main(int argc, char *argv[])
 
     struct game_threads game = { };
     init_game_threads(&game);
-    
+
     int output;
     show(screen, PS_PAUSE_MENU, &output);
 
     erase();
 
-    int map_width = 100;
-    Position map_position = { getCenteredX(map_width), 5 };
+    setup_map(&game);
 
-    MapSkeleton map = display_map(map_position, map_width, NULL);
-    
-    for (int i = 0, counter = 0; i < 10; i++) {
-        display_entity(COLORCODES_FROG_B, (StringArt){.art=_FROG_PLAY_ART, .length=FROG_PLAY_ART_LENGTH}, (Position){map_position.x + (int)(map_width/2), map.sidewalk.y + counter}, (Position){map_position.x + (int)(map_width/2), map.sidewalk.y + FROG_HEIGHT + counter}, map);
-        sleep(1);
-        counter -= 3;
-    }
-    wgetch(stdscr);
-    
     if (TEST_MODE)
     {
         test_threads(&game);

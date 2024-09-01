@@ -517,3 +517,13 @@ void cleanup_comms_buffer(struct game_threads *game)
     signal_mutex(game);
 }
 
+/**
+ * Esegue il setup della mappa.
+ * @param game  La struttura game_threads.
+ * @param width La larghezza della mappa.
+ */
+void setup_map(struct game_threads *game)
+{
+    Position map_position = { getCenteredX(MAP_WIDTH), 5 };
+    game->map = display_map(map_position, MAP_WIDTH, NULL);
+}

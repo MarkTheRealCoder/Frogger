@@ -118,9 +118,8 @@ bool writeifready(void *buff, pipe_t _pipe, size_t size)
 }
 
 int create_message(pMessages action, int receivers) {
-    return (int) action + (receivers << 4)
+    return (int) action + (receivers << 4);
 }
-
 
 pMessages check_for_comms(int id, void * service_mem) {
     int message = MESSAGE_NONE;

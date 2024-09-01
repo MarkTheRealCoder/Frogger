@@ -303,9 +303,9 @@ void display_hps(const Position p, const short mcurr, const short fcurr)
     int x = p.x;
     attron(A_BOLD);
     mvaddch(p.y, x, ' ');
-    x++;
-    print_hearts(&x, p.y, mcurr, MAIN_HPS, mpair, lost);
-    mvaddch(p.y, x, ' ');
+    /*x++;*/
+    /*print_hearts(&x, p.y, mcurr, MAIN_HPS, mpair, lost);*/
+    /*mvaddch(p.y, x, ' ');*/
     x++;
     print_hearts(&x, p.y, fcurr, FROG_HPS, fpair, lost);
     attroff(A_BOLD);
