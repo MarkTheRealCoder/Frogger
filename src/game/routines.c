@@ -31,61 +31,53 @@ void move_on_direction(EntityMovePacket *entity_move_packet)
         case DIRECTION_SOUTH:
             entity->y += CORE_GAME_FROG_JUMP;
             break;
+        case DIRECTION_STILL:
+            break;
     }
 }
 
 void handle_packet(struct game_threads *game, Packet *packet)
 {
+    char *log_message = NULL;
+
     switch (packet->type)
     {
         case PACKET_TYPE__ENTITYMOVE:
             {
                 EntityMovePacket *entity_move_packet = (EntityMovePacket *) packet->data;
+
                 struct entity *packet_entity = &entity_move_packet->entity;
-
-                DEBUG("*** EntityMovePacket\t-> id: %d, x: %d, y: %d, direction: %s\n", 
-                      packet_entity->id, packet_entity->x,
-                      packet_entity->y, 
-                      str_direction(entity_move_packet->entity.direction));
-
                 struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
+
+                Position currentEntityPosition = { 
+                    (*entity).x, 
+                    (*entity).y
+                };
 
                 entity->x += packet_entity->x;
                 entity->y += packet_entity->y;
                 entity->direction = packet_entity->direction;
 
-                DEBUG("^^^ Entity Updated Pos\t-> id: %d, x: %d, y: %d, direction: %s\n", 
-                      entity->id, entity->x, entity->y, str_direction(entity->direction));
-
+                Position newEntityPosition = { 
+                    (*entity).x, 
+                    (*entity).y
+                };
+                
                 StringArt art = getArt(entity);
 
-                Position currentEntityPosition = { entity->x, entity->y };
-                Position previousEntityPosition = { entity->x - packet_entity->x, entity->y - packet_entity->y };
+                display_entity(COLORCODES_FROG_B, art, currentEntityPosition, newEntityPosition, game->map);
 
-                eraseFor((Position) { getCenteredX(0) + 25, 1 }, 1, 15);
-                display_string((Position) { getCenteredX(0) + 25, 1 }, COLOR_RED, str_direction(entity->direction), 15);
-
-                char *coords = str_coords(entity);
-
-                eraseFor((Position) { getCenteredX(0), 1 }, 1, 15);
-                display_string((Position) { getCenteredX(0), 1 }, COLOR_RED, coords, 15);
-
-                free(coords);
-
-                display_entity(COLORCODES_FROG_B, art, previousEntityPosition, currentEntityPosition, game->map);
-
+                log_message = concat(5, str_packet_type(packet->type), " at ", 
+                                        str_coords(entity), " for ", 
+                                        str_entity_type(entity->type));
                 break;
             }
         case PACKET_TYPE__TIMER:
             {
                 TimerPacket *timer_packet = (TimerPacket *) packet->data;
 
-                DEBUG("*** TimerPacket\t-> current_time: %d, max_time: %d\n", 
-                      timer_packet->current_time, timer_packet->max_time);
-
                 if (timer_packet->current_time <= 0)
                 {
-                    DEBUG("^^^ TimerPacket\t-> time is up!\n");
                     // TODO end manche 
                 }
                 
@@ -103,8 +95,8 @@ void handle_packet(struct game_threads *game, Packet *packet)
     Position achievementTitlePosition = { getCenteredX(12) + 72, getCenteredY(25) - 2 };
     Position achievementPosition = { getCenteredX(30) + 75, getCenteredY(25) };
 
-    Position packetLogsTitlePosition = { getCenteredX(10) - 75, getCenteredY(25) - 2 };
-    Position packetLogsPosition = { getCenteredX(10) - 75, getCenteredY(25) };
+    Position packetLogsTitlePosition = { getCenteredX(20) - 75, getCenteredY(25) - 2 };
+    Position packetLogsPosition = { getCenteredX(20) - 75, getCenteredY(25) };
 
     Position hpsPosition = { getCenteredX(FROG_HPS) - 45, 3 };
     Position scorePosition = { getCenteredX(12), 3 };
@@ -117,7 +109,12 @@ void handle_packet(struct game_threads *game, Packet *packet)
     //addStringToList(&game->achievements->last, COLOR_YELLOW, str_packet_type(packet->type));
     //display_achievements(achievementPosition, 25, 25, *game->achievements);
     
-    addStringToList(&game->packet_logs->last, COLOR_YELLOW, str_packet_type(packet->type));
+    if (log_message == NULL)
+    {
+        log_message = str_packet_type(packet->type);
+    }
+
+    addStringToList(&game->packet_logs->last, COLOR_YELLOW, log_message);
     display_achievements(packetLogsPosition, 25, 25, *game->packet_logs);
 
     display_hps(hpsPosition, 0, 5);
@@ -202,12 +199,10 @@ void *frog_routine(void *args)
 
     Direction dir = -1;
 
+    bool firstIteration = true;
+
     while (true)
     {
-        wait_producer(game);
-
-        /* generation of the packet with its contents */
-
         switch (wgetch(stdscr)) 
         {
             case 'w':
@@ -234,7 +229,24 @@ void *frog_routine(void *args)
             case 'P':
                 halt_threads(game);
                 break;
+            default:
+                if (firstIteration)
+                {
+                    /* 
+                     * Movimento in direzione STILL in modo tale da stampare
+                     * a schermo la rana nella posizione iniziale.
+                     */
+                    dir = DIRECTION_STILL;
+                    firstIteration = false;
+                    break;
+                }
+                else
+                {
+                    continue;
+                }
         }
+
+        wait_producer(game);
 
         CHECK_SIGNAL(signal, mutex)
 

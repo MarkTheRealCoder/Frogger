@@ -4,14 +4,16 @@
 struct entity entities_default_frog(int *index)
 {
     // todo: set a fixed x and y in the bottom part of the map
+    int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
+    int y = getCenteredY(CORE_GAME_ENTITY_SIZE);
 
     struct entity frog = {
         .id = (*index)++,
         .type = ENTITY_TYPE__FROG,
         .width = CORE_GAME_ENTITY_SIZE,
         .alive = true,
-        .x = 0,
-        .y = 0,
+        .x = x,
+        .y = y,
         .direction = DIRECTION_NORTH
     };
 

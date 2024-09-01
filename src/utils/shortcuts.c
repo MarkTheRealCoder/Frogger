@@ -143,7 +143,7 @@ char *str_packet_type(PacketType packetType)
  */
 char *str_direction(Direction direction)
 {
-    #define DIRECTION_COUNT 4
+    #define DIRECTION_COUNT 5
 
     if (direction < 0 || direction > DIRECTION_COUNT - 1)
     {
@@ -155,9 +155,31 @@ char *str_direction(Direction direction)
         "SOUTH",
         "EAST",
         "WEST",
+        "STILL"
     };
 
     return directions[direction];
+}
+
+char *str_entity_type(EntityType entityType)
+{
+    static char *entityTypes[36] = { };
+
+    if (entityTypes[0] == NULL)
+    {
+        entityTypes[ENTITY_TYPE__EMPTY] = "EMPTY";
+        entityTypes[ENTITY_TYPE__FROG] = "FROG";
+        entityTypes[ENTITY_TYPE__CROC] = "CROC";
+        entityTypes[ENTITY_TYPE__PLANT] = "PLANT";
+        entityTypes[ENTITY_TYPE__PROJECTILE] = "PROJECTILE";
+    }
+
+    if (entityTypes[entityType] == NULL)
+    {
+        return "INVALID";
+    }
+
+    return entityTypes[entityType];
 }
 
 char *str_coords(struct entity *entity)
