@@ -161,6 +161,11 @@ char *str_direction(Direction direction)
     return directions[direction];
 }
 
+/**
+ * Restituisce la stringa corrispondente al tipo di entita'.
+ * @param entityType    Il tipo di entita'.
+ * @return              La stringa corrispondente al tipo di entita'.
+ */
 char *str_entity_type(EntityType entityType)
 {
     static char *entityTypes[36] = { };
@@ -182,6 +187,11 @@ char *str_entity_type(EntityType entityType)
     return entityTypes[entityType];
 }
 
+/**
+ * Restituisce la stringa corrispondente alle coordinate.
+ * @param entity    L'entita'.
+ * @return          La stringa corrispondente alle coordinate.
+ */
 char *str_coords(struct entity *entity)
 {
     char *xy = MALLOC(char, 10);

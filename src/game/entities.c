@@ -3,9 +3,8 @@
 
 struct entity entities_default_frog(int *index)
 {
-    // todo: set a fixed x and y in the bottom part of the map
     int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
-    int y = getCenteredY(CORE_GAME_ENTITY_SIZE);
+    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 19;
 
     struct entity frog = {
         .id = (*index)++,
@@ -14,7 +13,7 @@ struct entity entities_default_frog(int *index)
         .alive = true,
         .x = x,
         .y = y,
-        .direction = DIRECTION_NORTH
+        .direction = DIRECTION_STILL
     };
 
     return frog;
@@ -31,7 +30,7 @@ struct entity entities_default_plant(int *index)
         .alive = true,
         .x = plant_x,
         .y = 0,
-        .direction = DIRECTION_SOUTH
+        .direction = DIRECTION_STILL
     };
 
     plant_x += 9; // todo edit for spacing
@@ -39,6 +38,7 @@ struct entity entities_default_plant(int *index)
     return plant;
 }
 
+// todo redo
 struct entity entities_default_croc(int *index)
 {
     static int croc_y = 9; // todo edit for spacing

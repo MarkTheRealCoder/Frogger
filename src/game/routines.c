@@ -49,27 +49,31 @@ void handle_packet(struct game_threads *game, Packet *packet)
                 struct entity *packet_entity = &entity_move_packet->entity;
                 struct entity *entity = entity_node_find_id(game->entity_node, packet_entity->id);
 
-                Position currentEntityPosition = { 
-                    (*entity).x, 
-                    (*entity).y
-                };
+                Position currentEntityPosition = getPositionFromEntity(*entity);
 
                 entity->x += packet_entity->x;
                 entity->y += packet_entity->y;
                 entity->direction = packet_entity->direction;
 
-                Position newEntityPosition = { 
-                    (*entity).x, 
-                    (*entity).y
-                };
+                Position newEntityPosition = getPositionFromEntity(*entity);
                 
                 StringArt art = getArt(entity);
 
-                display_entity(COLORCODES_FROG_B, art, currentEntityPosition, newEntityPosition, game->map);
+                switch (entity->type)
+                {
+                    case ENTITY_TYPE__FROG:
+                        display_entity(COLORCODES_FROG_B, art, currentEntityPosition, newEntityPosition, game->map);
+                        break;
+                    case ENTITY_TYPE__CROC:
+                        display_entity(COLORCODES_CROC_B, art, currentEntityPosition, newEntityPosition, game->map);
+                        break;
+                    default:
+                        break;
+                }
 
-                log_message = concat(5, str_packet_type(packet->type), " at ", 
-                                        str_coords(entity), " for ", 
-                                        str_entity_type(entity->type));
+                log_message = concat(5, str_entity_type(entity->type), ": ",
+                                        str_packet_type(packet->type), " at ", 
+                                        str_coords(entity));
                 break;
             }
         case PACKET_TYPE__TIMER:
@@ -95,14 +99,14 @@ void handle_packet(struct game_threads *game, Packet *packet)
     Position achievementTitlePosition = { getCenteredX(12) + 72, getCenteredY(25) - 2 };
     Position achievementPosition = { getCenteredX(30) + 75, getCenteredY(25) };
 
-    Position packetLogsTitlePosition = { getCenteredX(20) - 75, getCenteredY(25) - 2 };
-    Position packetLogsPosition = { getCenteredX(20) - 75, getCenteredY(25) };
+    Position packetLogsTitlePosition = { getCenteredX(11) - 75, getCenteredY(25) - 2 };
+    Position packetLogsPosition = { getCenteredX(34) - 75, getCenteredY(25) };
 
     Position hpsPosition = { getCenteredX(FROG_HPS) - 45, 3 };
     Position scorePosition = { getCenteredX(12), 3 };
 
-    display_string(packetLogsTitlePosition, COLOR_RED, "Packet Logs", 11);
     display_string(achievementTitlePosition, COLOR_RED, "Achievements", 12);
+    display_string(packetLogsTitlePosition, COLOR_RED, "Packet Logs", 11);
 
     display_string(scorePosition, COLOR_RED, "Score: XXXXX", 12);
 
@@ -115,7 +119,7 @@ void handle_packet(struct game_threads *game, Packet *packet)
     }
 
     addStringToList(&game->packet_logs->last, COLOR_YELLOW, log_message);
-    display_achievements(packetLogsPosition, 25, 25, *game->packet_logs);
+    display_achievements(packetLogsPosition, 34, 25, *game->packet_logs);
 
     display_hps(hpsPosition, 0, 5);
 }
@@ -282,7 +286,7 @@ void *frog_projectile_routine(void *args)
         wait_producer(game);
 
         CHECK_SIGNAL(signal, mutex)
-     
+        
         int test = 0;
         /* generation of the packet with its contents */
         product = create_packet(&test, 1, PACKET_TYPE__INT, true);
@@ -296,6 +300,47 @@ void *frog_projectile_routine(void *args)
     }
 
     DEBUG("exited from frog projectile\n");
+
+    return NULL;
+}
+
+/*
+ * La routine dedicata alla gestione dei coccodrilli.
+ * @param args  Il pacchetto contenente i dati del gioco.
+ */ 
+void *crocodile_routine(void *args)
+{
+    DEFAULT_ROUTINE_INIT(args)
+    DEFAULT_ROUTINE_PRODUCER_INIT
+
+    static int crocId = 0; // todo keep an eye on this
+    crocId++;
+
+    struct entity *croc = entity_node_find_id(game->entity_node, crocId);
+    
+    EntityMovePacket entity_move_packet = { };
+    entity_move_packet.entity = *croc; // local clone
+    
+    while (true)
+    {
+        wait_producer(game);
+
+        CHECK_SIGNAL(signal, mutex)
+        
+        move_on_direction(&entity_move_packet);
+     
+        /* generation of the packet with its contents */
+        product = create_packet(&entity_move_packet, 1, PACKET_TYPE__ENTITYMOVE, true);
+        
+        /* writing in the communication buffer the created packet. */
+        WRITE_TO_COMMS_BUFFER(game, comms_buffer, index, product)
+        
+        signal_producer(game);
+
+        sleepy(1, TIMEFRAME_SECONDS);
+    }
+
+    DEBUG("exited from crocodile\n");
 
     return NULL;
 }
