@@ -1,7 +1,7 @@
 #ifndef FROGGER_ADDONS_H
 #define FROGGER_ADDONS_H
 
-#include "../game/core.h"
+#include "imports.h"
 
 /**
  * Program arguments.

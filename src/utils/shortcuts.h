@@ -2,7 +2,6 @@
 #define FROGGER_SHORTCUTS_H
 
 #include "imports.h"
-#include "../game/core.h"
 
 
 // Il valore di terminatore di stringa. ("\0")
@@ -95,7 +94,7 @@ double calculate_percentage(int dividend, int divisor);
 char *concat(int n, ...);
 bool str_eq(char *expected, char *toCompare);
 char *str_packet_type(PacketType packetType);
-char *str_direction(Direction direction);
+char *str_direction(Action direction);
 char *str_entity_type(EntityType entityType);
 char *str_coords(struct entity *entity);
 
@@ -105,6 +104,8 @@ bool isScreenValid();
 int getCenteredX(int height);
 int getCenteredY(int height);
 
-StringArt getArt(struct entity *entity);
+StringArt getArtOfEntity(const Entity *entity);
+StringArt getArtOfThing(char **art, int length);
+bool isActionMovement(Action action);
 
 #endif // !FROGGER_SHORTCUTS_H

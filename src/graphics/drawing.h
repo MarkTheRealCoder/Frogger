@@ -1,13 +1,12 @@
 #ifndef DRAWING_H
 #define DRAWING_H
-#include <ncurses.h>
-#include <locale.h>
-#include <string.h>
+
 #include "entities.h"
 #include "map.h"
 
-#define MAIN_HPS 3
-#define FROG_HPS 5
+static bool SCREEN_INVALID_SIZE = false;
+
+#define TOTAL_LIVES 3
 #define MAP_WIDTH 100
 
 #define PERCENTAGE_MAP_X 50
@@ -39,8 +38,8 @@ enum color_codes {
     COLORCODES_CROC_A,
     COLORCODES_FROG_B,
     COLORCODES_FROG_A,
-    COLORCODES_FLOWER_B,
-    COLORCODES_FLOWER_A,
+    COLORCODES_PLANT_B,
+    COLORCODES_PLANT_A,
     COLORCODES_PROJECTILE_F,
     COLORCODES_PROJECTILE_FL,
     COLORCODES_WATER,
@@ -205,7 +204,7 @@ void init_screen(Screen *scrn);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(Screen scr, enum PS prog_state, int *output);
 void display_clock(Position p, short value, short max);
-void display_hps(Position p, short mcurr, short fcurr);
+void display_hps(Position position, short lives);
 void addStringToList(StringNode **list, int color, char *string);
 
 void display_string(const Position position, const int color, const char *string, int length);
@@ -219,5 +218,10 @@ void eraseFor(Position sp, short height, short length);
 void handle_screen_resize();
 
 enum color_codes getEntityColor(enum entity_type type);
+
+void setScreenValidity(bool value);
+bool isScreenValid();
+
+void draw(struct entity_node *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
 
 #endif

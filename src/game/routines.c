@@ -20,16 +20,16 @@ void move_on_direction(EntityMovePacket *entity_move_packet)
 
     switch (entity->direction)
     {
-        case DIRECTION_WEST:
+        case ACTION_WEST:
             entity->x -= CORE_GAME_FROG_JUMP_X;
             break;
-        case DIRECTION_NORTH:
+        case ACTION_NORTH:
             entity->y -= CORE_GAME_FROG_JUMP_Y;
             break;
-        case DIRECTION_EAST:
+        case ACTION_EAST:
             entity->x += CORE_GAME_FROG_JUMP_X;
             break;
-        case DIRECTION_SOUTH:
+        case ACTION_SOUTH:
             entity->y += CORE_GAME_FROG_JUMP_Y;
             break;
         case DIRECTION_STILL:
@@ -37,29 +37,29 @@ void move_on_direction(EntityMovePacket *entity_move_packet)
     }
 }
 
-bool frog_wgetch(Direction *direction, bool *firstIteration)
+bool frog_wgetch(Action *direction, bool *firstIteration)
 {
     switch (wgetch(stdscr))
     {
         case 'w':
         case 'W':
         case KEY_UP:
-            *direction = DIRECTION_NORTH;
+            *direction = ACTION_NORTH;
             break;
         case 's':
         case 'S':
         case KEY_DOWN:
-            *direction = DIRECTION_SOUTH;
+            *direction = ACTION_SOUTH;
             break;
         case 'a':
         case 'A':
         case KEY_LEFT:
-            *direction = DIRECTION_WEST;
+            *direction = ACTION_WEST;
             break;
         case 'd':
         case 'D':
         case KEY_RIGHT:
-            *direction = DIRECTION_EAST;
+            *direction = ACTION_EAST;
             break;
         case 'p':
         case 'P':
@@ -111,7 +111,7 @@ void handle_packet_entityMove(struct game_threads *game, Packet *packet)
         }
     }
 
-    StringArt art = getArt(entity);
+    StringArt art = getArtOfEntity(entity);
     enum color_codes color = getEntityColor(entity->trueType);
 
     display_entity(color, art, currentEntityPosition, newEntityPosition, game->map);
@@ -244,7 +244,7 @@ void *frog_routine(void *args)
     EntityMovePacket entity_move_packet = { };
     entity_move_packet.entity = *frog; // local clone
 
-    Direction direction = DIRECTION_STILL;
+    Action direction = DIRECTION_STILL;
     bool firstIteration = true;
 
     while (true)

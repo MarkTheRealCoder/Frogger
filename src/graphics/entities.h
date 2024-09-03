@@ -9,34 +9,35 @@
 #define CROC_MIN 6  // 2 times
 #define CROC_MAX 15 // 5 times
 
-#define FLOWER_WIDTH 3
-#define FLOWER_HEIGHT 3
+#define PLANT_WIDTH 3
+#define PLANT_HEIGHT 3
 
 #define PROJ_WIDTH 1
 #define PROJ_HEIGHT 1
 
-enum entity_type {
-    CROC_TYPE,
-    CROC_ANGRY_TYPE,
-    FLOWER_TYPE,
-    FLOWER_HARMED_TYPE,
-    FROG_TYPE,
-    FROG_HARMED_TYPE,
-    PROJ_FROG_TYPE,
-    PROJ_FLOWER_TYPE
-};
+typedef enum entity_type {
+    TRUETYPE_CROC,
+    TRUETYPE_ANGRY_CROC,
+    TRUETYPE_PLANT,
+    TRUETYPE_PLANT_HARMED,
+    TRUETYPE_FROG,
+    TRUETYPE_FROG_HARMED,
+    TRUETYPE_PROJ_FROG,
+    TRUETYPE_PROJ_PLANT
+} TrueType;
 
 #define CROC_B_COLOR 51, 102, 0
 #define CROC_A_COLOR 102, 0, 0
 #define FROG_B_COLOR 153, 255, 51       // 90, 247, 22
 #define FROG_A_COLOR 255, 51, 51
-#define FLOWER_B_COLOR 255, 255, 102
-#define FLOWER_A_COLOR 255, 102, 102
+#define PLANT_B_COLOR 255, 255, 102
+#define PLANT_A_COLOR 255, 102, 102
 
 #define PROJECTILE_F_COLOR 0, 51, 25 // FROG
-#define PROJECTILE_FL_COLOR 255, 255, 204 // FLOWER
+#define PROJECTILE_FL_COLOR 255, 255, 204 // PLANT
 
 #define ART_OF_LENGTH_3 3
+#define ART_OF_LENGTH_1 1
 
 static char *_FROG_PLAY_ART[ART_OF_LENGTH_3] = {
         "\\^/",
@@ -61,5 +62,7 @@ static char *_PLANT_PLAY_ART[ART_OF_LENGTH_3] = {
         "♣♣♣",
         "♣♣♣"
 };
+
+static char *_PROJECTILE_PLAY_ART[ART_OF_LENGTH_1] =  { '|' };
 
 #endif

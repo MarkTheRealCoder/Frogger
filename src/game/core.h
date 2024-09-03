@@ -16,8 +16,8 @@
 #define CORE_GAME_ENTITY_SIZE 3
 
 #define CORE_GAME_FROG_LIVES 5
-#define CORE_GAME_FROG_JUMP_Y CORE_GAME_ENTITY_SIZE
 #define CORE_GAME_FROG_JUMP_X 1
+#define CORE_GAME_FROG_JUMP_Y CORE_GAME_ENTITY_SIZE
 
 #define CORE_GAME_LAWN_TOP_LANES 2
 #define CORE_GAME_LAWN_BOTTOM_LANES 2
@@ -36,6 +36,54 @@
 #define CORE_GAME_CROCS_MIN_WIDTH (2 * CORE_GAME_ENTITY_SIZE)
 #define CORE_GAME_CROCS_MAX_WIDTH (3 * CORE_GAME_ENTITY_SIZE)
 
+/**
+ * Game Core Structures
+ */
+
+typedef struct {
+    Position current;
+    Position last;
+    EntityType type;
+    TrueType trueType;
+    int hps;
+    int width;
+    int height;
+    bool readyToShoot;
+} Entity;
+
+struct entities_list {
+    Entity e;
+    struct entities_list *next;
+};
+
+typedef struct {
+    struct entities_list *entities;
+    int entity_num;
+} Entities;
+
+typedef struct {
+    enum {CLOCK_MAIN, CLOCK_SECONDARY} type;
+    unsigned int starting;
+    int current;
+    int fraction;
+} Clock;
+
+typedef struct {
+    void *component;
+    enum {COMPONENT_ENTITY, COMPONENT_ENTITIES, COMPONENT_CLOCK} type;
+} Component;
+
+typedef struct {
+    int current_plants;
+    int current_projectiles;
+    int current_frog_projectiles;
+    Component components[MAX_CONCURRENCY];
+    MapSkeleton map;
+    StringList *achievements;
+} GameSkeleton;
+
+Component *find_component(int index, GameSkeleton *game);
+void update_position (Entity *e, Action movement);
 
 /**
  * Packets related.
@@ -52,13 +100,14 @@ typedef enum
 
 typedef struct
 {
+    int id;
     void *data;
     PacketType type;
     bool cloned;
-} Packet;
+} Packet_;
 
-Packet *create_packet(void *data, int size, PacketType packetType, bool clone);
-void destroy_packet(Packet *packet);
+Packet_ *create_packet(void *data, int size, PacketType packetType, bool clone);
+void destroy_packet(Packet_ *packet);
 
 typedef struct
 {
@@ -74,7 +123,7 @@ typedef struct
 /**
  * Game threads & signals related.
  */
-
+/*
 typedef enum 
 {
     GAMESIGNAL_RUN,
@@ -113,7 +162,6 @@ struct game_threads
 
     MapSkeleton map;
 };
-
 struct comms 
 {
     void *buffer;
@@ -124,7 +172,7 @@ struct comms
 
     int next_prod_index;
     sem_t sem_mutex;
-};
+}; */
 
 void init_game_threads(struct game_threads *game_threads);
 void init_comms(struct game_threads *game, int size);
@@ -165,7 +213,7 @@ void signal_mutex(struct game_threads *game_threads);
 int await_cleanup_count(struct game_threads *game_threads);
 void cleanup_comms_buffer(struct game_threads *game);
 
-void setup_map(struct game_threads *game);
+void setup_map(GameSkeleton *game);
 
 #define CASE_PACKET_ALLOC(structure, type, from, to, size, clone)   \
     case type:                                                      \

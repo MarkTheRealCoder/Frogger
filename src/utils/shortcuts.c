@@ -67,7 +67,7 @@ bool str_eq(char *expected, char *toCompare)
  * @param direction La direzione.
  * @return          La stringa corrispondente alla direzione.
  */
-char *str_direction(Direction direction)
+char *str_direction(Action direction)
 {
     #define DIRECTION_COUNT 5
 
@@ -144,23 +144,23 @@ int *get_screen_size()
 
 /**
  * Restituisce la posizione centrata sull'asse X.
- * @param width La larghezza dell'elemento.
- * @return      La posizione centrata sull'asse X.
+ * @param height    L'altezza dell'elemento.
+ * @return          La posizione centrata sull'asse X.
  */
-int getCenteredX(int width)
+int getCenteredX(const int height)
 {
-    int x = get_screen_size()[1];
-    return (x / 2) - (width / 2);
+    const int x = get_screen_size()[1];
+    return (x / 2) - (height / 2);
 }
 
 /**
  * Restituisce la posizione centrata sull'asse Y.
- * @param height    L'altezza dell'elemento.
+ * @param height    La larghezza dell'elemento.
  * @return          La posizione centrata sull'asse Y.
  */
-int getCenteredY(int height)
+int getCenteredY(const int height)
 {
-    int y = get_screen_size()[0];
+    const int y = get_screen_size()[0];
     return (y / 2) - (height / 2);
 }
 
@@ -169,7 +169,7 @@ int getCenteredY(int height)
  * @param entity    L'entità'.
  * @return          L'icona corrispondente all'entità'.
  */ 
-StringArt getArt(struct entity *entity)
+StringArt getArtOfEntity(const Entity *entity)
 {
     StringArt result = { };
 
@@ -186,9 +186,60 @@ StringArt getArt(struct entity *entity)
         case ENTITY_TYPE__PLANT:
             result.art = _PLANT_PLAY_ART;
             break;
+        case ENTITY_TYPE__PROJECTILE:
+            result.art = _PROJECTILE_PLAY_ART;
+            result.length = ART_OF_LENGTH_1;
         default:
             break;
     }
 
     return result;
 }
+
+/**
+ * Restituisce l'icona corrispondente al tipo di icona'.
+ * @param art       Il contenuto dell'icona.
+ * @param length    La lunghezza dell'icona.
+ * @return          L'icona corrispondente all'entità'.
+ */
+StringArt getArtOfThing(const char **art, const int length)
+{
+    StringArt result = { };
+
+    switch (art)
+    {
+        case _FROG_ART:
+            result.art = _FROG_ART;
+            result.length = _FROG_ART_LENGTH;
+            break;
+        case _FROGGER_PAUSE_ART:
+            result.art = _FROGGER_PAUSE_ART;
+            result.length = _FROGGER_PAUSE_ART;
+            break;
+        case _FROGGER_PAUSE_LOGO:
+            result.art = _FROGGER_PAUSE_LOGO,
+            result.length = _FROGGER_PAUSE_LOGO_LENGTH;
+            break;
+        case _FROGGER_LOGO:
+            result.art = _FROGGER_LOGO,
+            result.length = _FROGGER_LOGO_LENGTH;
+            break;
+        default:
+            result.art = art;
+            result.length = length;
+            break;
+    }
+
+    return result;
+}
+
+/**
+ * Controlla se l'azione è di movimento.
+ * @param action    L'azione da controllare.
+ * @return          Se l'azione è di movimento o meno.
+ */
+bool isActionMovement(const Action action)
+{
+    return action >= ACTION_NORTH && action <= ACTION_WEST;
+}
+

@@ -1,12 +1,5 @@
-/*#include "game/core.h"
-#include "game/addons.h"
-#include "game/routines.h"
-#include "utils/shortcuts.h"
-#include "graphics/drawing.h"
-#include "utils/globals.h"*/
 #include "utils/imports.h"
 
-/*
 void cleanup()
 {
     endwin();
@@ -14,14 +7,13 @@ void cleanup()
     exit(EXIT_FAILURE);
 }
 
-
 int main(int argc, char *argv[])
 {
-    struct program_args parsed_program_args = addons_parse_args(argc, argv); 
+    struct program_args parsed_program_args = addons_parse_args(argc, argv);
 
     if (parsed_program_args.help)
     {
-        addons_args_help(); 
+        addons_args_help();
         return EXIT_SUCCESS;
     }
 
@@ -70,7 +62,7 @@ int main(int argc, char *argv[])
         }
     } while (menuOutput == -1);
 
-
+    /*
     struct game_threads game = { };
     setup_map(&game);
     init_game_threads(&game);
@@ -88,119 +80,12 @@ int main(int argc, char *argv[])
         destroy_packet(startupPacket);
         unlockMancheEndedMutex();
     } while (isGameEnded());
+    */
 
     return EXIT_SUCCESS;
 }
-*/
 
-typedef struct {
-    void *datas;
-    int buffer;
-} DataBuffer;
-
-typedef struct {
-    DataBuffer data;
-    int *buffer;
-    sem_t *writing;
-    sem_t *reading;
-} Carriage;
-
-typedef struct {
-    unsigned int id;
-    void *carriage;
-    void (*producer)(void*);
-} Packet;
-
-static int COMMUNICATIONS = 0;
-
-typedef enum {
-    MESSAGE_RUN=3, 
-    MESSAGE_HALT=2,
-    MESSAGE_STOP=1, 
-    MESSAGE_NONE=0
-} pMessages;
-
-#define SAFE_VALUE -999
-#define MATCH_ID(id, message) ((message) >> 4) == 0 || ((message) >> 4) & (id)
-#define AVAILABLE_DYNPID(result, ids)   \
-{                                       \
-    int copy = ids, count = 0;          \
-                                        \
-    while (copy & 1)                    \
-    {                                   \
-        count++;                        \
-        copy = copy >> 1;               \
-    }                                   \
-                                        \
-    result = 1 << (count);              \
-    ids = ids | result;                 \
-}
-
-void generic_thread(void *packet) {
-
-    Packet *p = (Packet*) packet;
-        void (*producer)(void*) = p->producer;
-        unsigned int id = p->id;
-        unsigned int index = 0;
-        while ((id >> index) != 1) index++;
-    
-    Carriage *carriage = p->carriage;
-        int *buffer = carriage->buffer;
-        DataBuffer data = carriage->data;
-    
-
-    pMessages action = MESSAGE_NONE;
-    while (true) {
-
-        if (MATCH_ID(id, COMMUNICATIONS)) {
-            action  = COMMUNICATIONS & MESSAGE_RUN;
-        }
-
-        if (action == MESSAGE_RUN) {
-            producer(&data);
-
-            sem_wait(carriage->reading);
-            int unlocked = 0;
-            sem_getvalue(carriage->writing, &unlocked);
-            if (unlocked) sem_wait(carriage->writing);
-
-            if (buffer[index] == SAFE_VALUE) buffer[index] = data.buffer;
-
-            sem_getvalue(carriage->writing, &unlocked);
-            if (!unlocked) sem_post(carriage->writing);
-            sem_post(carriage->reading);
-            sleep(1);
-        }
-        else if (action == MESSAGE_STOP) {
-            return;
-        }
-    }
-}
-
-void entity_move(void *_data) {
-    DataBuffer *data = (DataBuffer*) _data;
-    int value = (int) ((int*)data->datas)[0];
-    data->buffer = value;
-}
-
-void produttore(void *_data) {
-    DataBuffer *data = (DataBuffer*) _data;
-    data->buffer = -1; 
-    while (data->buffer == -1) {
-        switch(getch()) {
-            case 'A': data->buffer = LEFT;
-                break;
-            case 'S': data->buffer = DOWN;
-                break;
-            case 'W': data->buffer = UP;
-                break;
-            case 'D': data->buffer = RIGHT;
-                break;
-            case 'P': data->buffer = PAUSE;
-                break;
-        }
-    }
-}
+/*
 
 int main(int argc, char **argv) {
     int prodLeft    = LEFT;
@@ -246,7 +131,7 @@ int main(int argc, char **argv) {
 }
 
 
-
+*/
 
 
 

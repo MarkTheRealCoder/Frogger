@@ -1,14 +1,14 @@
 #include "core.h"
 #include "routines.h"
+#include "../concurrency/threads.h"
 #include "../utils/globals.h"
 #include "../utils/shortcuts.h"
 
 /**
  * Esegue il setup della mappa.
- * @param game  La struttura game_threads.
- * @param width La larghezza della mappa.
+ * @param game  La struttura GameSkeleton.
  */
-void setup_map(struct game_threads *game)
+void setup_map(GameSkeleton *game)
 {
     Position map_position = { getCenteredX(MAP_WIDTH), 5 };
     game->map = display_map(map_position, MAP_WIDTH, NULL);
@@ -545,3 +545,93 @@ void cleanup_comms_buffer(struct game_threads *game)
     signal_mutex(game);
 }
 
+/**
+ * Core routines
+ */
+
+void user_listener(void *_rules)
+{
+    ProductionRules *rules = (ProductionRules *) _rules;
+    int value = -1;
+
+    do
+    {
+        switch(wgetch(stdscr))
+        {
+            case 'W':
+            case 'w':
+            case KEY_UP:
+                value = ACTION_NORTH;
+                break;
+            case 'S':
+            case 's':
+            case KEY_DOWN:
+                value = ACTION_SOUTH;
+                break;
+            case 'A':
+            case 'a':
+            case KEY_LEFT:
+                value = ACTION_WEST;
+                break;
+            case 'D':
+            case 'd':
+            case KEY_RIGHT:
+                value = ACTION_EAST;
+                break;
+            case 'P':
+            case 'p':
+                value = ACTION_PAUSE;
+                break;
+            case ' ':
+                value = ACTION_PAUSE;
+                break;
+            case 'F':
+            case 'f':
+                // todo FIRE projectile?
+                break;
+            default:
+                break;
+        }
+    } while (value == -1);
+
+    rules->buffer = value;
+}
+
+Component *find_component(const int index, GameSkeleton *game)
+{
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        if ((1 << i) == index)
+        {
+            return &game->components[i];
+        }
+    }
+
+    return NULL;
+}
+
+void update_position(Entity *e, const Action action)
+{
+    if (!isActionMovement(action))
+    {
+        return;
+    }
+
+    if (action == ACTION_WEST || action == ACTION_EAST)
+    {
+        e->current.x += (action == ACTION_WEST) ? -CORE_GAME_FROG_JUMP_X : CORE_GAME_FROG_JUMP_X;
+    }
+    else
+    {
+        if (e->type == ENTITY_TYPE__FROG)
+        {
+            e->current.y += (action == ACTION_NORTH) ? -CORE_GAME_FROG_JUMP_Y : CORE_GAME_FROG_JUMP_Y;
+        }
+        else
+        {
+            e->current.y += (action == ACTION_NORTH) ? -CORE_GAME_FROG_JUMP_X : CORE_GAME_FROG_JUMP_X;
+        }
+    }
+
+    e->last = e->current;
+}

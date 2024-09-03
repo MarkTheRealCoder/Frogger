@@ -1,7 +1,8 @@
 #include "../drawing.h"
 #include "../../utils/shortcuts.h"
 
-void print_art(StringArt art, int *cuy, int max) {
+void print_art(StringArt art, int *cuy, int max)
+{
     int pair = alloc_pair(COLORCODES_FROG_ART, COLOR_BLACK);
 
     attron(COLOR_PAIR(pair) | A_BOLD);
@@ -32,8 +33,6 @@ void print_logo(StringArt logo, int pair, int max, int *cuy)
 
 /**
  * Stampa le scelte del menu'.
- * @param current_choice L'indice corrente del menu'.
- * @param max La larghezza della finestra.
  */
 void print_choices(char **choices, int choices_num, int current_choice, int max, int *cuy)
 {
@@ -114,7 +113,7 @@ int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt 
     return choice;
 }
 
-int main_menu(const Screen scr) 
+int main_menu(const Screen screen)
 {
     #define MM_LEN 4
     static char *choices[MM_LEN] = {
@@ -124,13 +123,12 @@ int main_menu(const Screen scr)
         "Quit"
     };
 
-    return generic_menu(scr, 
-        (StringArt){.art=choices, .length=MM_LEN},
-        (StringArt){.art=_FROGGER_LOGO, .length=_FROGGER_LOGO_LENGTH},
-        (StringArt){.art=_FROG_ART, .length=_FROG_ART_LENGTH});
+    return generic_menu(screen, getArtOfThing(choices, MM_LEN),
+                                getArtOfThing(_FROGGER_LOGO, 0),
+                                getArtOfThing(_FROG_ART, 0));
 }
 
-int pause_menu(const Screen scr) 
+int pause_menu(const Screen screen)
 {
     #define PM_LEN 6
     static char *choices[PM_LEN] = {
@@ -142,10 +140,9 @@ int pause_menu(const Screen scr)
         "Quit"
     };
 
-    return generic_menu(scr, 
-        (StringArt){.art=choices, .length=PM_LEN}, 
-        (StringArt){.art=_FROGGER_PAUSE_LOGO, .length=_FROGGER_PAUSE_LOGO_LENGTH}, 
-        (StringArt){.art=_FROGGER_PAUSE_ART, .length=_FROGGER_PAUSE_LENGTH});
+    return generic_menu(screen, getArtOfThing(choices, MM_LEN),
+                                getArtOfThing(_FROGGER_PAUSE_LOGO, 0),
+                                getArtOfThing(_FROGGER_PAUSE_ART, 0));
 }
 
 unsigned int show(const Screen scr, const enum PS prog_state, int *output) 

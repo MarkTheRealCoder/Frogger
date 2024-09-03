@@ -1,5 +1,4 @@
 #include "addons.h"
-#include "../utils/shortcuts.h"
 
 /**
  * Esegue il parsing degli argomenti passati al programma.
@@ -66,7 +65,7 @@ void addons_args_help()
 void addons_args_save_stats(struct game_threads *game)
 {
     FILE *file;
-    
+
     char date[24];
     char file_name[34];
 
@@ -80,10 +79,6 @@ void addons_args_save_stats(struct game_threads *game)
     fprintf(file, "Statistiche della partita di Frogger del `%s`\n\n", date);
 
     fprintf(file, "DETTAGLI PARTITA\n");
-    fprintf(file, "\t* ...\n");
-
-    fprintf(file, "DETTAGLI TECNICI\n");
-    fprintf(file, "\t* Threads totali:%d\n", game->total_threads);
     fprintf(file, "\t* ...\n");
 
     fclose(file); 

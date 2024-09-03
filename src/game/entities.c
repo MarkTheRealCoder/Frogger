@@ -1,63 +1,84 @@
 #include "entities.h"
-#include "../utils/shortcuts.h"
 
-struct entity entities_default_frog(int *index)
+Entity entities_default_frog()
 {
-    int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
-    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15;
+    static int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
+    static int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15;
 
-    struct entity frog = {
-        .id = (*index)++,
+    const Entity entity = {
+        .current = getPosition(x, y),
+        .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__FROG,
-        .width = CORE_GAME_ENTITY_SIZE,
-        .alive = true,
-        .x = x,
-        .y = y,
-        .direction = DIRECTION_STILL
+        .trueType = TRUETYPE_FROG,
+        .hps = TOTAL_LIVES,
+        .width = FROG_WIDTH,
+        .height = FROG_HEIGHT,
+        .readyToShoot = false
     };
 
-    return frog;
+    return entity;
 }
 
-struct entity entities_default_plant(int *index)
+Entity entities_default_plant(int index)
 {
-    static int plant_x = 0;
+    static int x = 0; // todo edit
+    static int y = 0; // todo edit
 
-    struct entity plant = {
-        .id = (*index)++,
+    const Entity entity = {
+        .current = getPosition(x, y),
+        .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__PLANT,
-        .width = CORE_GAME_ENTITY_SIZE,
-        .alive = true,
-        .x = plant_x,
-        .y = 0,
-        .direction = DIRECTION_STILL
+        .trueType = TRUETYPE_PLANT,
+        .hps = 1,
+        .width = PLANT_WIDTH,
+        .height = PLANT_HEIGHT,
+        .readyToShoot = false
     };
 
-    plant_x += 9; // todo edit for spacing
-
-    return plant;
+    return entity;
 }
 
-// todo redo
+Entity new_entities_default_croc(int index)
+{
+    #define OFFSET 0
+
+    static int x = 0; // todo edit
+    static int y = 0; // todo edit
+
+    const Entity entity = {
+        .current = getPosition(x, y),
+        .last = getPosition(-1, -1),
+        .type = ENTITY_TYPE__CROC,
+        .trueType = TRUETYPE_CROC,
+        .hps = 1,
+        .width = 0,
+        .height = CORE_GAME_ENTITY_SIZE,
+        .readyToShoot = false
+    };
+
+    return entity;
+}
+
+// todo redo completely
 struct entity entities_default_croc(int *index)
 {
     static int croc_y = 9; // todo edit for spacing
     static int in_row = 0;
     static int old_width = 0;
-    static Direction direction;
+    static Action direction;
     
     int width = choose_between(2, CORE_GAME_CROCS_MIN_WIDTH, CORE_GAME_CROCS_MAX_WIDTH);
    
     if (in_row == 0)
     {
-        direction = choose_between(2, DIRECTION_WEST, DIRECTION_EAST);
+        direction = choose_between(2, ACTION_WEST, ACTION_EAST);
     }
     DEBUG("chosen direction: %s\n", str_direction(direction));
    
     int delay = choose_between(3, CORE_GAME_ENTITY_SIZE, CORE_GAME_ENTITY_SIZE * 2, CORE_GAME_ENTITY_SIZE * 3);
     DEBUG("chosen delay: %d\n", delay);
 
-    bool is_west = direction == DIRECTION_WEST;
+    bool is_west = direction == ACTION_WEST;
     
     int croc_x = is_west ? CORE_GAME_MAP_WIDTH : 0;
     DEBUG("first croc_x: %d\n", croc_x);
@@ -90,13 +111,24 @@ struct entity entities_default_croc(int *index)
     DEBUG("GENERATED CROC -> x: %d, y: %d, width: %d, direction: %s\n", croc.x, croc.y, croc.width, str_direction(direction));
 
     return croc;
+} // <- todo Redo
+
+/**
+ * Crea una posizione basandosi sulle coordinate.
+ * @param x La coordinata X.
+ * @param y La coordinata Y.
+ * @return La posizione delle coordinate.
+ */
+Position getPosition(const int x, const int y)
+{
+    return (Position) { x, y };
 }
 
 /**
  * Ritorna l'altezza dell'entita' in base al suo tipo.
  * @param entityType Il tipo dell'entita'.
  */ 
-int getHeightByEntityType(EntityType entityType) 
+int getHeightByEntityType(const EntityType entityType)
 {
     return entityType == ENTITY_TYPE__PROJECTILE ? 1 : ENTITY_FROG_HEIGHT;
 }
@@ -105,7 +137,7 @@ int getHeightByEntityType(EntityType entityType)
  * Ritorna la priorita' dell'entita' in base al suo tipo.
  * @param entityType Il tipo dell'entita'.
  */
-int getPriorityByEntityType(EntityType entityType) 
+int getPriorityByEntityType(const EntityType entityType)
 {
     int prio = 0; 
 
@@ -133,17 +165,17 @@ int getPriorityByEntityType(EntityType entityType)
 
 /**
  * Crea un cuboide a partire da una posizione, una larghezza e un'altezza.
- * @param leftcorner La posizione dell'angolo in basso a sinistra del cuboide.
+ * @param leftCorner La posizione dell'angolo in basso a sinistra del cuboide.
  * @param width La larghezza del cuboide.
  * @param height L'altezza del cuboide.
  */
-Cuboid createCuboid(Position leftcorner, int width, int height) 
+Cuboid createCuboid(const Position leftCorner, const int width, const int height)
 {
-    Cuboid cuboid = {
-        .leftcorner = leftcorner,
+    const Cuboid cuboid = {
+        .leftcorner = leftCorner,
         .rightcorner = {
-            .x = leftcorner.x + width - 1,
-            .y = leftcorner.y + height - 1
+            .x = leftCorner.x + width - 1,
+            .y = leftCorner.y + height - 1
         }
     };
 
@@ -155,7 +187,7 @@ Cuboid createCuboid(Position leftcorner, int width, int height)
  * @param c1 Il primo cuboide.
  * @param c2 Il secondo cuboide.
  */
-bool compareCuboids(Cuboid c1, Cuboid c2) 
+bool compareCuboids(const Cuboid c1, const Cuboid c2)
 {
     for (int x = c2.leftcorner.x; x <= c2.rightcorner.x; x++)
     {
@@ -177,24 +209,10 @@ bool compareCuboids(Cuboid c1, Cuboid c2)
 }
 
 /**
- * Crea una posizione a partire da una struct entity.
- * @param e L'entita' da cui estrarre la posizione.
- */
-Position getPositionFromEntity(struct entity e) 
-{
-    Position position = {
-        .x = e.x,
-        .y = e.y
-    };
-
-    return position;
-}
-
-/**
  * Crea un cuboide a partire da una struct entity.
  * @param e L'entita' da cui estrarre il cuboide.
  */
-Cuboid getCuboidFromEntity(struct entity e) 
+Cuboid getCuboidFromEntity(const struct entity e)
 {
     return createCuboid(getPositionFromEntity(e), e.width, getHeightByEntityType(e.type));
 }
@@ -204,7 +222,7 @@ Cuboid getCuboidFromEntity(struct entity e)
  * @param e1 La prima entita'.
  * @param e2 La seconda entita'.
  */
-CollisionPacket areColliding(struct entity e1, struct entity e2) 
+CollisionPacket areColliding(const struct entity e1, const struct entity e2)
 {
     CollisionPacket collisionPacket = {
         .e1 = e1.type,
@@ -222,7 +240,7 @@ CollisionPacket areColliding(struct entity e1, struct entity e2)
     }
     else 
     {
-        collisionPacket.collision_type = ((e1.type & e2.type) == 3) ? COLLISION_DAMAGING : COLLISION_OVERLAPPING;
+        collisionPacket.collision_type = ((e1.type & 3) == 3 && (e2.type & 3) == 3) ? COLLISION_DAMAGING : COLLISION_OVERLAPPING;
     }
 
     return collisionPacket;

@@ -2,7 +2,6 @@
 #define FROGGER_ENTITIES_H
 
 #include "../utils/imports.h"
-#include "../graphics/drawing.h"
 
 #define ENTITIES_FROG_ID 0
 
@@ -19,12 +18,13 @@
 #define ENTITY_FROG_WIDTH 3
 
 typedef enum {
-    DIRECTION_NORTH,
-    DIRECTION_SOUTH,
-    DIRECTION_EAST,
-    DIRECTION_WEST,
-    DIRECTION_STILL
-} Direction;
+    ACTION_NORTH,
+    ACTION_EAST,
+    ACTION_SOUTH,
+    ACTION_WEST,
+    ACTION_SHOOT,
+    ACTION_PAUSE = 69
+} Action;
 
 typedef enum {
     ENTITY_TYPE__EMPTY = 0,
@@ -47,33 +47,12 @@ struct entity {
     bool alive;
     int x;
     int y;
-    Direction direction;
+    Action direction;
 };
 
 struct entity_node {
     struct entity entity;
     struct entity_node *next;
-};
-
-struct croc {
-    entity_id_t id;
-    bool angry;
-    bool dipped;
-};
-
-struct plant {
-    entity_id_t id;
-    // int lives; optional
-};
-
-struct projectile {
-    entity_id_t id;
-    entity_id_t shooter;
-};
-
-struct frog {
-    entity_id_t id;
-    int lives;
 };
 
 typedef struct {
@@ -95,10 +74,11 @@ typedef struct {
     } collision_type;
 } CollisionPacket;
 
+Position getPosition(int x, int y);
 
-struct entity entities_default_frog(int *index);
-struct entity entities_default_plant(int *index);
-struct entity entities_default_croc(int *index);
+Entity entities_default_frog();
+Entity entities_default_plant(int index);
+Entity entities_default_croc(int index);
 
 Position getPositionFromEntity(struct entity e);
 int getPriorityByEntityType(EntityType entityType);

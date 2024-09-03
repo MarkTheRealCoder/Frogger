@@ -58,13 +58,6 @@ typedef enum {
     STATUS_ENDED
 } Status;
 
-typedef enum {
-    MESSAGE_RUN=3, 
-    MESSAGE_HALT=2,
-    MESSAGE_STOP=1, 
-    MESSAGE_NONE=0
-} pMessages;
-
 typedef struct {
     int accesses[PIPE_SIZE];
     char *name;

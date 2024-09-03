@@ -36,7 +36,7 @@ pipe_t *create_pipes(int size, ...)
     
     for (int i = 0; i < size; i++) 
     {
-        array[i] = create_pipe(va_arg(nl, char*));
+        array[i] = create_pipe(va_arg(nl, char*)); // CLION: Leak of memory allocated in function 'create_pipe'
     }
 
     va_end(nl);
@@ -50,7 +50,7 @@ pipe_t *create_pipes(int size, ...)
  * @param _pipe La pipe.
  * @param size  La dimensione del contenuto del buffer.
 */
-void readfrm(void *buff, pipe_t _pipe, size_t size) 
+void readFrom(void *buff, pipe_t _pipe, size_t size)
 {
     //printf("----- %s\n", _pipe.name);
     HANDLE_ERROR(read(_pipe.accesses[READ], buff, size)+1);
@@ -62,7 +62,7 @@ void readfrm(void *buff, pipe_t _pipe, size_t size)
  * @param _pipe La pipe.
  * @param size  La dimensione del contenuto del buffer.
  */
-void writeto(void *buff, pipe_t _pipe, size_t size)
+void writeTo(void *buff, pipe_t _pipe, size_t size)
 {
     HANDLE_ERROR(write(_pipe.accesses[WRITE], buff, size)+1);
 }
@@ -73,7 +73,7 @@ void writeto(void *buff, pipe_t _pipe, size_t size)
  * @param _pipe La pipe.
  * @param size  La dimensione del contenuto del buffer.
 */
-bool readifready(void *buff, pipe_t _pipe, size_t size) 
+bool readIfReady(void *buff, pipe_t _pipe, size_t size)
 {
     fd_set set;
 
@@ -86,7 +86,7 @@ bool readifready(void *buff, pipe_t _pipe, size_t size)
     /* Controlla se sono presenti elementi nella pipe. */
     if (result)
     {
-        readfrm(buff, _pipe, size);
+        readFrom(buff, _pipe, size);
     }
 
     return result;
@@ -98,7 +98,7 @@ bool readifready(void *buff, pipe_t _pipe, size_t size)
  * @param _pipe La pipe.
  * @param size  La dimensione del contenuto del buffer.
  */
-bool writeifready(void *buff, pipe_t _pipe, size_t size) 
+bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
 {
     fd_set set;
 
@@ -111,34 +111,43 @@ bool writeifready(void *buff, pipe_t _pipe, size_t size)
 
     if (result)
     {
-        writeto(buff, _pipe, size);
+        writeTo(buff, _pipe, size);
     }
 
     return result;
 }
 
-int create_message(pMessages action, int receivers) {
-    return (int) action + (receivers << 4);
+SystemMessage create_message(SystemMessage action, int receivers)
+{
+    return action + (receivers << 4);
 }
 
-int send_message(int message, void *service_mem) {
-    memcpy(service_mem, &message, sizeof(int));
+void send_message(int message, void *service_mem)
+{
+    memcpy(service_mem, &message, sizeof(SystemMessage));
 }
 
-pMessages check_for_comms(int id, void * service_mem) {
-    int message = MESSAGE_NONE;
-    memcpy(&message, service_mem, sizeof(int));
-    if (MATCH_ID(id, message)) {
+SystemMessage check_for_comms(int id, void *service_mem)
+{
+    SystemMessage message = MESSAGE_NONE;
+    memcpy(&message, service_mem, sizeof(SystemMessage));
+
+    if (MATCH_ID(id, message))
+    {
         message = message & MESSAGE_RUN;
     }
+
     return message;
 }
 
-void generic_process(int id, int service_comms, void (*producer)(void*), void *args) {
+void generic_process(int id, int service_comms, void (*producer)(void*), void *args)
+{
     void *service_mem = mmap(0, SERVICE_SIZE, PROT_READ, MAP_SHARED, service_comms, 0);
-    pMessages action = MESSAGE_NONE;
-    while (true) {
-        pMessages new_action = check_for_comms(id, service_mem);
+    SystemMessage action = MESSAGE_NONE;
+
+    while (true)
+    {
+        SystemMessage new_action = check_for_comms(id, service_mem);
         if (new_action != MESSAGE_NONE && new_action != action) action = new_action;
         if (action == MESSAGE_RUN) {
             producer(args);
@@ -170,11 +179,12 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
         generic_process(p.dynamic_pid, service_comms, _func, args);
         exit(EXIT_SUCCESS);
     }
-    else if (p.pid == -1) 
+
+    if (p.pid == -1)
     {
         p.status = STATUS_IDLE;
     }
-    
+
     return p;
 }
 
@@ -216,7 +226,7 @@ int process_main(int argc, char **argv) {
     }
 
     Position map_position = { getCenteredX(MAP_WIDTH), 5 };
-    MapSkeleton map = display_map(map_position, MAP_WIDTH, NULL)
+    MapSkeleton map = display_map(map_position, MAP_WIDTH, NULL);
 
     /*GAME*/
     while (true) {
@@ -227,37 +237,4 @@ int process_main(int argc, char **argv) {
     //endwin();
     munmap(service_mem, SERVICE_SIZE);
     close(service_comms);
-}
-
-void draw(struct entity_node *es, MapSkeleton *map, TimerPacket timer, StringList *achievements, int score, bool drawAll) {
-    /*Draw Map if not already drawn*/
-    const static Position map_position = { getCenteredX(MAP_WIDTH), 5 };
-    if (drawAll) display_map(map_position, MAP_WIDTH, map);
-
-    /*Draw timer*/
-    display_clock((Position){ getCenteredX(0) + 25, 2 };, timer.current_time, timer.max_time);
-
-    /*Draw achievements*/
-    const static Position achievementTitlePosition = { getCenteredX(12) + 72, getCenteredY(25) - 2 };
-    const static Position achievementPosition = { getCenteredX(30) + 75, getCenteredY(25) };
-    if (drawAll) display_string(achievementTitlePosition, COLOR_RED, "Achievements", 12);
-    display_achievements(achievementPosition, 34, 25, *achievements);
-
-    /*Draw SCORE and HPS*/
-    const static Position hpsPosition = { getCenteredX(FROG_HPS) - 45, 3 };
-    const static Position scorePosition = { getCenteredX(12), 3 };
-
-    display_hps(hpsPosition, 3, 2);
-    display_string(scorePosition, COLOR_RED, "Score: XXXXX", 12);
-
-    for (int i = 0; i < 5; i++) {
-        struct entity_node *ec = es;
-        while (ec != NULL) {
-            if (getPriorityByEntityType(ec->entity.type) == i) {
-                /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
-                display_entity(COLORCODES_CROC_A, getArt(&ec->entity), (Position){ec->entity.x, ec->entity.y}, (Position){ec->entity.x, ec->entity.y}, *map);
-            }
-            ec = ec->next;
-        }
-    }
 }

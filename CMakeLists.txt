@@ -8,35 +8,38 @@ add_compile_options(-g -Og)
 
 add_executable(frogger  src/main.c
 
-                        # src/utils/globals.c
-                        # src/utils/globals.h
-# 
-                        src/utils/imports.h
-# 
-                        # src/utils/shortcuts.c
-                        # src/utils/shortcuts.h
-                        # 
-                        # src/game/addons.c
-                        # src/game/addons.h
-# 
-                        # src/game/core.c
-                        # src/game/core.h
-# 
-                        # src/game/routines.c
-                        # src/game/routines.h
-# 
-                        # src/game/entities.c
-                        # src/game/entities.h
-                        # 
-                        # src/graphics/drawings/drawing.c
-                        # src/graphics/drawings/menus.c
-                        # src/graphics/drawing.h
-                        # src/graphics/map.h
-                        # src/graphics/entities.h
-                        #
-                        # src/processes/processes.c
-                        # src/processes/processes.h
+        src/utils/imports.h
+
+                        src/utils/shortcuts.c
+                        src/utils/shortcuts.h
+
+                        src/utils/addons.c
+                        src/utils/addons.h
+ 
+                         src/game/core.c
+                         src/game/core.h
+ 
+                         src/game/routines.c
+                         src/game/routines.h
+ 
+                         src/game/entities.c
+                         src/game/entities.h
+                         
+                         src/graphics/drawings/drawing.c
+                         src/graphics/drawings/menus.c
+                         src/graphics/drawing.h
+                         src/graphics/map.h
+                         src/graphics/entities.h
+                        
+                         src/concurrency/processes.c
+                         src/concurrency/processes.h
+
+                         src/concurrency/threads.c
+                         src/concurrency/threads.h
+
+                         src/concurrency/common.c
+                         src/concurrency/common.h
 )
 
-# utile per aggiungere math.h#pow() anche su gcc linux
+# utile per aggiungere math.hpow() anche su gcc linux
 target_link_libraries(frogger PRIVATE m pthread ncursesw)

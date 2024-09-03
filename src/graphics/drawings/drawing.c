@@ -10,9 +10,9 @@ static Range map;
 
 /**
  * Inizializza lo schermo insieme ai colori.
- * @param scrn Lo schermo da inizializzare.
+ * @param screen Lo schermo da inizializzare.
  */
-void init_screen(Screen *scrn) 
+void init_screen(Screen *screen)
 {
     setlocale(LC_ALL, "");
     initscr();
@@ -21,7 +21,7 @@ void init_screen(Screen *scrn)
     keypad(stdscr, true);
     timeout(100);
     start_color();
-    getmaxyx(stdscr, scrn->y, scrn->x);
+    getmaxyx(stdscr, screen->y, screen->x);
 
     init_extended_color(COLORCODES_FROG_ART, FROG_ART_COLOR);
     init_extended_color(COLORCODES_FROG_ART_LOGO, FROG_ART_LOGO_COLOR);
@@ -38,8 +38,8 @@ void init_screen(Screen *scrn)
     init_extended_color(COLORCODES_CROC_A, CROC_A_COLOR);
     init_extended_color(COLORCODES_FROG_B, FROG_B_COLOR);
     init_extended_color(COLORCODES_FROG_A, FROG_A_COLOR);
-    init_extended_color(COLORCODES_FLOWER_B, FLOWER_B_COLOR);
-    init_extended_color(COLORCODES_FLOWER_A, FLOWER_A_COLOR);
+    init_extended_color(COLORCODES_PLANT_B, PLANT_B_COLOR);
+    init_extended_color(COLORCODES_PLANT_A, PLANT_A_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_F, PROJECTILE_F_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_FL, PROJECTILE_FL_COLOR);
 }
@@ -75,34 +75,34 @@ void handle_screen_resize()
  * @param type Il tipo di entità.
  * @return Il colore corrispondente.
  */
-enum color_codes getEntityColor(const enum entity_type type) 
+enum color_codes getEntityColor(const enum entity_type type)
 {
     enum color_codes color;
 
     switch (type) 
     {
-        case CROC_TYPE:
+        case TRUETYPE_CROC:
             color = COLORCODES_CROC_B;
             break;
-        case CROC_ANGRY_TYPE: 
+        case TRUETYPE_ANGRY_CROC:
             color = COLORCODES_CROC_A;
             break;
-        case FLOWER_TYPE:
-            color = COLORCODES_FLOWER_B;
+        case TRUETYPE_PLANT:
+            color = COLORCODES_PLANT_B;
             break;
-        case FLOWER_HARMED_TYPE: 
-            color = COLORCODES_FLOWER_A;
+        case TRUETYPE_PLANT_HARMED:
+            color = COLORCODES_PLANT_A;
             break;
-        case FROG_TYPE: 
+        case TRUETYPE_FROG:
             color = COLORCODES_FROG_B;
             break;
-        case FROG_HARMED_TYPE:
+        case TRUETYPE_FROG_HARMED:
             color = COLORCODES_FROG_A;
             break;
-        case PROJ_FROG_TYPE: 
+        case TRUETYPE_PROJ_FROG:
             color = COLORCODES_PROJECTILE_F;
             break;
-        case PROJ_FLOWER_TYPE: 
+        case TRUETYPE_PROJ_PLANT:
             color = COLORCODES_PROJECTILE_FL;
             break;
     }
@@ -282,26 +282,37 @@ void print_hearts(int *x, int y, int curr, int max, int main_color, int lost_col
 
 /**
  * Stampa a schermo i cuori per i punti vita.
- * @param p La posizione in cui stampare.
- * @param mcurr I punti vita attuali del giocatore.
- * @param fcurr I punti vita attuali della rana.
+ * @param position La posizione in cui stampare.
+ * @param lives I punti vita attuali del giocatore.
  */
-void display_hps(const Position p, const short mcurr, const short fcurr) 
+void display_hps(const Position position, const short lives)
 {
-    int mpair = alloc_pair(COLOR_RED, COLOR_BLACK);
     int fpair = alloc_pair(COLOR_GREEN, COLOR_BLACK);
     int lost = alloc_pair(COLOR_BLACK, COLOR_BLACK);
 
-    int x = p.x;
+    int x = position.x;
+    int y = position.y;
+
     attron(A_BOLD);
-    mvaddch(p.y, x, ' ');
-    /*x++;*/
-    /*print_hearts(&x, p.y, mcurr, MAIN_HPS, mpair, lost);*/
-    /*mvaddch(p.y, x, ' ');*/
-    x++;
-    print_hearts(&x, p.y, fcurr, FROG_HPS, fpair, lost);
-    attroff(A_BOLD);
+    mvaddch(y, x++, ' ');
+
+    print_hearts(&x, y, lives, TOTAL_LIVES, fpair, lost);
     refresh();
+}
+
+/**
+ * Stampa a schermo il punteggio.
+ * @param position La posizione in cui stampare.
+ * @param score Il punteggio attuale del giocatore.
+ */
+void display_score(const Position position, const int score)
+{
+    #define MAX_SIZE 7 + 8
+
+    char stringScore[MAX_SIZE];
+    snprintf(stringScore, sizeof(stringScore), "Score: %d", score);
+
+    display_string(position, COLOR_CYAN, stringScore, MAX_SIZE);
 }
 
 /**
@@ -484,3 +495,78 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
     return _map;
 }
 
+static bool GLOBAL_SCREEN_INVALID_SIZE = false;
+
+/**
+ * Imposta la validità dello schermo.
+ * @param value Il valore da impostare.
+ */
+void setScreenValidity(bool value)
+{
+    GLOBAL_SCREEN_INVALID_SIZE = value;
+}
+
+/**
+ * Controlla se lo schermo è valido.
+ * @return  Se lo schermo è valido.
+ */
+bool isScreenValid()
+{
+    return !GLOBAL_SCREEN_INVALID_SIZE;
+}
+
+void draw(struct entity_node *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
+{
+    const static Position POSITION_MAP = {
+        getCenteredX(MAP_WIDTH),
+        5
+    };
+
+    const static Position POSITION_ACHIEVEMENTS_TITLE = {
+        getCenteredX(12) + 72,
+        getCenteredY(25) - 2
+    };
+
+    const static Position POSITION_ACHIEVEMENTS = {
+        getCenteredX(30) + 75,
+        getCenteredY(25)
+    };
+
+    const static Position POSITION_LIVES = {
+        getCenteredX(TOTAL_LIVES) - 45,
+        3
+    };
+
+    const static Position POSITION_SCORE = {
+        getCenteredX(12),
+        3
+    };
+
+    const static Position POSITION_CLOCK = {
+        getCenteredX(0) + 25,
+        2
+    };
+
+    if (drawAll)
+    {
+        display_map(POSITION_MAP, MAP_WIDTH, map);
+        display_string(POSITION_ACHIEVEMENTS_TITLE, COLOR_RED, "Achievements", 12);
+    }
+
+    display_hps(POSITION_LIVES, lives);
+    display_score(POSITION_SCORE, score);
+
+    display_clock(POSITION_CLOCK, timer->current, timer->starting);
+    display_achievements(POSITION_ACHIEVEMENTS, 34, 25, *achievements);
+
+    for (int i = 0; i < 5; i++) {
+        struct entity_node *ec = es;
+        while (ec != NULL) {
+            if (getPriorityByEntityType(ec->entity.type) == i) {
+                /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
+                display_entity(COLORCODES_CROC_A, getArtOfEntity(&ec->entity), (Position){ec->entity.x, ec->entity.y}, (Position){ec->entity.x, ec->entity.y}, *map);
+            }
+            ec = ec->next;
+        }
+    }
+}
