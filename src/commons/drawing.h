@@ -1,10 +1,47 @@
 #ifndef DRAWING_H
 #define DRAWING_H
 
+#include "imports.h"
+#include "structures.h"
 #include "entities.h"
-#include "map.h"
+
+#define CORE_GAME_HIDEOUTS 5
+#define CORE_GAME_HIDEOUTS_SPACES_INBETWEEN 4
+#define CORE_GAME_MANCHE_MAXTIME 120 // in secondi
+#define CORE_GAME_MANCHE_FRACTION 1 // in secondi
+
+#define CORE_GAME_ENTITY_SIZE 3
+
+#define CORE_GAME_FROG_LIVES 5
+#define CORE_GAME_FROG_JUMP_X 1
+#define CORE_GAME_FROG_JUMP_Y CORE_GAME_ENTITY_SIZE
+
+#define CORE_GAME_LAWN_TOP_LANES 2
+#define CORE_GAME_LAWN_BOTTOM_LANES 2
+#define CORE_GAME_RIVER_LANES 8
+
+#define CORE_GAME_MAP_WIDTH                                         \
+    ((CORE_GAME_HIDEOUTS * CORE_GAME_ENTITY_SIZE) +                 \
+    (CORE_GAME_HIDEOUTS_SPACES_INBETWEEN * CORE_GAME_ENTITY_SIZE) + \
+    (2 * CORE_GAME_ENTITY_SIZE))
+
+#define CORE_GAME_PROJECTILE_WAIT 2 // in secondi
+
+#define CORE_GAME_PLANTS 3
+#define CORE_GAME_CROCS (2 * CORE_GAME_RIVER_LANES)
+
+#define CORE_GAME_CROCS_MIN_WIDTH (2 * CORE_GAME_ENTITY_SIZE)
+#define CORE_GAME_CROCS_MAX_WIDTH (3 * CORE_GAME_ENTITY_SIZE)
 
 static bool SCREEN_INVALID_SIZE = false;
+
+#define MAP_HEIGHT 39
+
+#define WATER_COLOR 51, 51, 255
+#define GRASS_COLOR 0, 102, 0
+#define BLOCKED_COLOR 22, 247, 236
+#define HIDEOUT_COLOR 51, 25, 0
+#define SIDEWALK_COLOR 204, 102, 0
 
 #define TOTAL_LIVES 3
 #define MAP_WIDTH 100
@@ -54,58 +91,28 @@ enum color_codes {
 };
 
 typedef struct {
-    unsigned int length;
-    char **art;
-} StringArt;
-
-typedef struct _string_node{
-    struct _string_node *next;
-    struct _string_node *prev;
-    char *string;
-    int color;
-    int length;
-} StringNode;
+    Position leftcorner;
+    Position rightcorner;
+} Cuboid;
 
 typedef struct {
-    StringNode *last;
-    int nodes;
-} StringList;
+    EntityType e1;
+    EntityType e2;
 
-typedef struct {
-    int x_from;
-    int x_to;
-    int y_from;
-    int y_to;
-} Range;
+    int e1_priority;
+    int e2_priority;
 
-typedef struct {
-    int x;
-    int y;
-} Position;
-
-typedef struct {
-    enum entity_type type;
-    Position pos;       // UP-LEFT CORNER
-} Drawing;
-
-typedef struct {
-    Position *hideouts;
-    Position sidewalk;
-    Position river;
-    Position garden;
-    int width;
-} MapSkeleton;
+    enum {
+        COLLISION_OVERLAPPING, 
+        COLLISION_DAMAGING,
+        COLLISION_AVOIDED
+    } collision_type;
+} CollisionPacket;
 
 typedef struct {
     unsigned int x;
     unsigned int y;
 } Screen;
-
-typedef struct {
-    char *top;
-    char *middle;
-    char *bottom;
-} EntityObject;
 
 enum PS {
     PS_MAIN_MENU,
@@ -222,6 +229,21 @@ enum color_codes getEntityColor(enum entity_type type);
 void setScreenValidity(bool value);
 bool isScreenValid();
 
-void draw(struct entity_node *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
+Position getPosition(int x, int y);
+
+Entity entities_default_frog();
+Entity entities_default_plant(int index);
+Entity entities_default_croc(int index);
+
+Component *find_component(int index, GameSkeleton *game);
+void update_position (Entity *e, Action movement);
+
+Position getPositionFromEntity(Entity e);
+int getPriorityByEntityType(EntityType entityType);
+Cuboid getCuboidFromEntity(Entity e);
+CollisionPacket areColliding(Entity e1, Entity e2);
+
+
+void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
 
 #endif

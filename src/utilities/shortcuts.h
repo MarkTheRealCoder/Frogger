@@ -1,7 +1,8 @@
 #ifndef FROGGER_SHORTCUTS_H
 #define FROGGER_SHORTCUTS_H
 
-#include "imports.h"
+#include "../commons/structures.h"
+#include "../commons/imports.h"
 
 
 // Il valore di terminatore di stringa. ("\0")
@@ -93,11 +94,20 @@ double calculate_percentage(int dividend, int divisor);
 
 char *concat(int n, ...);
 bool str_eq(char *expected, char *toCompare);
+/*
 char *str_packet_type(PacketType packetType);
 char *str_direction(Action direction);
 char *str_entity_type(EntityType entityType);
 char *str_coords(struct entity *entity);
+*/
 
+enum AVAILABLE_ARTS {
+    ART_BIG_FROG,
+    ART_TWO_FROGS,
+    ART_PAUSE_LOGO,
+    ART_MAIN_LOGO,
+    ART_UNKNOWN
+};
 
 int *get_screen_size();
 bool isScreenValid();
@@ -105,7 +115,7 @@ int getCenteredX(int height);
 int getCenteredY(int height);
 
 StringArt getArtOfEntity(const Entity *entity);
-StringArt getArtOfThing(char **art, int length);
+StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, const int length);
 bool isActionMovement(Action action);
 
 #endif // !FROGGER_SHORTCUTS_H

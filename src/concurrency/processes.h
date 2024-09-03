@@ -1,9 +1,9 @@
 #ifndef PROCESSES_H
 #define PROCESSES_H
 
-#include "../utils/imports.h"
-#include "../graphics/drawing.h"
-#include "../utils/shortcuts.h"
+#include "../commons/imports.h"
+#include "../commons/structures.h"
+#include "./shared/shared.h"
 
 #define PROCESS_NUM 24
 

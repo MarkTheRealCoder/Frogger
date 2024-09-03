@@ -197,8 +197,8 @@ int process_main(int argc, char **argv) {
     init_screen(&scr);
 
     /*MAIN MENU*/
+    int output = -1;
     do {
-        int output = -1;
         show(scr, PS_MAIN_MENU, &output);
         switch (output) {
             case MMO_OPEN_SAVING: {

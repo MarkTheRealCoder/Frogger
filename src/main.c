@@ -1,4 +1,4 @@
-#include "utils/imports.h"
+#include "commons/imports.h"
 
 void cleanup()
 {
@@ -62,7 +62,19 @@ int main(int argc, char *argv[])
         }
     } while (menuOutput == -1);
 
-    /*
+    GameSkeleton game = (GameSkeleton){
+        .current_plants = 0, 
+        .current_projectiles = 0, 
+        .current_frog_projectiles = 0, 
+        .achievements = (StringList){.nodes = 0, .last = NULL}
+    };
+
+    thread_main(&game);
+
+    return EXIT_SUCCESS;
+}
+
+/*
     struct game_threads game = { };
     setup_map(&game);
     init_game_threads(&game);
@@ -81,10 +93,6 @@ int main(int argc, char *argv[])
         unlockMancheEndedMutex();
     } while (isGameEnded());
     */
-
-    return EXIT_SUCCESS;
-}
-
 /*
 
 int main(int argc, char **argv) {

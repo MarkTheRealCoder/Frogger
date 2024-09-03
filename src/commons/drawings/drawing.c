@@ -1,12 +1,4 @@
 #include "../drawing.h"
-#include "../../utils/shortcuts.h"
-#include "../../utils/globals.h"
-
-static Range timer;
-static Range hps;
-static Range achievements;
-static Range trash_timers;
-static Range map;
 
 /**
  * Inizializza lo schermo insieme ai colori.
@@ -108,6 +100,139 @@ enum color_codes getEntityColor(const enum entity_type type)
     }
 
     return color;
+}
+
+/**
+ * Crea una posizione basandosi sulle coordinate.
+ * @param x La coordinata X.
+ * @param y La coordinata Y.
+ * @return La posizione delle coordinate.
+ */
+Position getPositionFromEntity(Entity e)
+{
+    return e.current;
+}
+
+/**
+ * Ritorna l'altezza dell'entita' in base al suo tipo.
+ * @param entityType Il tipo dell'entita'.
+ */ 
+int getHeightByEntityType(const EntityType entityType)
+{
+    return entityType == ENTITY_TYPE__PROJECTILE ? 1 : FROG_HEIGHT;
+}
+
+/**
+ * Ritorna la priorita' dell'entita' in base al suo tipo.
+ * @param entityType Il tipo dell'entita'.
+ */
+int getPriorityByEntityType(const EntityType entityType)
+{
+    int prio = 0; 
+
+    switch (entityType) 
+    {
+        case ENTITY_TYPE__PLANT: 
+            prio = 3;
+            break;
+        case ENTITY_TYPE__PROJECTILE: 
+            prio = 4;
+            break;
+        case ENTITY_TYPE__CROC: 
+            prio = 1;
+            break;
+        case ENTITY_TYPE__FROG: 
+            prio = 2;
+            break;
+        case ENTITY_TYPE__EMPTY: 
+            prio = 0;
+            break;
+    }
+
+    return prio;
+}
+
+/**
+ * Crea un cuboide a partire da una posizione, una larghezza e un'altezza.
+ * @param leftCorner La posizione dell'angolo in basso a sinistra del cuboide.
+ * @param width La larghezza del cuboide.
+ * @param height L'altezza del cuboide.
+ */
+Cuboid createCuboid(const Position leftCorner, const int width, const int height)
+{
+    const Cuboid cuboid = {
+        .leftcorner = leftCorner,
+        .rightcorner = {
+            .x = leftCorner.x + width - 1,
+            .y = leftCorner.y + height - 1
+        }
+    };
+
+    return cuboid;
+}
+
+/**
+ * Confronta due cuboidi e ritorna true se si sovrappongono, false altrimenti.
+ * @param c1 Il primo cuboide.
+ * @param c2 Il secondo cuboide.
+ */
+bool compareCuboids(const Cuboid c1, const Cuboid c2)
+{
+    for (int x = c2.leftcorner.x; x <= c2.rightcorner.x; x++)
+    {
+        if (!(c1.leftcorner.x <= x && x <= c1.rightcorner.x))
+        {
+            continue;
+        }
+
+        for (int y = c2.leftcorner.y; y <= c2.rightcorner.y; y++) 
+        {
+            if (c1.leftcorner.y <= y && y <= c1.rightcorner.y) 
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Crea un cuboide a partire da una struct entity.
+ * @param e L'entita' da cui estrarre il cuboide.
+ */
+Cuboid getCuboidFromEntity(const Entity e)
+{
+    return createCuboid(getPositionFromEntity(e), e.width, getHeightByEntityType(e.type));
+}
+
+/**
+ * Controlla se due entita' stanno collidendo.
+ * @param e1 La prima entita'.
+ * @param e2 La seconda entita'.
+ */
+CollisionPacket areColliding(const Entity e1, const Entity e2)
+{
+    CollisionPacket collisionPacket = {
+        .e1 = e1.type,
+        .e2 = e2.type,
+        .e1_priority = getPriorityByEntityType(e1.type),
+        .e2_priority = getPriorityByEntityType(e2.type)
+    };
+
+    Cuboid c1 = getCuboidFromEntity(e1);
+    Cuboid c2 = getCuboidFromEntity(e2);
+
+    if (!compareCuboids(c1, c2)) 
+    {
+        collisionPacket.collision_type = COLLISION_AVOIDED;
+    }
+    else 
+    {
+        collisionPacket.collision_type = ((e1.type & 3) == 3 && (e2.type & 3) == 3) ? COLLISION_DAMAGING : COLLISION_OVERLAPPING;
+    }
+
+    return collisionPacket;
 }
 
 /**
@@ -420,7 +545,7 @@ void display_entity(const int fg, const StringArt art, const Position curr, cons
 /* * * * * * */
 
 void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
-    int hideouts = HIDEOUTS;
+    int hideouts = CORE_GAME_HIDEOUTS;
     while (!(width > hideouts * FROG_WIDTH)) hideouts--;
     map->hideouts = CALLOC(Position, hideouts + 1);
     int total_left = width - hideouts * FROG_WIDTH;
@@ -515,34 +640,34 @@ bool isScreenValid()
     return !GLOBAL_SCREEN_INVALID_SIZE;
 }
 
-void draw(struct entity_node *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
+void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
 {
-    const static Position POSITION_MAP = {
+    Position POSITION_MAP = {
         getCenteredX(MAP_WIDTH),
         5
     };
-
-    const static Position POSITION_ACHIEVEMENTS_TITLE = {
+    // ho dovuto rimuovere tutti gli static perchè non gli piaceva il fatto che getCenteredX e Y non fossero costanti determinate a COMPILE TIME
+    Position POSITION_ACHIEVEMENTS_TITLE = {
         getCenteredX(12) + 72,
         getCenteredY(25) - 2
     };
 
-    const static Position POSITION_ACHIEVEMENTS = {
+    Position POSITION_ACHIEVEMENTS = {
         getCenteredX(30) + 75,
         getCenteredY(25)
     };
 
-    const static Position POSITION_LIVES = {
+    Position POSITION_LIVES = {
         getCenteredX(TOTAL_LIVES) - 45,
         3
     };
 
-    const static Position POSITION_SCORE = {
+    Position POSITION_SCORE = {
         getCenteredX(12),
         3
     };
 
-    const static Position POSITION_CLOCK = {
+    Position POSITION_CLOCK = {
         getCenteredX(0) + 25,
         2
     };
@@ -560,13 +685,101 @@ void draw(struct entity_node *es, MapSkeleton *map, Clock *timer, StringList *ac
     display_achievements(POSITION_ACHIEVEMENTS, 34, 25, *achievements);
 
     for (int i = 0; i < 5; i++) {
-        struct entity_node *ec = es;
+        struct entities_list *ec = es;
         while (ec != NULL) {
-            if (getPriorityByEntityType(ec->entity.type) == i) {
+            if (getPriorityByEntityType(ec->e.type) == i) {
                 /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
-                display_entity(COLORCODES_CROC_A, getArtOfEntity(&ec->entity), (Position){ec->entity.x, ec->entity.y}, (Position){ec->entity.x, ec->entity.y}, *map);
+                display_entity(COLORCODES_CROC_A, getArtOfEntity(&ec->e), ec->e.current, ec->e.last, *map);
             }
             ec = ec->next;
         }
     }
+}
+
+
+void user_listener(void *_rules)
+{
+    ProductionRules *rules = (ProductionRules *) _rules;
+    int value = -1;
+
+    do
+    {
+        switch(wgetch(stdscr))
+        {
+            case 'W':
+            case 'w':
+            case KEY_UP:
+                value = ACTION_NORTH;
+                break;
+            case 'S':
+            case 's':
+            case KEY_DOWN:
+                value = ACTION_SOUTH;
+                break;
+            case 'A':
+            case 'a':
+            case KEY_LEFT:
+                value = ACTION_WEST;
+                break;
+            case 'D':
+            case 'd':
+            case KEY_RIGHT:
+                value = ACTION_EAST;
+                break;
+            case 'P':
+            case 'p':
+                value = ACTION_PAUSE;
+                break;
+            case ' ':
+                value = ACTION_PAUSE;
+                break;
+            case 'F':
+            case 'f':
+                // todo FIRE projectile?
+                break;
+            default:
+                break;
+        }
+    } while (value == -1);
+
+    rules->buffer = value;
+}
+
+Component *find_component(const int index, GameSkeleton *game)
+{
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        if ((1 << i) == index)
+        {
+            return &game->components[i];
+        }
+    }
+
+    return NULL;
+}
+
+void update_position(Entity *e, const Action action)
+{
+    if (!isActionMovement(action))
+    {
+        return;
+    }
+
+    if (action == ACTION_WEST || action == ACTION_EAST)
+    {
+        e->current.x += (action == ACTION_WEST) ? -CORE_GAME_FROG_JUMP_X : CORE_GAME_FROG_JUMP_X;
+    }
+    else
+    {
+        if (e->type == ENTITY_TYPE__FROG)
+        {
+            e->current.y += (action == ACTION_NORTH) ? -CORE_GAME_FROG_JUMP_Y : CORE_GAME_FROG_JUMP_Y;
+        }
+        else
+        {
+            e->current.y += (action == ACTION_NORTH) ? -CORE_GAME_FROG_JUMP_X : CORE_GAME_FROG_JUMP_X;
+        }
+    }
+
+    e->last = e->current;
 }

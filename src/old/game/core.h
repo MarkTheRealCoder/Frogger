@@ -8,82 +8,9 @@
 #define CORE_THREADS 5 
 #define CORE_BUFFER_SIZE 64
 
-#define CORE_GAME_HIDEOUTS 5
-#define CORE_GAME_HIDEOUTS_SPACES_INBETWEEN 4
-#define CORE_GAME_MANCHE_MAXTIME 120 // in secondi
-#define CORE_GAME_MANCHE_FRACTION 1 // in secondi
-
-#define CORE_GAME_ENTITY_SIZE 3
-
-#define CORE_GAME_FROG_LIVES 5
-#define CORE_GAME_FROG_JUMP_X 1
-#define CORE_GAME_FROG_JUMP_Y CORE_GAME_ENTITY_SIZE
-
-#define CORE_GAME_LAWN_TOP_LANES 2
-#define CORE_GAME_LAWN_BOTTOM_LANES 2
-#define CORE_GAME_RIVER_LANES 8
-
-#define CORE_GAME_MAP_WIDTH                                         \
-    ((CORE_GAME_HIDEOUTS * CORE_GAME_ENTITY_SIZE) +                 \
-    (CORE_GAME_HIDEOUTS_SPACES_INBETWEEN * CORE_GAME_ENTITY_SIZE) + \
-    (2 * CORE_GAME_ENTITY_SIZE))
-
-#define CORE_GAME_PROJECTILE_WAIT 2 // in secondi
-
-#define CORE_GAME_PLANTS 3
-#define CORE_GAME_CROCS (2 * CORE_GAME_RIVER_LANES)
-
-#define CORE_GAME_CROCS_MIN_WIDTH (2 * CORE_GAME_ENTITY_SIZE)
-#define CORE_GAME_CROCS_MAX_WIDTH (3 * CORE_GAME_ENTITY_SIZE)
-
 /**
  * Game Core Structures
  */
-
-typedef struct {
-    Position current;
-    Position last;
-    EntityType type;
-    TrueType trueType;
-    int hps;
-    int width;
-    int height;
-    bool readyToShoot;
-} Entity;
-
-struct entities_list {
-    Entity e;
-    struct entities_list *next;
-};
-
-typedef struct {
-    struct entities_list *entities;
-    int entity_num;
-} Entities;
-
-typedef struct {
-    enum {CLOCK_MAIN, CLOCK_SECONDARY} type;
-    unsigned int starting;
-    int current;
-    int fraction;
-} Clock;
-
-typedef struct {
-    void *component;
-    enum {COMPONENT_ENTITY, COMPONENT_ENTITIES, COMPONENT_CLOCK} type;
-} Component;
-
-typedef struct {
-    int current_plants;
-    int current_projectiles;
-    int current_frog_projectiles;
-    Component components[MAX_CONCURRENCY];
-    MapSkeleton map;
-    StringList *achievements;
-} GameSkeleton;
-
-Component *find_component(int index, GameSkeleton *game);
-void update_position (Entity *e, Action movement);
 
 /**
  * Packets related.

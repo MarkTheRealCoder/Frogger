@@ -1,7 +1,9 @@
 #ifndef THREADS_H
 #define THREADS_H
 
-#include "../utils/imports.h"
+#include "../commons/imports.h"
+#include "../commons/structures.h"
+#include "./shared/shared.h"
 
 typedef struct {
     ProductionRules rules;
@@ -30,6 +32,7 @@ static sem_t POLLING_READING;
        `-------------'
           "BAK BAK"
  */
-PollingResult thread_polling_routine();
+PollingResult thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *game);
+void thread_main(GameSkeleton *game);
 
 #endif //THREADS_H

@@ -1,5 +1,4 @@
 #include "../drawing.h"
-#include "../../utils/shortcuts.h"
 
 void print_art(StringArt art, int *cuy, int max)
 {
@@ -123,9 +122,9 @@ int main_menu(const Screen screen)
         "Quit"
     };
 
-    return generic_menu(screen, getArtOfThing(choices, MM_LEN),
-                                getArtOfThing(_FROGGER_LOGO, 0),
-                                getArtOfThing(_FROG_ART, 0));
+    return generic_menu(screen, getArtOfThing(ART_UNKNOWN ,choices, MM_LEN),
+                                getArtOfThing(ART_MAIN_LOGO, _FROGGER_LOGO, 0),
+                                getArtOfThing(ART_BIG_FROG, _FROG_ART, 0));
 }
 
 int pause_menu(const Screen screen)
@@ -140,9 +139,9 @@ int pause_menu(const Screen screen)
         "Quit"
     };
 
-    return generic_menu(screen, getArtOfThing(choices, MM_LEN),
-                                getArtOfThing(_FROGGER_PAUSE_LOGO, 0),
-                                getArtOfThing(_FROGGER_PAUSE_ART, 0));
+    return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MM_LEN),
+                                getArtOfThing(ART_PAUSE_LOGO, _FROGGER_PAUSE_LOGO, 0),
+                                getArtOfThing(ART_TWO_FROGS, _FROGGER_PAUSE_ART, 0));
 }
 
 unsigned int show(const Screen scr, const enum PS prog_state, int *output) 

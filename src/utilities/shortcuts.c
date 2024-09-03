@@ -202,25 +202,25 @@ StringArt getArtOfEntity(const Entity *entity)
  * @param length    La lunghezza dell'icona.
  * @return          L'icona corrispondente all'entità'.
  */
-StringArt getArtOfThing(const char **art, const int length)
+StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, const int length)
 {
     StringArt result = { };
 
-    switch (art)
+    switch (artid)
     {
-        case _FROG_ART:
+        case ART_BIG_FROG:
             result.art = _FROG_ART;
             result.length = _FROG_ART_LENGTH;
             break;
-        case _FROGGER_PAUSE_ART:
+        case ART_TWO_FROGS:
             result.art = _FROGGER_PAUSE_ART;
-            result.length = _FROGGER_PAUSE_ART;
+            result.length = _FROGGER_PAUSE_LENGTH;
             break;
-        case _FROGGER_PAUSE_LOGO:
+        case ART_PAUSE_LOGO:
             result.art = _FROGGER_PAUSE_LOGO,
             result.length = _FROGGER_PAUSE_LOGO_LENGTH;
             break;
-        case _FROGGER_LOGO:
+        case ART_MAIN_LOGO:
             result.art = _FROGGER_LOGO,
             result.length = _FROGGER_LOGO_LENGTH;
             break;

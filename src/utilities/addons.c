@@ -62,7 +62,7 @@ void addons_args_help()
  * Salva le statistiche di gioco su file.
  * @param game  La struttura del gioco.
  */
-void addons_args_save_stats(struct game_threads *game)
+void addons_args_save_stats(GameSkeleton *game)
 {
     FILE *file;
 

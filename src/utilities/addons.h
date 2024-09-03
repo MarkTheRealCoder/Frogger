@@ -1,7 +1,8 @@
 #ifndef FROGGER_ADDONS_H
 #define FROGGER_ADDONS_H
 
-#include "imports.h"
+#include "../commons/imports.h"
+#include "../commons/structures.h"
 
 /**
  * Program arguments.
@@ -18,6 +19,6 @@ struct program_args
 
 struct program_args addons_parse_args(int argc, char *argv[]);
 void addons_args_help();
-void addons_args_save_stats(struct game_threads *game_threads);
+void addons_args_save_stats(GameSkeleton *game);
 
 #endif // !FROGGER_ADDONS_H

@@ -83,8 +83,5 @@ void generic_thread(void *packet)
 }
 
 
-void thread_main(int argc, char **argv) {
-    GameSkeleton game = {.current_plants = 0, .current_projectiles = 0, .current_frog_projectiles = 0};
-    setup_map(&game);
-    // todo to be continued
+void thread_main(GameSkeleton *game) {
 }

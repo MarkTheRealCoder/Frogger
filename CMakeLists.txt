@@ -8,37 +8,29 @@ add_compile_options(-g -Og)
 
 add_executable(frogger  src/main.c
 
-        src/utils/imports.h
+                        src/commons/imports.h
+                        src/commons/structures.h
 
-                        src/utils/shortcuts.c
-                        src/utils/shortcuts.h
+                        src/commons/entities.h
 
-                        src/utils/addons.c
-                        src/utils/addons.h
- 
-                         src/game/core.c
-                         src/game/core.h
- 
-                         src/game/routines.c
-                         src/game/routines.h
- 
-                         src/game/entities.c
-                         src/game/entities.h
-                         
-                         src/graphics/drawings/drawing.c
-                         src/graphics/drawings/menus.c
-                         src/graphics/drawing.h
-                         src/graphics/map.h
-                         src/graphics/entities.h
+                        src/commons/drawing.h
+                        src/commons/drawings/drawing.c
+                        src/commons/drawings/menus.c
+
+                        src/utilities/addons.c
+                        src/utilities/addons.h
+
+                        src/utilities/shortcuts.c
+                        src/utilities/shortcuts.h
+
+                        src/concurrency/shared/shared.c
+                        src/concurrency/shared/shared.h
                         
-                         src/concurrency/processes.c
-                         src/concurrency/processes.h
-
-                         src/concurrency/threads.c
-                         src/concurrency/threads.h
-
-                         src/concurrency/common.c
-                         src/concurrency/common.h
+                        src/concurrency/processes.c
+                        src/concurrency/processes.h
+                        
+                        src/concurrency/threads.c
+                        src/concurrency/threads.h
 )
 
 # utile per aggiungere math.hpow() anche su gcc linux

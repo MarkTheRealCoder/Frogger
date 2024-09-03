@@ -1,8 +1,8 @@
-#include "common.h"
+#include "shared.h"
 
 PollingResult handle_clock(Component *component, int value)
 {
-    Clock *clock = (Clock*) component;
+    Clock *clock = (Clock*) component->component;
     clock->current = value;
 
     if (clock->type == CLOCK_MAIN && value <= 0)
@@ -19,9 +19,9 @@ PollingResult handle_clock(Component *component, int value)
     return POLLING_NONE;
 }
 
-PollingResult handle_entity(Component *component, int value, bool canPause)
+PollingResult handle_entity(Component *component, int value, int canPause)
 {
-    Entity *entity = (Entity *) component;
+    Entity *entity = (Entity *) component->component;
 
     if (isActionMovement(value))
     {
@@ -41,7 +41,7 @@ PollingResult handle_entity(Component *component, int value, bool canPause)
 
 PollingResult handle_entities(Component *component, int value)
 {
-    Entities *entities = (Entities *) component;
+    Entities *entities = (Entities *) component->component;
     struct entities_list *list = entities->entities;
 
     while (list != NULL)
@@ -63,8 +63,6 @@ PollingResult handle_entities(Component *component, int value)
 
     return POLLING_NONE;
 }
-
-PollingResult
 
 /**
  * Inizializza i semafori.

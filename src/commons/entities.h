@@ -1,7 +1,5 @@
-#ifndef ENTITIES_G_H
-#define ENTITIES_G_H
-
-#include "../utils/imports.h"
+#ifndef ENTITIES_H
+#define ENTITIES_H
 
 #define FROG_WIDTH 3
 #define FROG_HEIGHT 3
@@ -14,17 +12,6 @@
 
 #define PROJ_WIDTH 1
 #define PROJ_HEIGHT 1
-
-typedef enum entity_type {
-    TRUETYPE_CROC,
-    TRUETYPE_ANGRY_CROC,
-    TRUETYPE_PLANT,
-    TRUETYPE_PLANT_HARMED,
-    TRUETYPE_FROG,
-    TRUETYPE_FROG_HARMED,
-    TRUETYPE_PROJ_FROG,
-    TRUETYPE_PROJ_PLANT
-} TrueType;
 
 #define CROC_B_COLOR 51, 102, 0
 #define CROC_A_COLOR 102, 0, 0
@@ -58,9 +45,9 @@ static char *_CROC_X2_PLAY_ART[ART_OF_LENGTH_3] = {
 };
 
 static char *_PLANT_PLAY_ART[ART_OF_LENGTH_3] = {
-        "♣♣♣",
-        "♣♣♣",
-        "♣♣♣"
+        "\\^/",
+        "-*-",
+        "/|\\"
 };
 
 static char *_PROJECTILE_PLAY_ART[ART_OF_LENGTH_1] =  { '|' };
