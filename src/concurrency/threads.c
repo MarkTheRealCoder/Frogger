@@ -82,6 +82,48 @@ void generic_thread(void *packet)
     }
 }
 
+void thread_main(GameSkeleton *game, struct entities_list **list)
+{
+    init_semaphores();
+    int buffer[MAX_CONCURRENCY] = {COMMS_EMPTY};
 
-void thread_main(GameSkeleton *game) {
+    while (true) {
+        // Polling routine
+        PollingResult result = thread_polling_routine(buffer, game);
+        switch (result) {
+            case POLLING_FROG_DEAD: // Manche lost
+                break;
+            case POLLING_GAME_PAUSE: // Pause
+                break;
+            case POLLING_MANCHE_LOST: // Manche lost
+                break;
+        }
+        // Validazione delle entità
+        // Creazione di nuove entità
+        // Collisioni
+        // Rimozione entità e aggiornamento
+        // Display
+    }
+
+    close_semaphores();
+}
+
+/**
+ * Inizializza i semafori.
+ */
+void init_semaphores()
+{
+    sem_init(&COMMUNICATION_SEMAPHORE, 0, 1);
+    sem_init(&POLLING_WRITING, 0, 1);
+    sem_init(&POLLING_READING, 0, 1);
+}
+
+/**
+ * Distrugge i semafori.
+ */
+void close_semaphores()
+{
+    sem_close(&COMMUNICATION_SEMAPHORE);
+    sem_close(&POLLING_WRITING);
+    sem_close(&POLLING_READING);
 }

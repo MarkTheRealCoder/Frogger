@@ -4,6 +4,7 @@
 #include "../../commons/imports.h"
 #include "../../commons/structures.h"
 
+#pragma once
 // Rappresenta il caso in cui una cella del buffer di comunicazione e' vuota.
 #define COMMS_EMPTY -10000
 

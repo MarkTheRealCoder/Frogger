@@ -5,6 +5,7 @@
 #include "structures.h"
 #include "entities.h"
 
+
 #define CORE_GAME_HIDEOUTS 5
 #define CORE_GAME_HIDEOUTS_SPACES_INBETWEEN 4
 #define CORE_GAME_MANCHE_MAXTIME 120 // in secondi
@@ -32,8 +33,6 @@
 
 #define CORE_GAME_CROCS_MIN_WIDTH (2 * CORE_GAME_ENTITY_SIZE)
 #define CORE_GAME_CROCS_MAX_WIDTH (3 * CORE_GAME_ENTITY_SIZE)
-
-static bool SCREEN_INVALID_SIZE = false;
 
 #define MAP_HEIGHT 39
 
@@ -207,7 +206,7 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
 #define FROG_ART_LOGO_COLOR_Q 255, 51, 51 // 153 0 0
 #define FROG_ART_SELECTED_COLOR 255, 124, 9 // 255 153 51
 
-void init_screen(Screen *scrn);
+void init_screen(Screen *screen);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(Screen scr, enum PS prog_state, int *output);
 void display_clock(Position p, short value, short max);
@@ -240,9 +239,10 @@ void update_position (Entity *e, Action movement);
 
 Position getPositionFromEntity(Entity e);
 int getPriorityByEntityType(EntityType entityType);
+int getHeightByEntityType(EntityType entityType);
+
 Cuboid getCuboidFromEntity(Entity e);
 CollisionPacket areColliding(Entity e1, Entity e2);
-
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
 

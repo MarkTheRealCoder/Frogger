@@ -50,6 +50,6 @@ static char *_PLANT_PLAY_ART[ART_OF_LENGTH_3] = {
         "/|\\"
 };
 
-static char *_PROJECTILE_PLAY_ART[ART_OF_LENGTH_1] =  { '|' };
+static char *_PROJECTILE_PLAY_ART[ART_OF_LENGTH_1] =  { "|" };
 
 #endif

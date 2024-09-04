@@ -8,15 +8,6 @@
 // Il valore di terminatore di stringa. ("\0")
 #define TERM 1
 
-
-// Esegue lo sleep per un numero di microsecondi.
-#define SLEEP_MICROS(quantity) usleep(quantity)
-// Esegue lo sleep per un numero di millisecondi.
-#define SLEEP_MILLIS(quantity) usleep(quantity * 1000)
-// Esegue lo sleep per un numero di secondi.
-#define SLEEP_SECONDS(quantity) sleep(quantity)
-
-
 // malloc() - Alloca la memoria.
 #define MALLOC(type, size) (type *)malloc(sizeof(type) * (size))
 
@@ -36,22 +27,6 @@
 #define CALLOC_TERM(type, size) (type *)calloc((size + TERM), sizeof(type))
 // Rialloca la memoria (realloc()) con terminatore.
 #define REALLOC_TERM(type, arr, size) (type *)realloc(arr, (sizeof(type) * size) + TERM)
-
-
-/**
- * Alloca la `packet->data`. 
- * Se `data` vive nello stack si deve eseguire una clonazione `clone = true`.
- * Se `data` vive nell'heap non è necessario eseguire una clonazione `clone = false`.
- */
-#define ALLOC_PACKET_DATA(from, to, type, size, clone)  \
-    if (clone)                                          \
-    {                                                   \
-        to = MALLOC(type, size);                        \
-        CRASH_IF_NULL(to)                               \
-        MEMCPY(from, to, type, size);                   \
-    }                                                   \
-    else                                                \
-        to = from;
 
 /**
  * Crasha il programma se `pointer = NULL`.
@@ -83,9 +58,6 @@ void sleepy(int quantity, TimeFrame timeFrame);
 
 int gen_num(int min, int max);
 int choose_between(int count, ...);
-int count_digits(int value);
-int divide_if_possible(int dividend, int divisor);
-double calculate_percentage(int dividend, int divisor);
 
 
 /**
@@ -94,12 +66,9 @@ double calculate_percentage(int dividend, int divisor);
 
 char *concat(int n, ...);
 bool str_eq(char *expected, char *toCompare);
-/*
-char *str_packet_type(PacketType packetType);
 char *str_direction(Action direction);
 char *str_entity_type(EntityType entityType);
-char *str_coords(struct entity *entity);
-*/
+char *str_coords(Entity entity);
 
 enum AVAILABLE_ARTS {
     ART_BIG_FROG,
@@ -110,12 +79,14 @@ enum AVAILABLE_ARTS {
 };
 
 int *get_screen_size();
-bool isScreenValid();
 int getCenteredX(int height);
 int getCenteredY(int height);
 
 StringArt getArtOfEntity(const Entity *entity);
-StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, const int length);
+StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, int length);
 bool isActionMovement(Action action);
+
+Position getMiddleOfRow(Position row, int width, int rowNumber, int innerMiddles);
+Position getMiddleOfRowEntityOffset(Position row, int rowWidth, int innerMiddles, int entitySize);
 
 #endif // !FROGGER_SHORTCUTS_H

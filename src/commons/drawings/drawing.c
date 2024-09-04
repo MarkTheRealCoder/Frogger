@@ -34,12 +34,14 @@ void init_screen(Screen *screen)
     init_extended_color(COLORCODES_PLANT_A, PLANT_A_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_F, PROJECTILE_F_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_FL, PROJECTILE_FL_COLOR);
+
+    setScreenValidity(true);
 }
 
 /**
  * Controlla la dimensione dello schermo ogni volta che viene ridimensionato.
  */
-void handle_screen_resize() 
+void handle_screen_resize()
 {
     #define MIN_ROWS 40
     #define MIN_COLS 100
@@ -103,14 +105,24 @@ enum color_codes getEntityColor(const enum entity_type type)
 }
 
 /**
+ * Prende la posizione dell'entità.
+ * @param entity L'entità.
+ * @return La posizione dell'entità.
+ */
+Position getPositionFromEntity(const Entity entity)
+{
+    return entity.current;
+}
+
+/**
  * Crea una posizione basandosi sulle coordinate.
  * @param x La coordinata X.
  * @param y La coordinata Y.
  * @return La posizione delle coordinate.
  */
-Position getPositionFromEntity(Entity e)
+Position getPosition(const int x, const int y)
 {
-    return e.current;
+    return (Position) { .x = x, .y = y };
 }
 
 /**
@@ -558,8 +570,8 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
         map->hideouts[i].y = sp.y + FROG_HEIGHT; 
         spacing += left_per_space;
         if (extra_left) {
-            if (spaces && i + 1 == ((int) (hideouts / 2)) + 1) spacing += extra_left;
-            else if (i + 1 == ((int) (hideouts / 2)) + 1 || i + 1 == ((int) (hideouts / 2)) + 2) spacing += (int) (extra_left / 2);
+            if (spaces && i + 1 == ((int) (hideouts / 2)) + 1) spacing += extra_left;                                               /* [_0_____0_] */
+            else if (i + 1 == ((int) (hideouts / 2)) + 1 || i + 1 == ((int) (hideouts / 2)) + 2) spacing += (int) (extra_left / 2); /* [_0__0__0_] */
         }
         map->hideouts[i].x = sp.x + spacing;
         spacing += FROG_WIDTH;
@@ -570,7 +582,7 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
     map->garden.x = map->sidewalk.x = map->river.x = sp.x;
     map->garden.y = map->hideouts[0].y + FROG_HEIGHT;
     map->river.y = map->garden.y + FROG_HEIGHT * 2;
-    map->sidewalk.y = map->river.y + FROG_HEIGHT * 8;
+    map->sidewalk.y = map->river.y + FROG_HEIGHT * CORE_GAME_RIVER_LANES;
     map->width = width;
 }
 
@@ -620,8 +632,6 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
     return _map;
 }
 
-static bool GLOBAL_SCREEN_INVALID_SIZE = false;
-
 /**
  * Imposta la validità dello schermo.
  * @param value Il valore da impostare.
@@ -631,13 +641,9 @@ void setScreenValidity(bool value)
     GLOBAL_SCREEN_INVALID_SIZE = value;
 }
 
-/**
- * Controlla se lo schermo è valido.
- * @return  Se lo schermo è valido.
- */
 bool isScreenValid()
 {
-    return !GLOBAL_SCREEN_INVALID_SIZE;
+    return GLOBAL_SCREEN_INVALID_SIZE;
 }
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
@@ -687,9 +693,9 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
     for (int i = 0; i < 5; i++) {
         struct entities_list *ec = es;
         while (ec != NULL) {
-            if (getPriorityByEntityType(ec->e.type) == i) {
+            if (getPriorityByEntityType(ec->e->type) == i) {
                 /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
-                display_entity(COLORCODES_CROC_A, getArtOfEntity(&ec->e), ec->e.current, ec->e.last, *map);
+                display_entity(COLORCODES_CROC_A, getArtOfEntity(ec->e), ec->e->current, ec->e->last, *map);
             }
             ec = ec->next;
         }

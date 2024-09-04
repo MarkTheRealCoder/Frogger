@@ -64,18 +64,4 @@ PollingResult handle_entities(Component *component, int value)
     return POLLING_NONE;
 }
 
-/**
- * Inizializza i semafori.
- */
-void init_semaphores()
-{
 
-}
-
-/**
- * Distrugge i semafori.
- */
-void destroy_semaphores()
-{
-
-}

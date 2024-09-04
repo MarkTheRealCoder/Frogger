@@ -7,6 +7,19 @@
 /**
  *  Qui ci sono tutte le strutture globalmente utili
 */
+#pragma once
+
+typedef enum {
+    POLLING_NONE,
+    POLLING_MANCHE_LOST,
+    POLLING_GAME_PAUSE = 69,
+    POLLING_FROG_DEAD
+} PollingResult;
+
+typedef struct {
+    int *rules;
+    int buffer;
+} ProductionRules;
 
 typedef enum {
     ACTION_NORTH,
@@ -72,7 +85,7 @@ typedef struct {
 } Entity;
 
 struct entities_list {
-    Entity e;
+    Entity *e;
     struct entities_list *next;
 };
 

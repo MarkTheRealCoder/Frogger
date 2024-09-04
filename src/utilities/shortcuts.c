@@ -6,7 +6,7 @@
  * @param max   Estremo maggiore.
  * @return      Il numero casuale generato.
  */
-int gen_num(int min, int max)
+int gen_num(const int min, const int max)
 {
     return min + rand() % (max - min + 1);
 }
@@ -17,7 +17,7 @@ int gen_num(int min, int max)
  * @param ...   Gli argomenti.
  * @return      Il valore scelto.
  */
-int choose_between(int count, ...) 
+int choose_between(const int count, ...)
 {
     va_list args;
     va_start(args, count);
@@ -45,7 +45,7 @@ int choose_between(int count, ...)
  * @param quantity      La quantità di tempo.
  * @param timeFrame     L'unità di misura del tempo.
  */
-void sleepy(int quantity, TimeFrame timeFrame)
+void sleepy(const int quantity, const TimeFrame timeFrame)
 {
     int multiplier = timeFrame == TIMEFRAME_MICROS ? 1 : timeFrame == TIMEFRAME_MILLIS ? 1000 : 1000000;
     usleep(multiplier * quantity);
@@ -67,7 +67,7 @@ bool str_eq(char *expected, char *toCompare)
  * @param direction La direzione.
  * @return          La stringa corrispondente alla direzione.
  */
-char *str_direction(Action direction)
+char *str_direction(const Action direction)
 {
     #define DIRECTION_COUNT 5
 
@@ -202,7 +202,7 @@ StringArt getArtOfEntity(const Entity *entity)
  * @param length    La lunghezza dell'icona.
  * @return          L'icona corrispondente all'entità'.
  */
-StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, const int length)
+StringArt getArtOfThing(const enum AVAILABLE_ARTS artid, char **art, const int length)
 {
     StringArt result = { };
 
@@ -243,3 +243,18 @@ bool isActionMovement(const Action action)
     return action >= ACTION_NORTH && action <= ACTION_WEST;
 }
 
+Position getMiddleOfRow(Position position, int width, int rowNumber, int innerMiddles)
+{
+    position.x = width / (2 * innerMiddles);
+    position.y = rowNumber * 3;
+    return position;
+}
+
+// todo fix
+Position getMiddleOfRowEntityOffset(Position row, int rowWidth, int entitySize, int innerMiddles)
+{
+    Position middle = getMiddleOfRow(row, rowWidth, entitySize, innerMiddles);
+    middle.x -= entitySize / 2;
+
+    return middle;
+}

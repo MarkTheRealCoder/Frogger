@@ -19,17 +19,7 @@
 #ifndef IMPORT
 #define IMPORT
 
-typedef enum {
-    POLLING_NONE,
-    POLLING_MANCHE_LOST,
-    POLLING_GAME_PAUSE = 69,
-    POLLING_FROG_DEAD
-} PollingResult;
-
-typedef struct {
-    int *rules;
-    int buffer;
-} ProductionRules;
+#pragma once
 
 #ifndef GAME_ADDONS
 #define GAME_ADDONS
@@ -61,8 +51,15 @@ typedef struct {
 #include "../utilities/shortcuts.h"
 #endif
 
+#ifndef GAME_COMMON
+#define GAME_COMMON
+#include "../utilities/common.h"
+#endif
 
 #endif
+
+static bool GLOBAL_SCREEN_INVALID_SIZE;
+
 #define TEST_MODE true
 #define DEBUG_MODE false
 

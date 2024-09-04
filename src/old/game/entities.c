@@ -2,8 +2,8 @@
 
 Entity entities_default_frog()
 {
-    static int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
-    static int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15;
+    int x = getCenteredX(CORE_GAME_ENTITY_SIZE);
+    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15;
 
     const Entity entity = {
         .current = getPosition(x, y),

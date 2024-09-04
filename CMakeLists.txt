@@ -31,6 +31,9 @@ add_executable(frogger  src/main.c
                         
                         src/concurrency/threads.c
                         src/concurrency/threads.h
+
+                        src/utilities/common.c
+                        src/utilities/common.h
 )
 
 # utile per aggiungere math.hpow() anche su gcc linux

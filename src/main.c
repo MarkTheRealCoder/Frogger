@@ -1,6 +1,6 @@
 #include "commons/imports.h"
 
-void cleanup()
+void handle_sigenv()
 {
     endwin();
     printf("SIGSEGV occured!\n");
@@ -18,14 +18,14 @@ int main(int argc, char *argv[])
     }
 
     srand(time(NULL));
-    
+
     Screen screen;
     init_screen(&screen);
 
     // Se il terminale è troppo piccolo, comunica a schermo.
     handle_screen_resize();
     signal(SIGWINCH, handle_screen_resize);
-    signal(SIGSEGV, cleanup);
+    signal(SIGSEGV, handle_sigenv); // todo remove after
     
     // Impedisce di giocare a Frogger con il terminale troppo piccolo.
     if (!isScreenValid())
@@ -35,7 +35,18 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    GameSkeleton game = {
+            .current_plants = 0,
+            .current_projectiles = 0,
+            .current_frog_projectiles = 0,
+            .achievements = {
+                    .nodes = 0,
+                    .last = NULL
+            }
+    };
+
     int menuOutput = -1;
+    bool loadedFromFile = false;
 
     do {
         show(screen, PS_MAIN_MENU, &menuOutput);
@@ -45,7 +56,8 @@ int main(int argc, char *argv[])
             case MMO_OPEN_SAVING: 
                 {
                     show(screen, PS_SAVINGS, &menuOutput);
-                    // getGameData(output, &game);
+                    // getGameData(menuOutput, &game);
+                    loadedFromFile = true;
                 }
                 break;
             case MMO_CREATE_SAVING: 
@@ -62,14 +74,8 @@ int main(int argc, char *argv[])
         }
     } while (menuOutput == -1);
 
-    GameSkeleton game = (GameSkeleton){
-        .current_plants = 0, 
-        .current_projectiles = 0, 
-        .current_frog_projectiles = 0, 
-        .achievements = (StringList){.nodes = 0, .last = NULL}
-    };
-
-    thread_main(&game);
+    struct entities_list *entities = create_default_entities(&game, loadedFromFile);
+    thread_main(&game, &entities);
 
     return EXIT_SUCCESS;
 }
@@ -141,34 +147,9 @@ int main(int argc, char **argv) {
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * \^/
+   -*-
+   /|\
+   \^/
+ */

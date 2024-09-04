@@ -1,6 +1,5 @@
 #include "processes.h"
 
-
 /**
  * Crea una pipe.
  * @param name  Il nome della pipe.
@@ -10,6 +9,7 @@ pipe_t create_pipe(char name[PIPE_NAME])
     pipe_t p;
 
     p.name = CALLOC(char, PIPE_NAME);
+    CRASH_IF_NULL(p.name)
     strcpy(p.name, name);
 
     HANDLE_ERROR(pipe(p.accesses) + 1);
@@ -17,6 +17,7 @@ pipe_t create_pipe(char name[PIPE_NAME])
     int len = strlen(name);
 
     p.name = REALLOC(char, p.name, len + TERM);
+    CRASH_IF_NULL(p.name)
     p.name[len] = '\0';
 
     return p;
@@ -30,13 +31,14 @@ pipe_t create_pipe(char name[PIPE_NAME])
 pipe_t *create_pipes(int size, ...) 
 {
     pipe_t *array = CALLOC(pipe_t, size);
+    CRASH_IF_NULL(array)
 
     va_list nl;
     va_start(nl, size);
     
     for (int i = 0; i < size; i++) 
     {
-        array[i] = create_pipe(va_arg(nl, char*)); // CLION: Leak of memory allocated in function 'create_pipe'
+        array[i] = create_pipe(va_arg(nl, char*)); // TODO CLION: Leak of memory allocated in function 'create_pipe'
     }
 
     va_end(nl);
@@ -117,17 +119,34 @@ bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
     return result;
 }
 
-SystemMessage create_message(SystemMessage action, int receivers)
+/**
+ * Crea un messaggio da inviare.
+ * @param action        L'azione.
+ * @param receivers     I riceventi.
+ * @return              Il messaggio da inviare.
+ */
+SystemMessage create_message(const SystemMessage action, const int receivers)
 {
     return action + (receivers << 4);
 }
 
-void send_message(int message, void *service_mem)
+/**
+ * Invia un messaggio.
+ * @param message     Il messaggio.
+ * @param service_mem La memoria di servizio.
+ */
+void send_message(const int message, void *service_mem)
 {
     memcpy(service_mem, &message, sizeof(SystemMessage));
 }
 
-SystemMessage check_for_comms(int id, void *service_mem)
+/**
+ * Controlla se ci sono comunicazioni.
+ * @param id            L'id del processo.
+ * @param service_mem   La memoria di servizio.
+ * @return              Il messaggio.
+ */
+SystemMessage check_for_comms(const int id, void *service_mem)
 {
     SystemMessage message = MESSAGE_NONE;
     memcpy(&message, service_mem, sizeof(SystemMessage));
@@ -159,12 +178,13 @@ void generic_process(int id, int service_comms, void (*producer)(void*), void *a
     }
 }
 
-
 /**
  * Crea un nuovo processo.
- * @param pname Il nome del processo.
- * @param _func Il puntatore alla funzione.
- * @param pkg   Il pacchetto.
+ * @param processes     I processi.
+ * @param service_comms Il canale di comunicazione.
+ * @param _func         La funzione da eseguire.
+ * @param args          Gli argomenti della funzione.
+ * @return              Il processo creato.
 */
 Process palloc(int *processes, int service_comms, void (*_func)(void*), void *args)
 {
