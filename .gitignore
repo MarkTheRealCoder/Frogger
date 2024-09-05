@@ -13,3 +13,4 @@ vgcore.*
 .ninja_deps
 build.ninja
 /.cmake/
+valgrind_output.txt

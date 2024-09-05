@@ -144,13 +144,13 @@ int *get_screen_size()
 
 /**
  * Restituisce la posizione centrata sull'asse X.
- * @param height    L'altezza dell'elemento.
+ * @param width     La larghezza dell'elemento.
  * @return          La posizione centrata sull'asse X.
  */
-int getCenteredX(const int height)
+int getCenteredX(const int width)
 {
     const int x = get_screen_size()[1];
-    return (x / 2) - (height / 2);
+    return (x / 2) - (width / 2);
 }
 
 /**
@@ -243,18 +243,27 @@ bool isActionMovement(const Action action)
     return action >= ACTION_NORTH && action <= ACTION_WEST;
 }
 
-Position getMiddleOfRow(Position position, int width, int rowNumber, int innerMiddles)
+int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entityWidth)
 {
-    position.x = width / (2 * innerMiddles);
-    position.y = rowNumber * 3;
-    return position;
+    int toDivide = divTimes * 2;
+
+    if (indexToPick > toDivide)
+    {
+        return -1;
+    }
+
+    int segment = width / toDivide;
+
+    int point = segment * indexToPick;
+    point -= entityWidth / 2;
+
+    return point;
 }
 
-// todo fix
-Position getMiddleOfRowEntityOffset(Position row, int rowWidth, int entitySize, int innerMiddles)
+Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int indexToPick, int entityWidth)
 {
-    Position middle = getMiddleOfRow(row, rowWidth, entitySize, innerMiddles);
-    middle.x -= entitySize / 2;
+    int x = getInnerMiddleWithOffset(width, divTimes, indexToPick, entityWidth);
+    int y = height;
 
-    return middle;
+    return getPosition(x, y);
 }

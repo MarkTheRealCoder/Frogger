@@ -3,6 +3,7 @@
 
 #include "../commons/imports.h"
 #include "../commons/structures.h"
+#include "../commons/drawing.h"
 #include "./shared/shared.h"
 
 typedef struct {
@@ -15,6 +16,7 @@ static int COMMUNICATIONS = 0;
 static sem_t COMMUNICATION_SEMAPHORE;
 static sem_t POLLING_WRITING;
 static sem_t POLLING_READING;
+
 
 /*
                      ,.

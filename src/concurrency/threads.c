@@ -87,10 +87,12 @@ void thread_main(GameSkeleton *game, struct entities_list **list)
     init_semaphores();
     int buffer[MAX_CONCURRENCY] = {COMMS_EMPTY};
 
-    while (true) {
-        // Polling routine
+    while (true)
+    {
         PollingResult result = thread_polling_routine(buffer, game);
-        switch (result) {
+
+        switch (result)
+        {
             case POLLING_FROG_DEAD: // Manche lost
                 break;
             case POLLING_GAME_PAUSE: // Pause
@@ -98,11 +100,14 @@ void thread_main(GameSkeleton *game, struct entities_list **list)
             case POLLING_MANCHE_LOST: // Manche lost
                 break;
         }
+
         // Validazione delle entità
         // Creazione di nuove entità
         // Collisioni
         // Rimozione entità e aggiornamento
         // Display
+
+        sleepy(100, TIMEFRAME_MILLIS);
     }
 
     close_semaphores();

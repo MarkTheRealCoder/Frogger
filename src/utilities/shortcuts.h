@@ -79,14 +79,14 @@ enum AVAILABLE_ARTS {
 };
 
 int *get_screen_size();
-int getCenteredX(int height);
+int getCenteredX(int width);
 int getCenteredY(int height);
 
 StringArt getArtOfEntity(const Entity *entity);
 StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, int length);
 bool isActionMovement(Action action);
 
-Position getMiddleOfRow(Position row, int width, int rowNumber, int innerMiddles);
-Position getMiddleOfRowEntityOffset(Position row, int rowWidth, int innerMiddles, int entitySize);
+int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entityWidth);
+Position getPositionWithInnerMiddleX(int width, int targetHeight, int divTimes, int indexToPick, int entityWidth);
 
 #endif // !FROGGER_SHORTCUTS_H

@@ -30,10 +30,42 @@ int main(int argc, char *argv[])
     // Impedisce di giocare a Frogger con il terminale troppo piccolo.
     if (!isScreenValid())
     {
+        Position closeNotice = {
+                getCenteredX(_FROGGER_SCREEN_CLOSE_NOTICE_LENGTH),
+                getCenteredY(0) + 2
+        };
+        display_string(closeNotice, COLOR_RED, _FROGGER_SCREEN_CLOSE_NOTICE, _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH);
+        sleepy(5, TIMEFRAME_SECONDS);
+
         endwin();
-        printf("Screen size is too small to play Frogger! :(\n");
         return EXIT_FAILURE;
     }
+
+    int threadsOrProcessesMenu = -1, mainMenu = -1;
+
+    /*
+     * Version menu.
+     */
+    do {
+        show(screen, PS_VERSION_MENU, &threadsOrProcessesMenu);
+
+        switch (threadsOrProcessesMenu)
+        {
+            case VMO_THREADS:
+                break;
+            case VMO_PROCESSES:
+                break;
+            case VMO_QUIT:
+                endwin();
+                return EXIT_SUCCESS;
+            default:
+                break;
+        }
+    } while (threadsOrProcessesMenu == -1);
+
+    /*
+     * Main menu.
+     */
 
     GameSkeleton game = {
             .current_plants = 0,
@@ -45,25 +77,24 @@ int main(int argc, char *argv[])
             }
     };
 
-    int menuOutput = -1;
     bool loadedFromFile = false;
 
     do {
-        show(screen, PS_MAIN_MENU, &menuOutput);
+        show(screen, PS_MAIN_MENU, &mainMenu);
 
-        switch (menuOutput) 
+        switch (mainMenu)
         {
             case MMO_OPEN_SAVING: 
                 {
-                    show(screen, PS_SAVINGS, &menuOutput);
+                    show(screen, PS_SAVINGS, &mainMenu);
                     // getGameData(menuOutput, &game);
                     loadedFromFile = true;
                 }
                 break;
             case MMO_CREATE_SAVING: 
                 {
-                    show(screen, PS_CREATE_SAVING, &menuOutput);
-                    menuOutput = -1;
+                    show(screen, PS_CREATE_SAVING, &mainMenu);
+                    mainMenu = -1;
                 }
                 break;
             case MMO_QUIT:
@@ -72,10 +103,10 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
-    } while (menuOutput == -1);
+    } while (mainMenu == -1);
 
     struct entities_list *entities = create_default_entities(&game, loadedFromFile);
-    thread_main(&game, &entities);
+    //thread_main(&game, &entities);
 
     return EXIT_SUCCESS;
 }

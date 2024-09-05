@@ -57,8 +57,26 @@ void handle_screen_resize()
 
     if (!isScreenValid())
     {
-        mvprintw(0, 0, "Screen size is too small to play Frogger! :(");
-        mvprintw(1, 0, "Please resize the screen to at least 40rows x 100cols.");
+        Position error = {
+                getCenteredX(_FROGGER_SCREEN_TOO_SMALL_LENGTH),
+                getCenteredY(0)
+        };
+
+        Position correctSize = {
+                getCenteredX(_FROGGER_SCREEN_CORRECT_LENGTH),
+                getCenteredY(0) + 1
+        };
+
+        Position displaySize = {
+                0, 0
+        };
+
+        char displayString[30];
+        snprintf(displayString, 30, "Display size: %d x %d", cols, rows);
+        display_string(displaySize, COLOR_RED, displayString, 30);
+
+        display_string(error, COLOR_RED, _FROGGER_SCREEN_TOO_SMALL, _FROGGER_SCREEN_TOO_SMALL_LENGTH);
+        display_string(correctSize, COLOR_RED, _FROGGER_SCREEN_CORRECT_SIZE, _FROGGER_SCREEN_CORRECT_LENGTH);
     }
     
     refresh();
@@ -286,6 +304,11 @@ void center_string_colored(char *string, int pair, int max, int cuy)
  */
 void center_string(char str[], int max, int cuy)
 {
+    if (!str)
+    {
+        return;
+    }
+
     int sl = strlen(str);
     int total_size = (int)((max - sl) / 2);
     move(cuy, 0);
@@ -643,7 +666,7 @@ void setScreenValidity(bool value)
 
 bool isScreenValid()
 {
-    return GLOBAL_SCREEN_INVALID_SIZE;
+    return !GLOBAL_SCREEN_INVALID_SIZE;
 }
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
@@ -762,6 +785,48 @@ Component *find_component(const int index, GameSkeleton *game)
     }
 
     return NULL;
+}
+
+void a(GameSkeleton *game)
+{
+    Component **components = find_components(game, 0, 1, 2, 3, -1);
+    free(components);
+}
+
+Component **find_components(GameSkeleton *game, ...)
+{
+    Component **foundComponents = NULL;
+
+    va_list args;
+    va_start(args, game);
+
+    int index;
+    int counter = 0;
+
+    while ((index = va_arg(args, int)) != -1)
+    {
+        if (index < 0 || index >= MAX_CONCURRENCY)
+        {
+            break;
+        }
+
+        if (counter == 0)
+        {
+            foundComponents = MALLOC(Component *, 1);
+        }
+        else
+        {
+            foundComponents = REALLOC(Component *, foundComponents, counter + 1);
+        }
+        CRASH_IF_NULL(foundComponents)
+
+        foundComponents[counter] = find_component(index, game);
+        counter++;
+    }
+
+    va_end(args);
+
+    return foundComponents;
 }
 
 void update_position(Entity *e, const Action action)

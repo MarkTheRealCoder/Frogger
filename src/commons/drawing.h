@@ -119,7 +119,8 @@ enum PS {
     PS_SAVINGS,
     PS_CREATE_SAVING,
     PS_LOST,
-    PS_WIN
+    PS_WIN,
+    PS_VERSION_MENU
 };
 
 enum MainMenuOptions {
@@ -138,6 +139,11 @@ enum PauseMenuOptions {
     PMO_QUIT
 };
 
+enum VersionMenuOptions {
+    VMO_THREADS,
+    VMO_PROCESSES,
+    VMO_QUIT
+};
 
 /* FROG ARTS */
 #define _FROG_ART_LENGTH 20
@@ -199,6 +205,18 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
         "| _|      /__/     \\__\\  \\______/  |_______/    |_______|"
     };
 
+#define _FROGGER_SCREEN_TOO_SMALL_LENGTH 45
+static char _FROGGER_SCREEN_TOO_SMALL[_FROGGER_SCREEN_TOO_SMALL_LENGTH] =
+    "Screen size is too small to play Frogger! :(\n";
+
+#define _FROGGER_SCREEN_CORRECT_LENGTH 34
+static char _FROGGER_SCREEN_CORRECT_SIZE[_FROGGER_SCREEN_CORRECT_LENGTH] =
+        "Minimum size is: 40rows x 100cols\n";
+
+#define _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH 27
+static char _FROGGER_SCREEN_CLOSE_NOTICE[_FROGGER_SCREEN_CLOSE_NOTICE_LENGTH] =
+        "Program will close shortly\n";
+
 #define HEART "\xE2\x99\xA5"
 
 #define FROG_ART_COLOR 51, 255, 51 // 0 204 0
@@ -230,11 +248,8 @@ bool isScreenValid();
 
 Position getPosition(int x, int y);
 
-Entity entities_default_frog();
-Entity entities_default_plant(int index);
-Entity entities_default_croc(int index);
-
 Component *find_component(int index, GameSkeleton *game);
+Component **find_components(GameSkeleton *game, ...);
 void update_position (Entity *e, Action movement);
 
 Position getPositionFromEntity(Entity e);

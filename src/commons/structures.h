@@ -38,7 +38,6 @@ typedef enum {
     ENTITY_TYPE__PROJECTILE = 35
 } EntityType;
 
-
 typedef enum entity_type {
     TRUETYPE_CROC,
     TRUETYPE_ANGRY_CROC,
@@ -60,7 +59,7 @@ typedef struct {
     char **art;
 } StringArt;
 
-typedef struct _string_node{
+typedef struct _string_node {
     struct _string_node *next;
     struct _string_node *prev;
     char *string;
@@ -95,7 +94,7 @@ typedef struct {
 } Entities;
 
 typedef struct {
-    enum {CLOCK_MAIN, CLOCK_SECONDARY} type;
+    enum { CLOCK_MAIN, CLOCK_SECONDARY } type;
     unsigned int starting;
     int current;
     int fraction;
@@ -103,7 +102,7 @@ typedef struct {
 
 typedef struct {
     void *component;
-    enum {COMPONENT_ENTITY, COMPONENT_ENTITIES, COMPONENT_CLOCK} type;
+    enum { COMPONENT_ENTITY, COMPONENT_ENTITIES, COMPONENT_CLOCK } type;
 } Component;
 
 typedef struct {

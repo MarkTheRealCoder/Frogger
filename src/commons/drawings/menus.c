@@ -86,25 +86,27 @@ bool menu_listener(int *choice, int choices_num)
     return not_exit;
 }
 
-int generic_menu(const Screen scr, StringArt choices, StringArt logo, StringArt art) 
+int generic_menu(const Screen screen, StringArt choices, StringArt logo, StringArt art)
 {
     erase();
 
     int standard = alloc_pair(COLORCODES_FROG_ART_LOGO, COLOR_BLACK);
     int quit = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
+
     int choice = 0;
     int cuy = 1;
-    int last_logo_pair = standard;
-    print_art(art, &cuy, scr.x);
+
+    print_art(art, &cuy, screen.x);
     cuy++;
     int logo_cuy = cuy;
 
     do 
     {
         cuy = logo_cuy;
-        print_logo(logo, choice == choices.length - 1 ? quit : standard, scr.x, &cuy);
+        print_logo(logo, choice == choices.length - 1 ? quit : standard, screen.x, &cuy);
+
         cuy += 4;
-        print_choices(choices.art, choices.length, choice, scr.x, &cuy);
+        print_choices(choices.art, choices.length, choice, screen.x, &cuy);
     } while(menu_listener(&choice, choices.length));
 
     erase();
@@ -144,15 +146,31 @@ int pause_menu(const Screen screen)
                                 getArtOfThing(ART_TWO_FROGS, _FROGGER_PAUSE_ART, 0));
 }
 
-unsigned int show(const Screen scr, const enum PS prog_state, int *output) 
+int thread_or_processes_menu(const Screen screen)
 {
-    switch (prog_state) 
+    #define TOPM_LEN 2
+    static char *choices[TOPM_LEN] = {
+        "Threads version",
+        "Processes version"
+    };
+
+    return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, TOPM_LEN),
+                                getArtOfThing(ART_MAIN_LOGO, _FROGGER_LOGO, 0),
+                                getArtOfThing(ART_BIG_FROG, _FROG_ART, 0));
+}
+
+unsigned int show(const Screen screen, const enum PS state, int *output)
+{
+    switch (state)
     {
         case PS_MAIN_MENU: 
-            *output = main_menu(scr);
+            *output = main_menu(screen);
             break;
         case PS_PAUSE_MENU: 
-            *output = pause_menu(scr);
+            *output = pause_menu(screen);
+            break;
+        case PS_VERSION_MENU:
+            *output = thread_or_processes_menu(screen);
             break;
         default: 
             return 1;

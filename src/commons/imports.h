@@ -58,7 +58,7 @@
 
 #endif
 
-static bool GLOBAL_SCREEN_INVALID_SIZE;
+static bool GLOBAL_SCREEN_INVALID_SIZE = false;
 
 #define TEST_MODE true
 #define DEBUG_MODE false

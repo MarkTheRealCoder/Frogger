@@ -188,7 +188,7 @@ void generic_process(int id, int service_comms, void (*producer)(void*), void *a
 */
 Process palloc(int *processes, int service_comms, void (*_func)(void*), void *args)
 {
-    Process p = {.status=0};
+    Process p = { .status=0 };
 
     AVAILABLE_DYNPID(p.dynamic_pid, *processes);
 
