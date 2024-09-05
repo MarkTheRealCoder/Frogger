@@ -210,30 +210,9 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
 
 
 
-int process_main(int argc, char **argv) {
+void process_main(GameSkeleton *game, struct entities_list **list) {
     // ADD A GAME STRUCT FOR FAST LOADING DATA
     int processes = 0;
-    Screen scr;
-    init_screen(&scr);
-
-    /*MAIN MENU*/
-    int output = -1;
-    do {
-        show(scr, PS_MAIN_MENU, &output);
-        switch (output) {
-            case MMO_OPEN_SAVING: {
-                show(scr, PS_SAVINGS, &output);
-                // getGameData(output, &game);
-            }
-                break;
-            case MMO_CREATE_SAVING: {
-                show(scr, PS_CREATE_SAVING, &output);
-                output = -1;
-            }
-                break;
-            case MMO_QUIT: return 0;
-        }
-    } while (output == -1);
 
     int service_comms = shm_open(SERVICE_NAME, O_CREAT | O_RDWR, 0666);
     HANDLE_ERROR(service_comms);
@@ -245,16 +224,12 @@ int process_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    Position map_position = { getCenteredX(MAP_WIDTH), 5 };
-    MapSkeleton map = display_map(map_position, MAP_WIDTH, NULL);
-
     /*GAME*/
     while (true) {
         
     }
         /*PAUSE MENU*/
 
-    //endwin();
     munmap(service_mem, SERVICE_SIZE);
     close(service_comms);
 }

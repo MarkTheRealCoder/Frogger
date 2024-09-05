@@ -18,17 +18,17 @@ PollingResult thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *
 
         buffer[i] = COMMS_EMPTY;
         Component *c = find_component(i, game);
-
+        
         switch(c->type)
         {
             case COMPONENT_CLOCK:
-                pollingResult = handle_clock(c->component, value);
+                pollingResult = handle_clock(c, value);
                 break;
             case COMPONENT_ENTITY:
-                pollingResult = handle_entity(c->component, value, true);
+                pollingResult = handle_entity(c, value, true);
                 break;
             case COMPONENT_ENTITIES:
-                pollingResult = handle_entities(c->component, value);
+                pollingResult = handle_entities(c, value);
                 break;
         }
     }
@@ -55,7 +55,8 @@ void generic_thread(void *packet)
     while (true) {
 
         if (MATCH_ID(id, COMMUNICATIONS)) {
-            action  = COMMUNICATIONS & MESSAGE_RUN;
+            SystemMessage msg = COMMUNICATIONS & MESSAGE_RUN;
+            action = (msg != action && msg != MESSAGE_NONE) ? msg : action;
         }
 
         if (action == MESSAGE_RUN) {
@@ -93,11 +94,11 @@ void thread_main(GameSkeleton *game, struct entities_list **list)
 
         switch (result)
         {
-            case POLLING_FROG_DEAD: // Manche lost
+            case POLLING_FROG_DEAD:     // Manche lost
                 break;
-            case POLLING_GAME_PAUSE: // Pause
+            case POLLING_GAME_PAUSE:    // Pause
                 break;
-            case POLLING_MANCHE_LOST: // Manche lost
+            case POLLING_MANCHE_LOST:   // Manche lost
                 break;
         }
 

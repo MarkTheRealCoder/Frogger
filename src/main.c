@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
                 getCenteredY(0) + 2
         };
         display_string(closeNotice, COLOR_RED, _FROGGER_SCREEN_CLOSE_NOTICE, _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH);
-        sleepy(5, TIMEFRAME_SECONDS);
+        wgetch(stdscr);
 
         endwin();
         return EXIT_FAILURE;
@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
 
         switch (threadsOrProcessesMenu)
         {
-            case VMO_THREADS:
+            case VMO_THREADS: threadsOrProcessesMenu = 0;
                 break;
-            case VMO_PROCESSES:
+            case VMO_PROCESSES: threadsOrProcessesMenu = 1;
                 break;
             case VMO_QUIT:
                 endwin();
@@ -101,12 +101,14 @@ int main(int argc, char *argv[])
                 endwin();
                 return EXIT_SUCCESS;
             default:
+                mainMenu = 0;
                 break;
         }
     } while (mainMenu == -1);
 
     struct entities_list *entities = create_default_entities(&game, loadedFromFile);
-    //thread_main(&game, &entities);
+    if (!threadsOrProcessesMenu) thread_main(&game, &entities);
+    else process_main(&game, &entities);
 
     return EXIT_SUCCESS;
 }
@@ -131,7 +133,6 @@ int main(int argc, char *argv[])
     } while (isGameEnded());
     */
 /*
-
 int main(int argc, char **argv) {
     int prodLeft    = LEFT;
     int prodRight   = RIGHT;
@@ -174,13 +175,4 @@ int main(int argc, char **argv) {
     COMMUNICATIONS = MESSAGE_STOP;
     pthread_join(t, NULL);
 }
-
-
 */
-
-/**
- * \^/
-   -*-
-   /|\
-   \^/
- */

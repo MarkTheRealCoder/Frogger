@@ -213,9 +213,9 @@ static char _FROGGER_SCREEN_TOO_SMALL[_FROGGER_SCREEN_TOO_SMALL_LENGTH] =
 static char _FROGGER_SCREEN_CORRECT_SIZE[_FROGGER_SCREEN_CORRECT_LENGTH] =
         "Minimum size is: 40rows x 100cols\n";
 
-#define _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH 27
+#define _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH 32
 static char _FROGGER_SCREEN_CLOSE_NOTICE[_FROGGER_SCREEN_CLOSE_NOTICE_LENGTH] =
-        "Program will close shortly\n";
+        "Press any key to close the game\n";
 
 #define HEART "\xE2\x99\xA5"
 

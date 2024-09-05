@@ -74,4 +74,7 @@ typedef struct {
     Status status;
 } Process;
 
+
+void process_main(GameSkeleton *game, struct entities_list **list);
+
 #endif

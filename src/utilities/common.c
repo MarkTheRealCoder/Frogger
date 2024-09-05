@@ -1,14 +1,14 @@
 #include "common.h"
 
-Entity entities_default_frog(MapSkeleton mapSkeleton)
+Entity entities_default_frog()
 {
-    int x = getInnerMiddleWithOffset(mapSkeleton.width, 1, 1, CORE_GAME_ENTITY_SIZE);
-    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15; // todo edit
+    //int x = getInnerMiddleWithOffset(mapSkeleton.width, 1, 1, CORE_GAME_ENTITY_SIZE);
+    //int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15; // todo edit
 
-    Position startPosition = getPosition(x, y);
+    //Position startPosition = getPosition(x, y);
 
     Entity entity = {
-        .current = startPosition,
+        .current = getPosition(0, 0),
         .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__FROG,
         .trueType = TRUETYPE_FROG,
@@ -21,15 +21,15 @@ Entity entities_default_frog(MapSkeleton mapSkeleton)
     return entity;
 }
 
-Entity entities_default_plant(MapSkeleton mapSkeleton, int index)
+Entity entities_default_plant()
 {
-    int x = getInnerMiddleWithOffset(mapSkeleton.width, 2, index + 1, PLANT_WIDTH);
-    int y = getCenteredY(CORE_GAME_ENTITY_SIZE) - 12; // todo edit
+    //int x = getInnerMiddleWithOffset(mapSkeleton.width, 2, index + 1, PLANT_WIDTH);
+    //int y = getCenteredY(CORE_GAME_ENTITY_SIZE) - 12; // todo edit
 
-    Position startPosition = getPosition(x, y);
+    //Position startPosition = getPosition(x, y);
 
     Entity entity = {
-        .current = startPosition,
+        .current = getPosition(0, 0),
         .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__PLANT,
         .trueType = TRUETYPE_PLANT,
@@ -42,15 +42,15 @@ Entity entities_default_plant(MapSkeleton mapSkeleton, int index)
     return entity;
 }
 
-Entity new_entities_default_croc(int index)
+Entity new_entities_default_croc()
 {
-    #define OFFSET 0
+    //#define OFFSET 0
 
-    static int x = 0; // todo edit
-    static int y = 0; // todo edit
+    //static int x = 0; // todo edit
+    //static int y = 0; // todo edit
 
     Entity entity = {
-        .current = getPosition(x, y),
+        .current = getPosition(0, 0),
         .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__CROC,
         .trueType = TRUETYPE_CROC,
@@ -134,7 +134,19 @@ struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSk
             free(binded);
         }
         else {
-            // todo edit
+            if (index == COMPONENT_CLOCK_INDEX) {
+                free(node);
+                break;
+            }
+            if (index < COMPONENT_CLOCK_INDEX) node->e = CALLOC(Entity, 1);
+
+            if (index == COMPONENT_FROG_INDEX)          *(node->e) = entities_default_frog();
+            else if (index <= COMPONENT_CROC_INDEXES)   *(node->e) = new_entities_default_croc();
+            else if (index < COMPONENT_CLOCK_INDEX)     *(node->e) = entities_default_plant();
+
+            game->components[index] = (Component){.type=COMPONENT_ENTITY, .component=node->e};
+            node->next = entities;
+            index++;
         }
         entities = node;
     }

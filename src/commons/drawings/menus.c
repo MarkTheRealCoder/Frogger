@@ -38,7 +38,7 @@ void print_choices(char **choices, int choices_num, int current_choice, int max,
     int standard    = alloc_pair(COLORCODES_FROG_ART_LOGO, COLOR_BLACK);
     int quit        = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
     int selected    = alloc_pair(COLORCODES_FROG_ART_SELECTED, COLOR_BLACK);
-    int starting_choice = current_choice <= 0 ? 0 : current_choice > choices_num - 3 ? choices_num - 3 : current_choice - 1;
+    int starting_choice = current_choice <= 0 ? 0 : current_choice > choices_num - 3 && choices_num - 3 >= 0 ? choices_num - 3 : current_choice - 1;
     for (size_t i = starting_choice; i <= starting_choice + 2; i++)
     {
         (*cuy)++;
@@ -148,10 +148,11 @@ int pause_menu(const Screen screen)
 
 int thread_or_processes_menu(const Screen screen)
 {
-    #define TOPM_LEN 2
+    #define TOPM_LEN 3
     static char *choices[TOPM_LEN] = {
         "Threads version",
-        "Processes version"
+        "Processes version",
+        "Quit"
     };
 
     return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, TOPM_LEN),
