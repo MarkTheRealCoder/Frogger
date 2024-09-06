@@ -75,6 +75,6 @@ typedef struct {
 } Process;
 
 
-void process_main(GameSkeleton *game, struct entities_list **list);
+int process_main(GameSkeleton *game, struct entities_list **list);
 
 #endif

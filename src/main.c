@@ -1,12 +1,5 @@
 #include "commons/imports.h"
 
-void handle_sigenv()
-{
-    endwin();
-    printf("SIGSEGV occured!\n");
-    exit(EXIT_FAILURE);
-}
-
 int main(int argc, char *argv[])
 {
     struct program_args parsed_program_args = addons_parse_args(argc, argv);
@@ -20,48 +13,37 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     Screen screen;
-    init_screen(&screen);
+    WINDOW *w = init_screen(&screen);
 
     // Se il terminale è troppo piccolo, comunica a schermo.
     handle_screen_resize();
     signal(SIGWINCH, handle_screen_resize);
-    signal(SIGSEGV, handle_sigenv); // todo remove after
-    
-    // Impedisce di giocare a Frogger con il terminale troppo piccolo.
-    if (!isScreenValid())
-    {
-        Position closeNotice = {
-                getCenteredX(_FROGGER_SCREEN_CLOSE_NOTICE_LENGTH),
-                getCenteredY(0) + 2
-        };
-        display_string(closeNotice, COLOR_RED, _FROGGER_SCREEN_CLOSE_NOTICE, _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH);
-        wgetch(stdscr);
 
-        endwin();
-        return EXIT_FAILURE;
-    }
-
-    int threadsOrProcessesMenu = -1, mainMenu = -1;
+    int threadsOrProcessesMenu = 0, mainMenu = -1;
 
     /*
      * Version menu.
      */
-    do {
+
+
+     do {
         show(screen, PS_VERSION_MENU, &threadsOrProcessesMenu);
 
         switch (threadsOrProcessesMenu)
         {
-            case VMO_THREADS: threadsOrProcessesMenu = 0;
+            case VMO_THREADS:
+                threadsOrProcessesMenu = 0;
                 break;
-            case VMO_PROCESSES: threadsOrProcessesMenu = 1;
+            case VMO_PROCESSES:
+                threadsOrProcessesMenu = 1;
                 break;
             case VMO_QUIT:
-                endwin();
-                return EXIT_SUCCESS;
+                goto TERMINATE;
             default:
                 break;
         }
     } while (threadsOrProcessesMenu == -1);
+
 
     /*
      * Main menu.
@@ -97,19 +79,24 @@ int main(int argc, char *argv[])
                     mainMenu = -1;
                 }
                 break;
-            case MMO_QUIT:
-                endwin();
-                return EXIT_SUCCESS;
+            case MMO_QUIT: goto TERMINATE;
             default:
                 mainMenu = 0;
                 break;
         }
     } while (mainMenu == -1);
 
+    int result;
     struct entities_list *entities = create_default_entities(&game, loadedFromFile);
-    if (!threadsOrProcessesMenu) thread_main(&game, &entities);
-    else process_main(&game, &entities);
+    if (!threadsOrProcessesMenu) result = thread_main(&game, &entities);
+    else result = process_main(&game, &entities);
 
+    display_game_over(screen, result);
+
+    TERMINATE:
+        reset_color_pairs();
+        endwin();
+        delwin(w);
     return EXIT_SUCCESS;
 }
 

@@ -135,11 +135,11 @@ char *concat(const int n, ...)
  */
 int *get_screen_size()
 {
-    int rows, cols;
+    static int size[2] = {0, 0};
 
-    getmaxyx(stdscr, rows, cols); 
+    getmaxyx(stdscr, size[0], size[1]);
 
-    return (int[]) { rows, cols };
+    return size;
 }
 
 /**

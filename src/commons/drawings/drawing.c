@@ -4,10 +4,10 @@
  * Inizializza lo schermo insieme ai colori.
  * @param screen Lo schermo da inizializzare.
  */
-void init_screen(Screen *screen)
+WINDOW *init_screen(Screen *screen)
 {
     setlocale(LC_ALL, "");
-    initscr();
+    WINDOW *w = initscr();
     noecho();
     curs_set(false);
     keypad(stdscr, true);
@@ -35,7 +35,7 @@ void init_screen(Screen *screen)
     init_extended_color(COLORCODES_PROJECTILE_F, PROJECTILE_F_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_FL, PROJECTILE_FL_COLOR);
 
-    setScreenValidity(true);
+    return w;
 }
 
 /**
@@ -43,19 +43,17 @@ void init_screen(Screen *screen)
  */
 void handle_screen_resize()
 {
+    static bool SCREEN_VALID = false;
+
     #define MIN_ROWS 40
     #define MIN_COLS 100
 
-    endwin();
-    refresh();
-    clear();
-    
     int *xy = get_screen_size();
     int rows = xy[0], cols = xy[1];
 
-    setScreenValidity(rows < MIN_ROWS || cols < MIN_COLS);
+    SCREEN_VALID = rows < MIN_ROWS || cols < MIN_COLS;
 
-    if (!isScreenValid())
+    if (!SCREEN_VALID)
     {
         Position error = {
                 getCenteredX(_FROGGER_SCREEN_TOO_SMALL_LENGTH),
@@ -71,15 +69,18 @@ void handle_screen_resize()
                 0, 0
         };
 
-        char displayString[30];
-        snprintf(displayString, 30, "Display size: %d x %d", cols, rows);
-        display_string(displaySize, COLOR_RED, displayString, 30);
+        erase();
+        char displayString[35] = { 0 };
+        snprintf(displayString, 35, "Display size: %d x %d", cols, rows);
+        display_string(displaySize, COLOR_RED, displayString, 35);
 
         display_string(error, COLOR_RED, _FROGGER_SCREEN_TOO_SMALL, _FROGGER_SCREEN_TOO_SMALL_LENGTH);
         display_string(correctSize, COLOR_RED, _FROGGER_SCREEN_CORRECT_SIZE, _FROGGER_SCREEN_CORRECT_LENGTH);
+        refresh();
+        wgetch(stdscr);
+        endwin();
+        exit(EXIT_FAILURE);
     }
-    
-    refresh();
 }
 
 /**
@@ -501,14 +502,14 @@ void addStringToList(StringNode **list, int color, char *string)
 
 void display_string(const Position position, const int color, const char *string, int length)
 {
-    eraseFor(position, 1, length);
+    eraseFor(position, 1, (short)length);
     
     int pair = alloc_pair(color, getAreaFromY(position.y));
 
     attron(COLOR_PAIR(pair));
     mvaddstr(position.y, position.x, string);
     attroff(COLOR_PAIR(pair));
-    
+
     refresh();
 }
 
@@ -655,20 +656,6 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
     return _map;
 }
 
-/**
- * Imposta la validità dello schermo.
- * @param value Il valore da impostare.
- */
-void setScreenValidity(bool value)
-{
-    GLOBAL_SCREEN_INVALID_SIZE = value;
-}
-
-bool isScreenValid()
-{
-    return !GLOBAL_SCREEN_INVALID_SIZE;
-}
-
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
 {
     Position POSITION_MAP = {
@@ -787,12 +774,6 @@ Component *find_component(const int index, GameSkeleton *game)
     return NULL;
 }
 
-void a(GameSkeleton *game)
-{
-    Component **components = find_components(game, 0, 1, 2, 3, -1);
-    free(components);
-}
-
 Component **find_components(GameSkeleton *game, ...)
 {
     Component **foundComponents = NULL;
@@ -853,4 +834,9 @@ void update_position(Entity *e, const Action action)
     }
 
     e->last = e->current;
+}
+
+void display_game_over(Screen scr, int result) {
+    // Work in progress...
+    wgetch(stdscr);
 }

@@ -83,11 +83,12 @@ void generic_thread(void *packet)
     }
 }
 
-void thread_main(GameSkeleton *game, struct entities_list **list)
+int thread_main(GameSkeleton *game, struct entities_list **list)
 {
     init_semaphores();
     int buffer[MAX_CONCURRENCY] = {COMMS_EMPTY};
 
+    wgetch(stdscr);
     while (true)
     {
         PollingResult result = thread_polling_routine(buffer, game);

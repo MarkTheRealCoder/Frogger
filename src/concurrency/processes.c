@@ -210,7 +210,7 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
 
 
 
-void process_main(GameSkeleton *game, struct entities_list **list) {
+int process_main(GameSkeleton *game, struct entities_list **list) {
     // ADD A GAME STRUCT FOR FAST LOADING DATA
     int processes = 0;
 

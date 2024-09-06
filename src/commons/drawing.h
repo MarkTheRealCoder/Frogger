@@ -202,8 +202,48 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
         "|  |_)  |    /  ^  \\    |  |  |  |    |   (----`|  |__   ",
         "|   ___/    /  /_\\  \\   |  |  |  |     \\   \\    |   __|  ",
         "|  |       /  _____  \\  |  `--'  | .----)   |   |  |____ ",
-        "| _|      /__/     \\__\\  \\______/  |_______/    |_______|"
+        "|__|      /__/     \\__\\  \\______/  |_______/    |_______|"
     };
+
+#define _FROGGER_LOST_LOGO_LENGTH 5
+static char *_FROGGER_LOST_LOGO[_FROGGER_LOST_LOGO_LENGTH] =
+        {
+                "__   __                    _                     _",
+                "\\ \\ / /   ___    _   _    | |       ___    ___  | |_",
+                " \\ V /   / _ \\  | | | |   | |      / _ \\  / __| | __|",
+                "  | |   | (_) | | |_| |   | |___  | (_) | \\__ \\ | |_",
+                "  |_|    \\___/   \\__,_|   |_____|  \\___/  |___/  \\__|"
+        };
+
+#define _FROGGER_WIN_LOGO_LENGTH 5
+static char *_FROGGER_WIN_LOGO[_FROGGER_WIN_LOGO_LENGTH] =
+        {
+                "__   __                   __        __  _",
+                "\\ \\ / /   ___    _   _    \\ \\      / / (_)  _ __",
+                " \\ V /   / _ \\  | | | |    \\ \\ /\\ / /  | | | '_ \\",
+                "  | |   | (_) | | |_| |     \\ V  V /   | | | | | |",
+                "  |_|    \\___/   \\__,_|      \\_/\\_/    |_| |_| |_|"
+        };
+
+/*
+
+
+ __   __                    _                     _
+ \ \ / /   ___    _   _    | |       ___    ___  | |_
+  \ V /   / _ \  | | | |   | |      / _ \  / __| | __|
+   | |   | (_) | | |_| |   | |___  | (_) | \__ \ | |_
+   |_|    \___/   \__,_|   |_____|  \___/  |___/  \__|
+
+
+
+ __   __                   __        __  _
+ \ \ / /   ___    _   _    \ \      / / (_)  _ __
+  \ V /   / _ \  | | | |    \ \ /\ / /  | | | '_ \
+   | |   | (_) | | |_| |     \ V  V /   | | | | | |
+   |_|    \___/   \__,_|      \_/\_/    |_| |_| |_|
+
+
+ */
 
 #define _FROGGER_SCREEN_TOO_SMALL_LENGTH 45
 static char _FROGGER_SCREEN_TOO_SMALL[_FROGGER_SCREEN_TOO_SMALL_LENGTH] =
@@ -224,7 +264,7 @@ static char _FROGGER_SCREEN_CLOSE_NOTICE[_FROGGER_SCREEN_CLOSE_NOTICE_LENGTH] =
 #define FROG_ART_LOGO_COLOR_Q 255, 51, 51 // 153 0 0
 #define FROG_ART_SELECTED_COLOR 255, 124, 9 // 255 153 51
 
-void init_screen(Screen *screen);
+WINDOW *init_screen(Screen *screen);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(Screen scr, enum PS prog_state, int *output);
 void display_clock(Position p, short value, short max);
@@ -243,9 +283,6 @@ void handle_screen_resize();
 
 enum color_codes getEntityColor(enum entity_type type);
 
-void setScreenValidity(bool value);
-bool isScreenValid();
-
 Position getPosition(int x, int y);
 
 Component *find_component(int index, GameSkeleton *game);
@@ -260,5 +297,6 @@ Cuboid getCuboidFromEntity(Entity e);
 CollisionPacket areColliding(Entity e1, Entity e2);
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
+void display_game_over(Screen scr, int result);
 
 #endif
