@@ -144,8 +144,6 @@ void user_listener(void *_rules)
     ProductionRules *rules = (ProductionRules *) _rules;
     int value = -1;
 
-    sleepy(1, TIMEFRAME_SECONDS);
-
     do
     {
         switch(getch())
@@ -184,6 +182,8 @@ void user_listener(void *_rules)
             default:
                 break;
         }
+
+        sleepy(1, TIMEFRAME_SECONDS);
     } while (value == -1);
 
     rules->buffer = value;
@@ -193,7 +193,6 @@ void entity_move(void *_rules) {
     ProductionRules *rules = (ProductionRules*)_rules;
     int value = rules->rules[0];
     rules->buffer = value;
-    sleepy(1, TIMEFRAME_SECONDS);
 }
 
 void timer_counter(void *_rules) {
@@ -201,7 +200,6 @@ void timer_counter(void *_rules) {
     int value = (int)((int*)rules->rules)[0]; // current value (updated in main routine)
     int part = (int)((int*)rules->rules)[1]; // fraction to be subtracted from value;
     rules->buffer = value - part;
-    sleepy(1, TIMEFRAME_SECONDS);
 }
 
 /**

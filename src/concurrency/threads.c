@@ -19,9 +19,7 @@ PollingResult  thread_polling_routine(int *buffer, GameSkeleton *game)
         }
 
         buffer[i] = COMMS_EMPTY;
-        //Component *c = find_component(i, game);
-        printf("Component %i produced %i\n", i, value);
-        /*
+        Component *c = find_component(i, game);
         switch(c->type)
         {
             case COMPONENT_CLOCK:
@@ -33,10 +31,8 @@ PollingResult  thread_polling_routine(int *buffer, GameSkeleton *game)
             case COMPONENT_ENTITIES:
                 pollingResult = handle_entities(c, value);
                 break;
-        }*/
+        }
     }
-
-    sleepy(1, TIMEFRAME_SECONDS);
 
     sem_post(&POLLING_WRITING);
 
@@ -134,7 +130,6 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
             packet->ms = clock->fraction;
         } break;
         default:
-            printf("Qualcosa è andato storto\n");
             break;
     }
     carriage->rules = t->rules;
@@ -181,36 +176,42 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
     return threads_list;
 }
 
-int thread_main(GameSkeleton *game, struct entities_list **list)
-{
-    endwin();
+int thread_main(Screen scr, GameSkeleton *game, struct entities_list **list) {
+    erase();
     init_semaphores();
     int *buffer = CALLOC(int, MAX_CONCURRENCY);
-    int threads = 0;
+    int threads = 0, score = 0, lives = TOTAL_LIVES;
 
     Thread *threadList = create_threads(game->components, buffer, &threads);
     COMMUNICATIONS = MESSAGE_RUN;
-    while (true)
-    {
+    //draw(*list, &game->map, , &game->achievements, score, lives, true); todo redo.
+    while (true) {
         PollingResult result = thread_polling_routine(buffer, game);
+        switch (result) {
+            case POLLING_MANCHE_LOST:
+            case POLLING_FROG_DEAD: {
 
-        /*
-        switch (result)
-        {
-            case POLLING_FROG_DEAD:     // Manche lost
-                break;
-            case POLLING_GAME_PAUSE:    // Pause
-                break;
-            case POLLING_MANCHE_LOST:   // Manche lost
-                return PS_LOST;
+            } break;
+            case POLLING_GAME_PAUSE: {
+                COMMUNICATIONS = MESSAGE_HALT;
+                int output;
+                show(scr, PS_PAUSE_MENU, &output);
+            } break;
         }
-         */
 
         // Validazione delle entità
+            //validate_entities(*list, game->map);
+
         // Creazione di nuove entità
-        // Collisioni
-        // Rimozione entità e aggiornamento
+            //create_new_entities(list, game->components, game->map)
+
+        // todo: Maybe together?
+            // Collisioni
+            // Rimozione entità e aggiornamento
+
         // Display
+            // draw();
+
         sleepy(50, TIMEFRAME_MILLIS);
     }
 
