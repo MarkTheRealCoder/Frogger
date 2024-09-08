@@ -8,12 +8,13 @@
 
 typedef struct {
     ProductionRules rules;
-    int *buffer;
+    void *buffer;
 } ThreadCarriage;
 
 typedef struct {
     pthread_t id;
     Component *component;
+    ProductionRules rules;
 } Thread;
 
 

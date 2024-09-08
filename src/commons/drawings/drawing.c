@@ -1,5 +1,6 @@
 #include "../drawing.h"
 
+
 /**
  * Inizializza lo schermo insieme ai colori.
  * @param screen Lo schermo da inizializzare.
@@ -364,7 +365,7 @@ void display_clock(const Position p, const short value, const short max)
     int decaying_color = alloc_pair(COLOR_BLACK, COLOR_YELLOW);
     int decaying_2_color = alloc_pair(COLOR_BLACK, COLOR_RED);
 
-    int parts_per_tick = (int) (max / 10);
+    int parts_per_tick = (int) (max / CLOCK_DISPLAY_TRUE_SIZE);
     int ticks = (int) (value / parts_per_tick), left = (int) (value % parts_per_tick);
     int subticks = 0;
 
@@ -378,9 +379,9 @@ void display_clock(const Position p, const short value, const short max)
         left -= (int) (parts_per_tick / 2);
     }
 
-    eraseFor(p, 2, 20);
+    eraseFor(p, 2, CLOCK_DISPLAY_SIZE);
 
-    for (int i = 0, color = 0; i < 20 && (!i || (int)(i / 2) < ticks + (subticks > 0)); i += 2) 
+    for (int i = 0, color = 0; i < CLOCK_DISPLAY_SIZE && (!i || (int)(i / 2) < ticks + (subticks > 0)); i += 2)
     {
         if ((!i && ticks) || (i && (int)(i / 2) < ticks)) 
         {
@@ -468,7 +469,7 @@ void display_hps(const Position position, const short lives)
  */
 void display_score(const Position position, const int score)
 {
-    #define MAX_SIZE 7 + 8
+    #define MAX_SIZE (7 + 8)
 
     char stringScore[MAX_SIZE];
     snprintf(stringScore, sizeof(stringScore), "Score: %d", score);
@@ -581,7 +582,7 @@ void display_entity(const int fg, const StringArt art, const Position curr, cons
 /* * * * * * */
 
 void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
-    int hideouts = CORE_GAME_HIDEOUTS;
+    int hideouts = GAME_HIDEOUTS;
     while (!(width > hideouts * FROG_WIDTH)) hideouts--;
     map->hideouts = CALLOC(Position, hideouts + 1);
     int total_left = width - hideouts * FROG_WIDTH;
@@ -606,7 +607,7 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
     map->garden.x = map->sidewalk.x = map->river.x = sp.x;
     map->garden.y = map->hideouts[0].y + FROG_HEIGHT;
     map->river.y = map->garden.y + FROG_HEIGHT * 2;
-    map->sidewalk.y = map->river.y + FROG_HEIGHT * CORE_GAME_RIVER_LANES;
+    map->sidewalk.y = map->river.y + FROG_HEIGHT * GAME_RIVER_LANES;
     map->width = width;
 }
 
@@ -713,128 +714,6 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
 }
 
 
-void user_listener(void *_rules)
-{
-    ProductionRules *rules = (ProductionRules *) _rules;
-    int value = -1;
-
-    do
-    {
-        switch(wgetch(stdscr))
-        {
-            case 'W':
-            case 'w':
-            case KEY_UP:
-                value = ACTION_NORTH;
-                break;
-            case 'S':
-            case 's':
-            case KEY_DOWN:
-                value = ACTION_SOUTH;
-                break;
-            case 'A':
-            case 'a':
-            case KEY_LEFT:
-                value = ACTION_WEST;
-                break;
-            case 'D':
-            case 'd':
-            case KEY_RIGHT:
-                value = ACTION_EAST;
-                break;
-            case 'P':
-            case 'p':
-                value = ACTION_PAUSE;
-                break;
-            case ' ':
-                value = ACTION_PAUSE;
-                break;
-            case 'F':
-            case 'f':
-                // todo FIRE projectile?
-                break;
-            default:
-                break;
-        }
-    } while (value == -1);
-
-    rules->buffer = value;
-}
-
-Component *find_component(const int index, GameSkeleton *game)
-{
-    for (int i = 0; i < MAX_CONCURRENCY; i++)
-    {
-        if ((1 << i) == index)
-        {
-            return &game->components[i];
-        }
-    }
-
-    return NULL;
-}
-
-Component **find_components(GameSkeleton *game, ...)
-{
-    Component **foundComponents = NULL;
-
-    va_list args;
-    va_start(args, game);
-
-    int index;
-    int counter = 0;
-
-    while ((index = va_arg(args, int)) != -1)
-    {
-        if (index < 0 || index >= MAX_CONCURRENCY)
-        {
-            break;
-        }
-
-        if (counter == 0)
-        {
-            foundComponents = MALLOC(Component *, 1);
-        }
-        else
-        {
-            foundComponents = REALLOC(Component *, foundComponents, counter + 1);
-        }
-        CRASH_IF_NULL(foundComponents)
-
-        foundComponents[counter] = find_component(index, game);
-        counter++;
-    }
-
-    va_end(args);
-
-    return foundComponents;
-}
-
-void update_position(Entity *e, const Action action)
-{
-    if (!isActionMovement(action))
-    {
-        return;
-    }
-
-    if (action == ACTION_WEST || action == ACTION_EAST)
-    {
-        e->current.x += (action == ACTION_WEST) ? -CORE_GAME_FROG_JUMP_X : CORE_GAME_FROG_JUMP_X;
-    }
-    else
-    {
-        if (e->type == ENTITY_TYPE__FROG)
-        {
-            e->current.y += (action == ACTION_NORTH) ? -CORE_GAME_FROG_JUMP_Y : CORE_GAME_FROG_JUMP_Y;
-        }
-        else
-        {
-            e->current.y += (action == ACTION_NORTH) ? -CORE_GAME_FROG_JUMP_X : CORE_GAME_FROG_JUMP_X;
-        }
-    }
-
-    e->last = e->current;
-}
 
 void display_game_over(Screen scr, int result) {
     // Work in progress...

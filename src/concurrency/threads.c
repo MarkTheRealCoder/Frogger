@@ -1,11 +1,13 @@
 #include "threads.h"
 
-PollingResult thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *game)
+PollingResult  thread_polling_routine(int *buffer, GameSkeleton *game)
 {
     PollingResult pollingResult = POLLING_NONE;
 
-    sem_wait(&POLLING_WRITING);
     sem_wait(&POLLING_READING);
+    sem_wait(&POLLING_WRITING);
+
+    printf("Qualcuno ha prodotto? Siotto!\n");
 
     for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
@@ -17,8 +19,9 @@ PollingResult thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *
         }
 
         buffer[i] = COMMS_EMPTY;
-        Component *c = find_component(i, game);
-        
+        //Component *c = find_component(i, game);
+        printf("Component %i produced %i\n", i, value);
+        /*
         switch(c->type)
         {
             case COMPONENT_CLOCK:
@@ -30,16 +33,17 @@ PollingResult thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *
             case COMPONENT_ENTITIES:
                 pollingResult = handle_entities(c, value);
                 break;
-        }
+        }*/
     }
 
-    sem_post(&POLLING_READING);
+    sleepy(1, TIMEFRAME_SECONDS);
+
     sem_post(&POLLING_WRITING);
 
     return pollingResult;
 }
 
-void generic_thread(void *packet)
+void *generic_thread(void *packet)
 {
     Packet *p = (Packet*) packet;
     void (*producer)(void*) = p->producer;
@@ -61,48 +65,136 @@ void generic_thread(void *packet)
 
         if (action == MESSAGE_RUN) {
 
-            sem_wait(&POLLING_READING);
+            sem_wait(&POLLING_WRITING);
+            sem_post(&POLLING_WRITING);
+
+            producer(&rules);
+            //printf("BUFFER for %d | ADDR=%x\n", index, buffer);
+            if (buffer[index] == COMMS_EMPTY) buffer[index] = rules.buffer;
+
             sem_post(&POLLING_READING);
-
-            int sem_val = 0;
-            sem_getvalue(&POLLING_WRITING, &sem_val);
-            if (sem_val) {
-
-                producer(&rules);
-                sem_wait(&POLLING_WRITING);
-
-                if (buffer[index] == COMMS_EMPTY) buffer[index] = rules.buffer;
-
-                sem_post(&POLLING_WRITING);
-                sleep(1);
-            }
         }
         else if (action == MESSAGE_STOP) {
-            return;
+            printf("STOP=%d\n", id);
+            break;
         }
+
+        printf("SLEEP at INDEX=%d | TIME=%dms\n", index, p->ms);
+        sleepy(p->ms, TIMEFRAME_MILLIS);
     }
 }
 
-void create_threads(Component comps[MAX_CONCURRENCY]) {
-    Thread ts[MAX_CONCURRENCY];
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
-        ts[i].component = &(comps[i]);
-        if (!comps[i].type) {
-            
-        }
+void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
+{
+    Packet *packet = CALLOC(Packet, 1);
+    CRASH_IF_NULL(packet)
+
+    ThreadCarriage *carriage = CALLOC(ThreadCarriage, 1);
+    CRASH_IF_NULL(carriage)
+    carriage->buffer = buffer;
+    AVAILABLE_DYNPID(packet->id, *threads);
+
+    t->rules.rules = NULL;
+    packet->ms = 0;
+
+    switch(comp.type)
+    {
+        case COMPONENT_ENTITY:
+        {
+            Entity *entity = (Entity*) comp.component;
+            if (entity->type == ENTITY_TYPE__FROG)
+            {
+                packet->producer = &user_listener;
+            }
+            else
+            {
+                packet->producer = &entity_move;
+                t->rules.rules = CALLOC(int, 1);
+                CRASH_IF_NULL(t->rules.rules)
+                t->rules.rules[0] = ACTION_WEST;
+                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 1000 + gen_num(1000, 5000) : 1000;
+            }
+        } break;
+        case COMPONENT_ENTITIES:
+        {
+            packet->producer = &entity_move;
+            t->rules.rules = CALLOC(int, 1);
+            CRASH_IF_NULL(t->rules.rules)
+            t->rules.rules[0] = ACTION_NORTH;
+            packet->ms = 500;
+        } break;
+        case COMPONENT_CLOCK:
+        {
+            packet->producer = &timer_counter;
+            t->rules.rules = CALLOC(int, 2);
+            CRASH_IF_NULL(t->rules.rules)
+            Clock *clock = (Clock*) comp.component;
+            t->rules.rules[0] = clock->current;
+            t->rules.rules[1] = clock->fraction;
+            packet->ms = clock->fraction;
+        } break;
+        default:
+            printf("Qualcosa è andato storto\n");
+            break;
     }
+    carriage->rules = t->rules;
+    packet->carriage = carriage;
+    pthread_create(&t->id, NULL, &generic_thread, packet);
+}
+
+Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threads) {
+    Thread *threads_list = CALLOC(Thread, MAX_CONCURRENCY);
+    CRASH_IF_NULL(threads_list)
+    int clocks = 2;
+    int projectiles = 2;
+
+    enum ComponentType type;
+
+    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+        threads_list[i].component = &(comps[i]);
+
+        type = comps[i].type;
+        clocks += (type == COMPONENT_CLOCK) ? -1 : 0;
+        projectiles += (type == COMPONENT_ENTITIES) ? -1 : 0;
+
+        if (!type) {
+            if (!clocks && projectiles) {
+                comps[i] = (Component) {.type=COMPONENT_ENTITIES, .component=create_entities_group()};
+                projectiles--;
+            }
+            switch (clocks) {
+                case 1: {
+                    comps[i] = (Component) {.type=COMPONENT_CLOCK, .component=create_clock(2, CLOCK_SECONDARY)};
+                    clocks--;
+                } break;
+                case 2: {
+                    comps[i] = (Component) {.type=COMPONENT_CLOCK, .component=create_clock(120, CLOCK_MAIN)};
+                    clocks--;
+                } break;
+                default:
+                    break;
+            }
+        }
+
+        thread_factory(threads, comps[i], &(threads_list[i]), buffer);
+    }
+    return threads_list;
 }
 
 int thread_main(GameSkeleton *game, struct entities_list **list)
 {
+    endwin();
     init_semaphores();
-    int buffer[MAX_CONCURRENCY] = {COMMS_EMPTY};
+    int *buffer = CALLOC(int, MAX_CONCURRENCY);
+    int threads = 0;
 
-    wgetch(stdscr);
+    Thread *threadList = create_threads(game->components, buffer, &threads);
+    COMMUNICATIONS = MESSAGE_RUN;
     while (true)
     {
         PollingResult result = thread_polling_routine(buffer, game);
 
+        /*
         switch (result)
         {
             case POLLING_FROG_DEAD:     // Manche lost
@@ -110,16 +202,16 @@ int thread_main(GameSkeleton *game, struct entities_list **list)
             case POLLING_GAME_PAUSE:    // Pause
                 break;
             case POLLING_MANCHE_LOST:   // Manche lost
-                break;
+                return PS_LOST;
         }
+         */
 
         // Validazione delle entità
         // Creazione di nuove entità
         // Collisioni
         // Rimozione entità e aggiornamento
         // Display
-
-        sleepy(100, TIMEFRAME_MILLIS);
+        sleepy(50, TIMEFRAME_MILLIS);
     }
 
     close_semaphores();

@@ -2,8 +2,8 @@
 
 Entity entities_default_frog()
 {
-    //int x = getInnerMiddleWithOffset(mapSkeleton.width, 1, 1, CORE_GAME_ENTITY_SIZE);
-    //int y = getCenteredY(CORE_GAME_ENTITY_SIZE) + 15; // todo edit
+    //int x = getInnerMiddleWithOffset(mapSkeleton.width, 1, 1, GAME_ENTITY_SIZE);
+    //int y = getCenteredY(GAME_ENTITY_SIZE) + 15; // todo edit
 
     //Position startPosition = getPosition(x, y);
 
@@ -24,7 +24,7 @@ Entity entities_default_frog()
 Entity entities_default_plant()
 {
     //int x = getInnerMiddleWithOffset(mapSkeleton.width, 2, index + 1, PLANT_WIDTH);
-    //int y = getCenteredY(CORE_GAME_ENTITY_SIZE) - 12; // todo edit
+    //int y = getCenteredY(GAME_ENTITY_SIZE) - 12; // todo edit
 
     //Position startPosition = getPosition(x, y);
 
@@ -56,11 +56,34 @@ Entity new_entities_default_croc()
         .trueType = TRUETYPE_CROC,
         .hps = 1,
         .width = 0,
-        .height = CORE_GAME_ENTITY_SIZE,
+        .height = GAME_ENTITY_SIZE,
         .readyToShoot = false
     };
 
     return entity;
+}
+
+Clock *create_clock(unsigned int value, enum ClockType type)
+{
+    Clock *c = CALLOC(Clock, 1);
+    CRASH_IF_NULL(c)
+
+    c->type = type;
+    c->current = c->starting = value * 1000;
+    c->fraction = (int) (c->starting / CLOCK_DISPLAY_SIZE);
+
+    return c;
+}
+
+Entities *create_entities_group()
+{
+    Entities *e = CALLOC(Entities, 1);
+    CRASH_IF_NULL(e)
+
+    e->entity_num = 0;
+    e->entities = NULL;
+
+    return e;
 }
 
 void **getEntitiesFromComponent(Component c)
@@ -104,9 +127,12 @@ struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSk
     while (true)
     {
         struct entities_list *node = CALLOC(struct entities_list, 1);
-        if (loadFromSkeleton) {
+        CRASH_IF_NULL(node)
 
-            if (index == MAX_CONCURRENCY) {
+        if (loadFromSkeleton)
+        {
+            if (index == MAX_CONCURRENCY)
+            {
                 free(node);
                 break;
             }
@@ -138,7 +164,12 @@ struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSk
                 free(node);
                 break;
             }
-            if (index < COMPONENT_CLOCK_INDEX) node->e = CALLOC(Entity, 1);
+
+            if (index < COMPONENT_CLOCK_INDEX)
+            {
+                node->e = CALLOC(Entity, 1);
+                CRASH_IF_NULL(node->e)
+            }
 
             if (index == COMPONENT_FROG_INDEX)          *(node->e) = entities_default_frog();
             else if (index <= COMPONENT_CROC_INDEXES)   *(node->e) = new_entities_default_croc();

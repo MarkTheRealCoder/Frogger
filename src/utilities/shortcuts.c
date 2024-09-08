@@ -40,6 +40,11 @@ int choose_between(const int count, ...)
     return result;
 }
 
+bool choose_between_bool()
+{
+    return gen_num(0, 1);
+}
+
 /**
  * Esegue una sleep per un determinato periodo di tempo.
  * @param quantity      La quantità di tempo.

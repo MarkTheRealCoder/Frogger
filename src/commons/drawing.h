@@ -6,33 +6,34 @@
 #include "entities.h"
 
 
-#define CORE_GAME_HIDEOUTS 5
-#define CORE_GAME_HIDEOUTS_SPACES_INBETWEEN 4
-#define CORE_GAME_MANCHE_MAXTIME 120 // in secondi
-#define CORE_GAME_MANCHE_FRACTION 1 // in secondi
+#define GAME_HIDEOUTS 5
+#define GAME_HIDEOUTS_SPACES_INBETWEEN 4
 
-#define CORE_GAME_ENTITY_SIZE 3
+#define GAME_MANCHE_MAXTIME 120 // in secondi
+#define GAME_MANCHE_FRACTION 1 // in secondi
 
-#define CORE_GAME_FROG_LIVES 5
-#define CORE_GAME_FROG_JUMP_X 1
-#define CORE_GAME_FROG_JUMP_Y CORE_GAME_ENTITY_SIZE
+#define GAME_ENTITY_SIZE 3
 
-#define CORE_GAME_LAWN_TOP_LANES 2
-#define CORE_GAME_LAWN_BOTTOM_LANES 2
-#define CORE_GAME_RIVER_LANES 8
+#define GAME_FROG_LIVES 5
+#define GAME_FROG_JUMP_X 1
+#define GAME_FROG_JUMP_Y GAME_ENTITY_SIZE
 
-#define CORE_GAME_MAP_WIDTH                                         \
-    ((CORE_GAME_HIDEOUTS * CORE_GAME_ENTITY_SIZE) +                 \
-    (CORE_GAME_HIDEOUTS_SPACES_INBETWEEN * CORE_GAME_ENTITY_SIZE) + \
-    (2 * CORE_GAME_ENTITY_SIZE))
+#define GAME_LAWN_TOP_LANES 2
+#define GAME_LAWN_BOTTOM_LANES 2
+#define GAME_RIVER_LANES 8
 
-#define CORE_GAME_PROJECTILE_WAIT 2 // in secondi
+#define CORE_GAME_MAP_WIDTH                               \
+    ((GAME_HIDEOUTS * GAME_ENTITY_SIZE) +                 \
+    (GAME_HIDEOUTS_SPACES_INBETWEEN * GAME_ENTITY_SIZE) + \
+    (2 * GAME_ENTITY_SIZE))
 
-#define CORE_GAME_PLANTS 3
-#define CORE_GAME_CROCS (2 * CORE_GAME_RIVER_LANES)
+#define GAME_PROJECTILE_WAIT 2 // in secondi
 
-#define CORE_GAME_CROCS_MIN_WIDTH (2 * CORE_GAME_ENTITY_SIZE)
-#define CORE_GAME_CROCS_MAX_WIDTH (3 * CORE_GAME_ENTITY_SIZE)
+#define GAME_PLANTS 3
+#define GAME_CROCS (2 * GAME_RIVER_LANES)
+
+#define GAME_CROCS_MIN_WIDTH (2 * GAME_ENTITY_SIZE)
+#define GAME_CROCS_MAX_WIDTH (3 * GAME_ENTITY_SIZE)
 
 #define MAP_HEIGHT 39
 
@@ -45,23 +46,8 @@
 #define TOTAL_LIVES 3
 #define MAP_WIDTH 100
 
-#define PERCENTAGE_MAP_X 50
-#define PERCENTAGE_MAP_Y 80
-
-#define PERCENTAGE_TIMER_X 10
-#define PERCENTAGE_TIMER_Y 5
-
-#define PERCENTAGE_TTIMER_X 10
-#define PERCENTAGE_TTIMER_Y 5
-
-#define PERCENTAGE_HPS_X 10
-#define PERCENTAGE_HPS_Y 5
-
-#define PERCENTAGE_ACHI_X 20
-#define PERCENTAGE_ACHI_Y 50
-
-
-#define JOLLY_PAIR 127
+#define CLOCK_DISPLAY_TRUE_SIZE 10
+#define CLOCK_DISPLAY_SIZE 20
 
 #define GET_MAP_Y(_y, map) (_y) - (map.hideouts[0].y - 3)
 
@@ -225,26 +211,6 @@ static char *_FROGGER_WIN_LOGO[_FROGGER_WIN_LOGO_LENGTH] =
                 "  |_|    \\___/   \\__,_|      \\_/\\_/    |_| |_| |_|"
         };
 
-/*
-
-
- __   __                    _                     _
- \ \ / /   ___    _   _    | |       ___    ___  | |_
-  \ V /   / _ \  | | | |   | |      / _ \  / __| | __|
-   | |   | (_) | | |_| |   | |___  | (_) | \__ \ | |_
-   |_|    \___/   \__,_|   |_____|  \___/  |___/  \__|
-
-
-
- __   __                   __        __  _
- \ \ / /   ___    _   _    \ \      / / (_)  _ __
-  \ V /   / _ \  | | | |    \ \ /\ / /  | | | '_ \
-   | |   | (_) | | |_| |     \ V  V /   | | | | | |
-   |_|    \___/   \__,_|      \_/\_/    |_| |_| |_|
-
-
- */
-
 #define _FROGGER_SCREEN_TOO_SMALL_LENGTH 45
 static char _FROGGER_SCREEN_TOO_SMALL[_FROGGER_SCREEN_TOO_SMALL_LENGTH] =
     "Screen size is too small to play Frogger! :(\n";
@@ -252,10 +218,6 @@ static char _FROGGER_SCREEN_TOO_SMALL[_FROGGER_SCREEN_TOO_SMALL_LENGTH] =
 #define _FROGGER_SCREEN_CORRECT_LENGTH 34
 static char _FROGGER_SCREEN_CORRECT_SIZE[_FROGGER_SCREEN_CORRECT_LENGTH] =
         "Minimum size is: 40rows x 100cols\n";
-
-#define _FROGGER_SCREEN_CLOSE_NOTICE_LENGTH 32
-static char _FROGGER_SCREEN_CLOSE_NOTICE[_FROGGER_SCREEN_CLOSE_NOTICE_LENGTH] =
-        "Press any key to close the game\n";
 
 #define HEART "\xE2\x99\xA5"
 
@@ -284,10 +246,6 @@ void handle_screen_resize();
 enum color_codes getEntityColor(enum entity_type type);
 
 Position getPosition(int x, int y);
-
-Component *find_component(int index, GameSkeleton *game);
-Component **find_components(GameSkeleton *game, ...);
-void update_position (Entity *e, Action movement);
 
 Position getPositionFromEntity(Entity e);
 int getPriorityByEntityType(EntityType entityType);

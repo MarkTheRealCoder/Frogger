@@ -120,17 +120,6 @@ bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
 }
 
 /**
- * Crea un messaggio da inviare.
- * @param action        L'azione.
- * @param receivers     I riceventi.
- * @return              Il messaggio da inviare.
- */
-SystemMessage create_message(const SystemMessage action, const int receivers)
-{
-    return action + (receivers << 4);
-}
-
-/**
  * Invia un messaggio.
  * @param message     Il messaggio.
  * @param service_mem La memoria di servizio.
@@ -167,10 +156,17 @@ void generic_process(int id, int service_comms, void (*producer)(void*), void *a
     while (true)
     {
         SystemMessage new_action = check_for_comms(id, service_mem);
-        if (new_action != MESSAGE_NONE && new_action != action) action = new_action;
-        if (action == MESSAGE_RUN) {
+        if (new_action != MESSAGE_NONE && new_action != action)
+        {
+            action = new_action;
+        }
+
+        if (action == MESSAGE_RUN)
+        {
             producer(args);
-        } else if (action == MESSAGE_STOP) {
+        }
+        else if (action == MESSAGE_STOP)
+        {
             munmap(service_mem, SERVICE_SIZE);
             close(service_comms);
             break;
@@ -207,8 +203,6 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
 
     return p;
 }
-
-
 
 int process_main(GameSkeleton *game, struct entities_list **list) {
     // ADD A GAME STRUCT FOR FAST LOADING DATA

@@ -14,5 +14,6 @@ Entity entities_default_frog();
 Entity entities_default_plant();
 
 struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSkeleton);
-
+Clock *create_clock(unsigned int value, enum ClockType type);
+Entities *create_entities_group();
 #endif //FROGGER_COMMON_H

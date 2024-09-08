@@ -12,20 +12,20 @@ int main(int argc, char *argv[])
 
     srand(time(NULL));
 
+    /*
     Screen screen;
     WINDOW *w = init_screen(&screen);
 
     // Se il terminale è troppo piccolo, comunica a schermo.
     handle_screen_resize();
     signal(SIGWINCH, handle_screen_resize);
-
+*/
     int threadsOrProcessesMenu = 0, mainMenu = -1;
 
     /*
      * Version menu.
      */
-
-
+/*
      do {
         show(screen, PS_VERSION_MENU, &threadsOrProcessesMenu);
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
                 break;
         }
     } while (threadsOrProcessesMenu == -1);
-
+*/
 
     /*
      * Main menu.
@@ -58,14 +58,18 @@ int main(int argc, char *argv[])
                     .last = NULL
             }
     };
-
     bool loadedFromFile = false;
+/*
 
     do {
         show(screen, PS_MAIN_MENU, &mainMenu);
 
         switch (mainMenu)
         {
+            case MMO_START_NEW:
+                {
+                }
+                break;
             case MMO_OPEN_SAVING: 
                 {
                     show(screen, PS_SAVINGS, &mainMenu);
@@ -79,24 +83,25 @@ int main(int argc, char *argv[])
                     mainMenu = -1;
                 }
                 break;
-            case MMO_QUIT: goto TERMINATE;
+            case MMO_QUIT:
+                goto TERMINATE;
             default:
                 mainMenu = 0;
                 break;
         }
     } while (mainMenu == -1);
-
+*/
     int result;
     struct entities_list *entities = create_default_entities(&game, loadedFromFile);
     if (!threadsOrProcessesMenu) result = thread_main(&game, &entities);
     else result = process_main(&game, &entities);
 
-    display_game_over(screen, result);
+    //display_game_over(screen, result);
 
     TERMINATE:
-        reset_color_pairs();
-        endwin();
-        delwin(w);
+        //reset_color_pairs();
+        //endwin();
+        //delwin(w);
     return EXIT_SUCCESS;
 }
 

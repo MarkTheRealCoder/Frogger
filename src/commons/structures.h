@@ -94,7 +94,7 @@ typedef struct {
 } Entities;
 
 typedef struct {
-    enum { CLOCK_MAIN, CLOCK_SECONDARY } type;
+    enum ClockType { CLOCK_MAIN, CLOCK_SECONDARY } type;
     unsigned int starting;
     int current;
     int fraction;

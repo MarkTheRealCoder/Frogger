@@ -35,7 +35,7 @@
 #define CRASH_IF_NULL(pointer)                  \
     if (!pointer) {                             \
         perror("Cannot allocate memory!\n");    \
-        exit(-1);                               \
+        exit(EXIT_FAILURE);                     \
     }
 
 /**
@@ -58,7 +58,7 @@ void sleepy(int quantity, TimeFrame timeFrame);
 
 int gen_num(int min, int max);
 int choose_between(int count, ...);
-
+bool choose_between_bool();
 
 /**
  * String utils.
