@@ -100,9 +100,10 @@ typedef struct {
     int fraction;
 } Clock;
 
+enum ComponentType { COMPONENT_NONE, COMPONENT_ENTITY, COMPONENT_ENTITIES, COMPONENT_CLOCK };
 typedef struct {
     void *component;
-    enum { COMPONENT_ENTITY, COMPONENT_ENTITIES, COMPONENT_CLOCK } type;
+    enum ComponentType type;
 } Component;
 
 typedef struct {

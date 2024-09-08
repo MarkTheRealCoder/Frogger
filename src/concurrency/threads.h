@@ -11,6 +11,11 @@ typedef struct {
     int *buffer;
 } ThreadCarriage;
 
+typedef struct {
+    pthread_t id;
+    Component *component;
+} Thread;
+
 
 static int COMMUNICATIONS = 0;
 static sem_t COMMUNICATION_SEMAPHORE;

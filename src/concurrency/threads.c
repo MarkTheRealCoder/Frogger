@@ -83,6 +83,16 @@ void generic_thread(void *packet)
     }
 }
 
+void create_threads(Component comps[MAX_CONCURRENCY]) {
+    Thread ts[MAX_CONCURRENCY];
+    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+        ts[i].component = &(comps[i]);
+        if (!comps[i].type) {
+            
+        }
+    }
+}
+
 int thread_main(GameSkeleton *game, struct entities_list **list)
 {
     init_semaphores();

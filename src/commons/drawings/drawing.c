@@ -43,7 +43,7 @@ WINDOW *init_screen(Screen *screen)
  */
 void handle_screen_resize()
 {
-    static bool SCREEN_VALID = false;
+    static bool SCREEN_INVALID = true;
 
     #define MIN_ROWS 40
     #define MIN_COLS 100
@@ -51,9 +51,9 @@ void handle_screen_resize()
     int *xy = get_screen_size();
     int rows = xy[0], cols = xy[1];
 
-    SCREEN_VALID = rows < MIN_ROWS || cols < MIN_COLS;
+    SCREEN_INVALID = rows < MIN_ROWS || cols < MIN_COLS;
 
-    if (!SCREEN_VALID)
+    if (SCREEN_INVALID)
     {
         Position error = {
                 getCenteredX(_FROGGER_SCREEN_TOO_SMALL_LENGTH),
