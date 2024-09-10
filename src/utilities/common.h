@@ -16,4 +16,5 @@ Entity entities_default_plant();
 struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSkeleton);
 Clock *create_clock(unsigned int value, enum ClockType type);
 Entities *create_entities_group();
+void create_new_entities(struct entities_list **list, Component components[MAX_CONCURRENCY]);
 #endif //FROGGER_COMMON_H

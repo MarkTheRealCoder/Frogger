@@ -715,8 +715,8 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
 }
 
 
+// todo
+void display_game_over(Screen screen, int result)
+{
 
-void display_game_over(Screen scr, int result) {
-    // Work in progress...
-    wgetch(stdscr);
 }

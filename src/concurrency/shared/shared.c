@@ -16,7 +16,7 @@ PollingResult handle_clock(Component *component, int value)
         return POLLING_FROG_DEAD;
     }
 
-    return POLLING_NONE;
+    return INNER_MESSAGE_NONE;
 }
 
 PollingResult handle_entity(Component *component, int value, int canPause)
@@ -36,7 +36,7 @@ PollingResult handle_entity(Component *component, int value, int canPause)
         return POLLING_GAME_PAUSE;
     }
 
-    return POLLING_NONE;
+    return INNER_MESSAGE_NONE;
 }
 
 PollingResult handle_entities(Component *component, int value)
@@ -61,20 +61,12 @@ PollingResult handle_entities(Component *component, int value)
          */
     }
 
-    return POLLING_NONE;
+    return INNER_MESSAGE_NONE;
 }
 
 Component *find_component(const int index, GameSkeleton *game)
 {
-    for (int i = 0; i < MAX_CONCURRENCY; i++)
-    {
-        if ((1 << i) == index)
-        {
-            return &game->components[i];
-        }
-    }
-
-    return NULL;
+    return &game->components[index];
 }
 
 Component **find_components(GameSkeleton *game, ...)
@@ -146,7 +138,7 @@ void user_listener(void *_rules)
 
     do
     {
-        switch(getch())
+        switch(wgetch(stdscr))
         {
             case 'W':
             case 'w':
@@ -173,17 +165,11 @@ void user_listener(void *_rules)
                 value = ACTION_PAUSE;
                 break;
             case ' ':
-                value = ACTION_PAUSE;
-                break;
-            case 'F':
-            case 'f':
                 value = ACTION_SHOOT;
                 break;
             default:
                 break;
         }
-
-        sleepy(1, TIMEFRAME_SECONDS);
     } while (value == -1);
 
     rules->buffer = value;
@@ -211,4 +197,57 @@ void timer_counter(void *_rules) {
 SystemMessage create_message(const SystemMessage action, const int receivers)
 {
     return action + (receivers << 4);
+}
+
+InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
+{
+    int *lives = &game->lives;
+    int *score = &game->score;
+
+    if (*lives == 0)
+    {
+        *score = -*score;
+        return EVALUATION_MANCHE_LOST;
+    }
+
+    if (areHideoutsClosed(&game->map))
+    {
+        return EVALUATION_MANCHE_WON;
+    }
+
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        Component *c = &game->components[i];
+
+        switch (c->type)
+        {
+            case COMPONENT_ENTITY:
+            {
+                Entity *entity = (Entity *) c->component;
+                //validate_entity(entity, game->map);
+            } break;
+            case COMPONENT_ENTITIES:
+            {
+                Entities *entities = (Entities *) c->component;
+                //validate_entities(entities, game->map);
+            } break;
+            default:
+                continue;
+        }
+    }
+
+    // validate_entities(*list, game->map);
+    // close hideouts
+
+    return INNER_MESSAGE_NONE;
+}
+
+InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
+{
+    int *lives = &game->lives;
+    int *score = &game->score;
+
+
+
+    return INNER_MESSAGE_NONE;
 }

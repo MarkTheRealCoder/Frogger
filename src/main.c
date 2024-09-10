@@ -50,9 +50,8 @@ int main(int argc, char *argv[])
      */
 
     GameSkeleton game = {
-            .current_plants = 0,
-            .current_projectiles = 0,
-            .current_frog_projectiles = 0,
+            .lives = TOTAL_LIVES,
+            .score = 0,
             .achievements = {
                     .nodes = 0,
                     .last = NULL

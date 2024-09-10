@@ -272,3 +272,112 @@ Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int in
 
     return getPosition(x, y);
 }
+
+int countHideouts(MapSkeleton *map)
+{
+    int counter = 0;
+
+    for (int i = 0; map->hideouts[i].x != -1; ++i)
+    {
+        if (map->hideouts[i].x != 0 && map->hideouts[i].y != 0)
+        {
+            counter++;
+        }
+    }
+
+    return counter;
+}
+
+bool areHideoutsClosed(MapSkeleton *map)
+{
+    int counter = 0;
+
+    for (int i = 0; map->hideouts[i].x != -1; ++i)
+    {
+        if (map->hideouts[i].x != 0 && map->hideouts[i].y != 0)
+        {
+            counter = counter | (1 << i);
+        }
+    }
+
+    return counter;
+}
+
+Component getDefaultClockComponent(enum ClockType clockType)
+{
+    #define MAIN_VALUE 120
+    #define SECONDARY_VALUE 2
+
+    int value = clockType == CLOCK_MAIN ? MAIN_VALUE : SECONDARY_VALUE;
+
+    return (Component) {
+        .type = COMPONENT_CLOCK,
+        .component = create_clock(value, clockType)
+    };
+}
+
+GenericNode *createNode(void *data)
+{
+    GenericNode *node = CALLOC(GenericNode, 1);
+    CRASH_IF_NULL(node)
+
+    node->current = data;
+    node->next = NULL;
+
+    return node;
+}
+
+GenericNode *addNode(GenericNode *head, void *data)
+{
+    GenericNode *node = createNode(data);
+
+    if (!head)
+    {
+        return node;
+    }
+
+    GenericNode *current = head;
+
+    while (current->next)
+    {
+        current = current->next;
+    }
+
+    current->next = node;
+
+    return head;
+}
+
+GenericNode *removeNode(GenericNode *head, void *data)
+{
+    if (!head)
+    {
+        return NULL;
+    }
+
+    GenericNode *current = head;
+    GenericNode *prev = NULL;
+
+    while (current)
+    {
+        if (current->current == data)
+        {
+            if (!prev)
+            {
+                head = current->next;
+            }
+            else
+            {
+                prev->next = current->next;
+            }
+
+            free(current);
+            break;
+        }
+
+        prev = current;
+        current = current->next;
+    }
+
+    return head;
+}

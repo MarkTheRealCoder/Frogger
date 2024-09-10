@@ -63,6 +63,23 @@ Entity new_entities_default_croc()
     return entity;
 }
 
+Entity create_projectile(Entity *master) {
+    bool masterIsFrog = master->type == ENTITY_TYPE__FROG;
+    Position p = master->current;
+    p.x += 1;
+    p.y += (masterIsFrog) ? -1 : FROG_HEIGHT;
+    return (Entity) {
+            .current = p,
+            .last = getPosition(-1, -1),
+            .readyToShoot = false,
+            .type = ENTITY_TYPE__PROJECTILE,
+            .trueType = (masterIsFrog) ? TRUETYPE_PROJ_FROG : TRUETYPE_PROJ_PLANT,
+            .hps = 1,
+            .width = 1,
+            .height = 1
+    };
+}
+
 Clock *create_clock(unsigned int value, enum ClockType type)
 {
     Clock *c = CALLOC(Clock, 1);
@@ -183,4 +200,31 @@ struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSk
     }
 
     return entities;
+}
+
+void create_new_entities(struct entities_list **list, Component components[MAX_CONCURRENCY]) {
+    struct entities_list *entity = *list;
+    Position p = {0, 0};
+    while (entity) {
+        Entity *e = entity->e;
+        if (e->readyToShoot) {
+            Entity *new = CALLOC(Entity, 1);
+            CRASH_IF_NULL(new);
+            *new = create_projectile(e);
+            // Adding entity to the main list
+            struct entities_list *node = CALLOC(struct entities_list, 1);
+            node->next = *list;
+            node->e = new;
+            *list = node;
+            // Adding entity to its component's list
+            node = CALLOC(struct entities_list, 1);
+            int index = (e->type == ENTITY_TYPE__FROG) ? COMPONENT_FROG_PROJECTILES_INDEX : COMPONENT_PROJECTILES_INDEX;
+            Entities *es = (Entities *) components[index].component;
+            es->entity_num++;
+            node->next = es->entities;
+            node->e = new;
+            es->entities = node;
+        }
+        entity = entity->next;
+    }
 }

@@ -94,11 +94,6 @@ typedef struct {
     } collision_type;
 } CollisionPacket;
 
-typedef struct {
-    unsigned int x;
-    unsigned int y;
-} Screen;
-
 enum PS {
     PS_MAIN_MENU,
     PS_PAUSE_MENU,
@@ -228,7 +223,7 @@ static char _FROGGER_SCREEN_CORRECT_SIZE[_FROGGER_SCREEN_CORRECT_LENGTH] =
 
 WINDOW *init_screen(Screen *screen);
 void center_string_colored(char *string, int pair, int max, int cuy);
-unsigned int show(Screen scr, enum PS prog_state, int *output);
+unsigned int show(Screen screen, enum PS prog_state, int *output);
 void display_clock(Position p, short value, short max);
 void display_hps(Position position, short lives);
 void addStringToList(StringNode **list, int color, char *string);
@@ -255,6 +250,6 @@ Cuboid getCuboidFromEntity(Entity e);
 CollisionPacket areColliding(Entity e1, Entity e2);
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
-void display_game_over(Screen scr, int result);
+void display_game_over(Screen screen, int result);
 
 #endif

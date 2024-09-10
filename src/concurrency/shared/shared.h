@@ -25,11 +25,16 @@
 }
 
 typedef enum {
-    MESSAGE_RUN=3,
-    MESSAGE_HALT=2,
-    MESSAGE_STOP=1,
-    MESSAGE_NONE=0
+    MESSAGE_RUN = 3,
+    MESSAGE_HALT = 2,
+    MESSAGE_STOP = 1,
+    MESSAGE_NONE = 0
 } SystemMessage;
+
+typedef enum {
+    VALIDATION_NONE,
+    VALIDATION_BREAK
+} ValidationResult;
 
 enum LFI {
     LFI_EMPTY_ID = 0,
@@ -43,9 +48,9 @@ typedef struct {
     int ms;
 } Packet;
 
-PollingResult handle_clock(Component *component, int value);
-PollingResult handle_entity(Component *component, int value, int canPause);
-PollingResult handle_entities(Component *component, int value);
+InnerMessages handle_clock(Component *component, int value);
+InnerMessages handle_entity(Component *component, int value, int canPause);
+InnerMessages handle_entities(Component *component, int value);
 
 Component *find_component(int index, GameSkeleton *game);
 Component **find_components(GameSkeleton *game, ...);
@@ -53,5 +58,8 @@ void update_position (Entity *e, Action movement);
 void user_listener(void *_rules);
 void entity_move(void *_rules);
 void timer_counter(void *_rules);
-SystemMessage create_message(const SystemMessage action, const int receivers);
+SystemMessage create_message(SystemMessage action, int receivers);
+
+InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list);
+
 #endif //COMMON_H

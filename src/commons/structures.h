@@ -10,11 +10,14 @@
 #pragma once
 
 typedef enum {
-    POLLING_NONE,
+    INNER_MESSAGE_NONE,
+    EVALUATION_MANCHE_WON,
+    EVALUATION_MANCHE_LOST,
+    EVALUATION_GAME_WON,
     POLLING_MANCHE_LOST,
     POLLING_GAME_PAUSE = 69,
     POLLING_FROG_DEAD
-} PollingResult;
+} InnerMessages;
 
 typedef struct {
     int *rules;
@@ -115,14 +118,21 @@ typedef struct {
 } MapSkeleton;
 
 typedef struct {
-    int current_plants;
-    int current_projectiles;
-    int current_frog_projectiles;
+    int lives;
+    int score;
     Component components[MAX_CONCURRENCY];
     MapSkeleton map;
     StringList achievements;
 } GameSkeleton;
 
+typedef struct {
+    unsigned int x;
+    unsigned int y;
+} Screen;
+
+typedef struct generic_node {
+    void *current;
+    struct generic_node *next;
+} GenericNode;
+
 #endif
-
-
