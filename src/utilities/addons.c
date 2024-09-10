@@ -20,24 +20,9 @@ struct program_args addons_parse_args(int argc, char *argv[])
             parsed_arguments.help = true;
         }
 
-        if (str_eq("-q", current_arg) || str_eq("--quit_after_win", current_arg))
-        {
-            parsed_arguments.quit_on_win = true;
-        }
-
         if (str_eq("-s", current_arg) || str_eq("--save_game_stats", current_arg))
         {
             parsed_arguments.save_game_stats = true;
-        }
-
-        if (str_eq("-rs", current_arg) || str_eq("--replay_save", current_arg))
-        {
-            parsed_arguments.save_replay = true;
-        }
-
-        if (str_eq("-rv", current_arg) || str_eq("--replay_view", current_arg))
-        {
-            parsed_arguments.replay_view = true;
         }
     }
 
@@ -52,10 +37,7 @@ void addons_args_help()
     printf("Usage: frogger [options]\n");
     printf("Options:\n");
     printf("\t-h, --help\t\tShows this help message\n");
-    printf("\t-q, --quit_after_win\tQuits the program after game is won.\n");
     printf("\t-s, --save_game_stats\tSaves the last game's statistics to file.\n");
-    printf("\t-rs, --replay_save\tSaves the last game replay to a file.");
-    printf("\t-rv, --replay_view\tViews the saved replays.");
 }
 
 /**

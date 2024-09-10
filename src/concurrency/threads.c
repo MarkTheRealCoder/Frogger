@@ -1,8 +1,8 @@
 #include "threads.h"
 
-PollingResult  thread_polling_routine(int *buffer, GameSkeleton *game)
+InnerMessages  thread_polling_routine(int *buffer, GameSkeleton *game)
 {
-    InnerMessages pollingResult = INNER_MESSAGE_NONE;
+    InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
     sem_wait(&POLLING_READING);
     sem_wait(&POLLING_WRITING);
@@ -23,20 +23,20 @@ PollingResult  thread_polling_routine(int *buffer, GameSkeleton *game)
         switch(c->type)
         {
             case COMPONENT_CLOCK:
-                pollingResult = handle_clock(c, value);
+                innerMessage = handle_clock(c, value);
                 break;
             case COMPONENT_ENTITY:
-                pollingResult = handle_entity(c, value, true);
+                innerMessage = handle_entity(c, value, true);
                 break;
             case COMPONENT_ENTITIES:
-                pollingResult = handle_entities(c, value);
+                innerMessage = handle_entities(c, value);
                 break;
         }
     }
 
     sem_post(&POLLING_WRITING);
 
-    return pollingResult;
+    return innerMessage;
 }
 
 void *generic_thread(void *packet)
@@ -222,7 +222,6 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
             } break;
         }
 
-
         if (!skipValidation) result = apply_validation(game, list);
 
         switch(result)
@@ -232,10 +231,10 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
                 (*lives)--;
             case EVALUATION_MANCHE_WON:
             {
-                reset_main_timer(game); // todo <-
-                reset_secondary_timer(game); // todo <-
-                reset_frog(game); // todo <-
-                reset_entities(list, game); // todo <-
+                // reset_main_timer(game); // todo <-
+                // reset_secondary_timer(game); // todo <-
+                // reset_frog(game); // todo <-
+                // reset_entities(list, game); // todo <-
                 *score += 1000;
             } break;
         }

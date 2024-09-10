@@ -51,7 +51,9 @@
 
 #define GET_MAP_Y(_y, map) (_y) - (map.hideouts[0].y - 3)
 
-#define WITHIN_BOUNDARIES(_x, _y, map) ((map.sidewalk.x) <= (_x) && ((_x) < ((map.sidewalk.x) + (map.width)))) && ((map.hideouts[0].y) <= (_y) && ((_y) < ((map.sidewalk.y) + (3))))
+#define WITHIN_BOUNDARIES(_x, _y, map)                                      \
+((map.sidewalk.x) <= (_x) && ((_x) < ((map.sidewalk.x) + (map.width)))) &&  \
+((map.hideouts[0].y) <= (_y) && ((_y) < ((map.sidewalk.y) + (3))))
 
 /* COLOR CODES */
 
@@ -97,8 +99,6 @@ typedef struct {
 enum PS {
     PS_MAIN_MENU,
     PS_PAUSE_MENU,
-    PS_SAVINGS,
-    PS_CREATE_SAVING,
     PS_LOST,
     PS_WIN,
     PS_VERSION_MENU
@@ -106,17 +106,11 @@ enum PS {
 
 enum MainMenuOptions {
     MMO_START_NEW,
-    MMO_OPEN_SAVING,
-    MMO_CREATE_SAVING,
     MMO_QUIT
 };
 
 enum PauseMenuOptions {
     PMO_RESUME,
-    PMO_SAVE_CURRENT,
-    PMO_SAVE_REPLAY,
-    PMO_CREATE_SAVING,
-    PMO_SAVE_AND_QUIT,
     PMO_QUIT
 };
 

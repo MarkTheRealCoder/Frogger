@@ -69,19 +69,6 @@ int main(int argc, char *argv[])
                 {
                 }
                 break;
-            case MMO_OPEN_SAVING: 
-                {
-                    show(screen, PS_SAVINGS, &mainMenu);
-                    // getGameData(menuOutput, &game);
-                    loadedFromFile = true;
-                }
-                break;
-            case MMO_CREATE_SAVING: 
-                {
-                    show(screen, PS_CREATE_SAVING, &mainMenu);
-                    mainMenu = -1;
-                }
-                break;
             case MMO_QUIT:
                 goto TERMINATE;
             default:

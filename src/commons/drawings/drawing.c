@@ -664,7 +664,7 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
         getCenteredX(MAP_WIDTH),
         5
     };
-    // ho dovuto rimuovere tutti gli static perchè non gli piaceva il fatto che getCenteredX e Y non fossero costanti determinate a COMPILE TIME
+
     Position POSITION_ACHIEVEMENTS_TITLE = {
         getCenteredX(12) + 72,
         getCenteredY(25) - 2

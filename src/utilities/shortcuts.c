@@ -273,7 +273,7 @@ Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int in
     return getPosition(x, y);
 }
 
-int countHideouts(MapSkeleton *map)
+int countHideouts(const MapSkeleton *map)
 {
     int counter = 0;
 
@@ -288,7 +288,7 @@ int countHideouts(MapSkeleton *map)
     return counter;
 }
 
-bool areHideoutsClosed(MapSkeleton *map)
+bool areHideoutsClosed(const MapSkeleton *map)
 {
     int counter = 0;
 
@@ -303,7 +303,27 @@ bool areHideoutsClosed(MapSkeleton *map)
     return counter;
 }
 
-Component getDefaultClockComponent(enum ClockType clockType)
+int isEntityInsideOfHideout(const Entity *entity, const MapSkeleton *map)
+{
+    if (entity->type != ENTITY_TYPE__FROG || entity->current.y != (map->garden.y - FROG_HEIGHT))
+    {
+        return false;
+    }
+
+    int hideoutsCount = countHideouts(map);
+
+    for (int i = 0; i < hideoutsCount; i++)
+    {
+        if (entity->current.x == map->hideouts[i].x && entity->current.y == map->hideouts[i].y)
+        {
+            return i + 1;
+        }
+    }
+
+    return false;
+}
+
+Component getDefaultClockComponent(const enum ClockType clockType)
 {
     #define MAIN_VALUE 120
     #define SECONDARY_VALUE 2
@@ -314,70 +334,4 @@ Component getDefaultClockComponent(enum ClockType clockType)
         .type = COMPONENT_CLOCK,
         .component = create_clock(value, clockType)
     };
-}
-
-GenericNode *createNode(void *data)
-{
-    GenericNode *node = CALLOC(GenericNode, 1);
-    CRASH_IF_NULL(node)
-
-    node->current = data;
-    node->next = NULL;
-
-    return node;
-}
-
-GenericNode *addNode(GenericNode *head, void *data)
-{
-    GenericNode *node = createNode(data);
-
-    if (!head)
-    {
-        return node;
-    }
-
-    GenericNode *current = head;
-
-    while (current->next)
-    {
-        current = current->next;
-    }
-
-    current->next = node;
-
-    return head;
-}
-
-GenericNode *removeNode(GenericNode *head, void *data)
-{
-    if (!head)
-    {
-        return NULL;
-    }
-
-    GenericNode *current = head;
-    GenericNode *prev = NULL;
-
-    while (current)
-    {
-        if (current->current == data)
-        {
-            if (!prev)
-            {
-                head = current->next;
-            }
-            else
-            {
-                prev->next = current->next;
-            }
-
-            free(current);
-            break;
-        }
-
-        prev = current;
-        current = current->next;
-    }
-
-    return head;
 }

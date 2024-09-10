@@ -116,11 +116,9 @@ int generic_menu(const Screen screen, StringArt choices, StringArt logo, StringA
 
 int main_menu(const Screen screen)
 {
-    #define MM_LEN 4
+    #define MM_LEN 2
     static char *choices[MM_LEN] = {
         "Start new game",
-        "Open a saving",
-        "Create a new saving",
         "Quit"
     };
 
@@ -131,13 +129,9 @@ int main_menu(const Screen screen)
 
 int pause_menu(const Screen screen)
 {
-    #define PM_LEN 6
+    #define PM_LEN 2
     static char *choices[PM_LEN] = {
         "Resume",
-        "Save current game",
-        "Save as a Replay",
-        "Create a new saving",
-        "Save & Quit",
         "Quit"
     };
 

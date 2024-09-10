@@ -89,8 +89,9 @@ bool isActionMovement(Action action);
 int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entityWidth);
 Position getPositionWithInnerMiddleX(int width, int targetHeight, int divTimes, int indexToPick, int entityWidth);
 
-int countHideouts(MapSkeleton *map);
-bool areHideoutsClosed(MapSkeleton *map);
+int countHideouts(const MapSkeleton *map);
+bool areHideoutsClosed(const MapSkeleton *map);
 Component getDefaultClockComponent(enum ClockType clockType);
+int isEntityInsideOfHideout(const Entity *entity, const MapSkeleton *map);
 
 #endif // !FROGGER_SHORTCUTS_H
