@@ -261,7 +261,7 @@ CollisionPacket areColliding(const Entity e1, const Entity e2)
     }
     else 
     {
-        collisionPacket.collision_type = ((e1.type & 3) == 3 && (e2.type & 3) == 3) ? COLLISION_DAMAGING : COLLISION_OVERLAPPING;
+        collisionPacket.collision_type = e1.trueType & e2.trueType;
     }
 
     return collisionPacket;

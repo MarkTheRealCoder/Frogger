@@ -399,11 +399,33 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
     int *score = &game->score;
 
     struct entities_list *el = *list;
-    int counter = 0;
+
+    CollisionPacket collisionPacket;
 
     while (el)
     {
-        counter++;
+        Entity *entity = el->e;
+        struct entities_list *innerEl = el->next;
+
+        while (innerEl)
+        {
+            Entity *innerEntity = innerEl->e;
+
+            collisionPacket = areColliding(*entity, *innerEntity);
+
+            switch (collisionPacket.collision_type)
+            {
+                case COLLISION_OVERLAPPING:
+                    break;
+                case COLLISION_DAMAGING:
+                    break;
+                case COLLISION_AVOIDED:
+                    break;
+            }
+
+            innerEl = innerEl->next;
+        }
+
         el = el->next;
     }
 

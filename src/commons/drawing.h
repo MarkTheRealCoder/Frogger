@@ -90,9 +90,11 @@ typedef struct {
     int e2_priority;
 
     enum {
-        COLLISION_OVERLAPPING, 
-        COLLISION_DAMAGING,
-        COLLISION_AVOIDED
+        COLLISION_OVERLAPPING = 0,
+        COLLISION_AVOIDED = 1,
+        COLLISION_DESTROYING = 3,
+        COLLISION_DAMAGING = 48,
+        COLLISION_TRANSFORM = 195
     } collision_type;
 } CollisionPacket;
 
