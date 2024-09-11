@@ -12,7 +12,7 @@ Entity entities_default_frog()
         .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__FROG,
         .trueType = TRUETYPE_FROG,
-        .hps = 2,
+        .hps = 1,
         .width = FROG_WIDTH,
         .height = FROG_HEIGHT,
         .readyToShoot = false

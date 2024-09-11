@@ -112,6 +112,8 @@ void update_position(Entity *e, const Action action)
         return;
     }
 
+    e->last = e->current;
+
     if (action == ACTION_WEST || action == ACTION_EAST)
     {
         e->current.x += (action == ACTION_WEST) ? -GAME_FROG_JUMP_X : GAME_FROG_JUMP_X;
@@ -127,8 +129,6 @@ void update_position(Entity *e, const Action action)
             e->current.y += (action == ACTION_NORTH) ? -GAME_FROG_JUMP_X : GAME_FROG_JUMP_X;
         }
     }
-
-    e->last = e->current;
 }
 
 void user_listener(void *_rules)
@@ -287,11 +287,15 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
     {
         case ENTITY_TYPE__FROG:
         {
-            bool notWithinBoundaries = !WITHIN_BOUNDARIES(x, y, (*map)) || !WITHIN_BOUNDARIES(x + 2, y, (*map));
-            int entityInsideOfHideout = isEntityInsideOfHideout(entity, map);
+            bool notWithinBoundaries = !WITHIN_BOUNDARIES(*x, *y, *map) || !WITHIN_BOUNDARIES(*x + 2, *y, *map);
+            int entityInsideOfHideout = isEntityPositionHideoutValid(entity, map);
+
+            //display_debug_string(1, "FROG: nw=%d, h=%d sidewalk.y: %i - Y: %i", 40, notWithinBoundaries, entityInsideOfHideout, map->sidewalk.y, *y);
+            display_debug_string(2, "LY: %i - FY: %i", 40, map->sidewalk.y, *y);
 
             if (notWithinBoundaries || !entityInsideOfHideout)
             {
+                display_debug_string(5, "PROVA", 40);
                 *x = *lastX;
                 *y = *lastY;
             }
@@ -300,15 +304,17 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
                 entity->last = invalidate_position(entity, *list);
             }
 
-            if (entityInsideOfHideout)
+            if (entityInsideOfHideout >= 2)
             {
-                map->hideouts[entityInsideOfHideout - 1].x = 0;
-                map->hideouts[entityInsideOfHideout - 1].y = 0;
+                map->hideouts[entityInsideOfHideout - 2].x = 0;
+                map->hideouts[entityInsideOfHideout - 2].y = 0;
+
+                return EVALUATION_MANCHE_WON;
             }
         } break;
         case ENTITY_TYPE__CROC:
         {
-            if (!WITHIN_BOUNDARIES(x, y, (*map)))
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
             {
                 bool isActionWest = getDefaultActionByY(*map, *y, false) == ACTION_WEST;
                 bool invalid = (isActionWest && *x + entity->width < map->sidewalk.x) || !isActionWest;
@@ -321,14 +327,14 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
         } break;
         case ENTITY_TYPE__PLANT:
         {
-            if (!WITHIN_BOUNDARIES(x, y, (*map)))
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
             {
                 entity->readyToShoot = false;
             }
         } break;
         case ENTITY_TYPE__PROJECTILE:
         {
-            if (!WITHIN_BOUNDARIES(x, y, (*map)))
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
             {
                 return INNER_MESSAGE_DESTROY_ENTITY;
             }
@@ -344,45 +350,48 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
     return INNER_MESSAGE_NONE;
 }
 
-InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
-{
+InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) {
+
+    // display_debug_string("APPLY VALIDATION", 40);
+
+    InnerMessages result = INNER_MESSAGE_NONE;
+    InnerMessages entityValidationResult;
+
     int *lives = &game->lives;
     int *score = &game->score;
 
-    if (*lives == 0)
-    {
+    if (*lives == 0) {
         *score = -*score;
         return EVALUATION_MANCHE_LOST;
     }
 
-    if (areHideoutsClosed(&game->map))
-    {
-        return EVALUATION_MANCHE_WON;
+    if (!areHideoutsClosed(&game->map)) {
+        return EVALUATION_GAME_WON;
     }
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++)
-    {
+    // display_debug_string("AFTER HIDEOUT CLOSED", 40);
+
+    for (int i = 0; i < MAX_CONCURRENCY; i++) {
         Component *c = &game->components[i];
 
-        switch (c->type)
-        {
-            case COMPONENT_ENTITY:
-            {
+        // display_debug_string("COMPONENT %d is %d", 40, i, c->type);
+
+        switch (c->type) {
+            case COMPONENT_ENTITY: {
                 Entity *entity = (Entity *) c->component;
-                validate_entity(entity, &game->map, list);
+                entityValidationResult = validate_entity(entity, &game->map, list);
+                result = entityValidationResult != INNER_MESSAGE_NONE ? entityValidationResult : result;
             } break;
-            case COMPONENT_ENTITIES:
-            {
+            case COMPONENT_ENTITIES: {
                 Entities *entities = (Entities *) c->component;
                 struct entities_list *el = entities->entities;
                 while (el) {
-                    InnerMessages result = validate_entity(el->e, &game->map, list);
+                    entityValidationResult = validate_entity(el->e, &game->map, list);
                     if (result == INNER_MESSAGE_DESTROY_ENTITY) {
                         struct entities_list *prev = el;
                         el = el->next;
                         destroy_entity(&entities->entities, list, prev->e);
-                    }
-                    else el = el->next;
+                    } else el = el->next;
                 }
             } break;
             default:
@@ -390,11 +399,16 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
         }
     }
 
-    return INNER_MESSAGE_NONE;
+    return result;
+}
+
+void evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **list, Component *components) {
+    if (e->hps != 0) return;
 }
 
 InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
 {
+    InnerMessages message = INNER_MESSAGE_NONE;
     int *lives = &game->lives;
     int *score = &game->score;
 
@@ -415,12 +429,29 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
 
             switch (collisionPacket.collision_type)
             {
-                case COLLISION_OVERLAPPING:
-                    break;
-                case COLLISION_DAMAGING:
-                    break;
-                case COLLISION_AVOIDED:
-                    break;
+                case COLLISION_OVERLAPPING: {
+                    bool anyEntityIsFrog = collisionPacket.e1 == TRUETYPE_FROG || collisionPacket.e2 == TRUETYPE_FROG;
+                    bool anyEntityIsAngryCroc = collisionPacket.e1 == TRUETYPE_ANGRY_CROC || collisionPacket.e2 == TRUETYPE_ANGRY_CROC;
+                    if (anyEntityIsFrog && anyEntityIsAngryCroc) message = EVALUATION_START_SECONDARY_CLOCK;
+                } break;
+                case COLLISION_DAMAGING: {
+                    entity->hps--;
+                    innerEntity->hps--;
+                    evaluate_entity(&message, entity, list, game->components);
+                    evaluate_entity(&message, innerEntity, list, game->components);
+                } break;
+                case COLLISION_DESTROYING: {
+                    bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
+                    Entities *frog_projs = (Entities*) game->components[COMPONENT_FROG_PROJECTILES_INDEX].component;
+                    destroy_entity(&(frog_projs->entities), list, (isEntityOneProj) ? entity : innerEntity);
+                } break;
+                case COLLISION_TRANSFORM: {
+                    bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
+                    if (isEntityOneProj) innerEntity->trueType = TRUETYPE_CROC;
+                    else entity->trueType = TRUETYPE_CROC;
+                    Entities *frog_projs = (Entities*) game->components[COMPONENT_FROG_PROJECTILES_INDEX].component;
+                    destroy_entity(&(frog_projs->entities), list, (isEntityOneProj) ? entity : innerEntity);
+                } break;
             }
 
             innerEl = innerEl->next;

@@ -194,16 +194,34 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
     COMMUNICATIONS = MESSAGE_RUN;
 
     int *buffer = CALLOC(int, MAX_CONCURRENCY);
+    for (int i = 0; i < MAX_CONCURRENCY; i++) buffer[i] = COMMS_EMPTY;
     int *lives = &game->lives;
     int *score = &game->score;
     int threadIds = 0;
 
     Thread *threadList = create_threads(game->components, buffer, &threadIds);
+    Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
 
-    //draw(*list, &game->map, , &game->achievements, true); todo redo.
+    make_MapSkeleton(&game->map, getPosition(MAP_START_X, MAP_START_Y), MAP_WIDTH);
+    draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, true);
+
+
+    Entity* frog = ((Entity*) game->components[COMPONENT_FROG_INDEX].component);
+
+   // display_debug_string("START | CURR_X: %d CURR_Y: %d", 40, frog->current.x, frog->current.y);
+    //display_debug_string("START | LAST_X: %d LAST_Y: %d", 40, frog->last.x, frog->last.y);
+
+    display_debug_string(10, "sidewalk.y = %d", 30, game->map.sidewalk.y);
+
+
+    frog->current = getPositionWithInnerMiddleX(game->map.width, game->map.sidewalk.y, 1, 1, FROG_WIDTH);
+
 
     while (true)
     {
+        //display_debug_string("LOOP | CURR_X: %d CURR_Y: %d", 40, frog->current.x, frog->current.y);
+        //display_debug_string("LOOP | LAST_X: %d LAST_Y: %d", 40, frog->last.x, frog->last.y);
+
         InnerMessages result = thread_polling_routine(buffer, game);
         bool skipValidation = false;
 
@@ -218,13 +236,14 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
                 COMMUNICATIONS = MESSAGE_HALT;
                 int output;
                 show(screen, PS_PAUSE_MENU, &output);
+                draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, true);
                 COMMUNICATIONS = MESSAGE_RUN;
             } break;
         }
 
         if (!skipValidation) result = apply_validation(game, list);
 
-        switch(result)
+        switch (result)
         {
             case POLLING_FROG_DEAD:
             case POLLING_MANCHE_LOST:
@@ -247,7 +266,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
             // Rimozione entità e aggiornamento
 
         // Display
-            // draw();
+        draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, false);
 
         sleepy(50, TIMEFRAME_MILLIS);
     }

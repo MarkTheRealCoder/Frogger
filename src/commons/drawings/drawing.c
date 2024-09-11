@@ -110,9 +110,6 @@ enum color_codes getEntityColor(const enum entity_type type)
         case TRUETYPE_FROG:
             color = COLORCODES_FROG_B;
             break;
-        case TRUETYPE_FROG_HARMED:
-            color = COLORCODES_FROG_A;
-            break;
         case TRUETYPE_PROJ_FROG:
             color = COLORCODES_PROJECTILE_F;
             break;
@@ -330,9 +327,9 @@ void replaceWith(int pair, Position sp, int height, int length, char c)
 {
     attron(COLOR_PAIR(pair));
 
-    for (short i = 0; i < length; i++) 
+    for (int i = 0; i < length; i++)
     {
-        for (short j = 0; j < height; j++) 
+        for (int j = 0; j < height; j++)
         {
             mvaddch(sp.y + j, sp.x + i, c);
         }
@@ -347,7 +344,7 @@ void replaceWith(int pair, Position sp, int height, int length, char c)
  * @param height L'altezza dell'area.
  * @param length La lunghezza dell'area.
  */
-void eraseFor(Position sp, short height, short length) 
+void eraseFor(Position sp, int height, int length)
 {
     int pair = alloc_pair(COLOR_BLACK, COLOR_BLACK);
     replaceWith(pair, sp, height, length, ' ');
@@ -359,7 +356,7 @@ void eraseFor(Position sp, short height, short length)
  * @param value Il valore da stampare.
  * @param max Il valore massimo.
  */
-void display_clock(const Position p, const short value, const short max) 
+void display_clock(const Position p, const int value, const unsigned int max)
 {
     int main_color = alloc_pair(COLOR_BLACK, COLOR_WHITE);
     int decaying_color = alloc_pair(COLOR_BLACK, COLOR_YELLOW);
@@ -447,7 +444,7 @@ void print_hearts(int *x, int y, int curr, int max, int main_color, int lost_col
  * @param position La posizione in cui stampare.
  * @param lives I punti vita attuali del giocatore.
  */
-void display_hps(const Position position, const short lives)
+void display_hps(const Position position, const int lives)
 {
     int fpair = alloc_pair(COLOR_GREEN, COLOR_BLACK);
     int lost = alloc_pair(COLOR_BLACK, COLOR_BLACK);
@@ -514,7 +511,13 @@ void display_string(const Position position, const int color, const char *string
     refresh();
 }
 
-void display_achievements(const Position p, const short length, const short height, StringList list) {
+void display_achievements(const Position p, const short length, const short height, StringList list)
+{
+    if (list.last == NULL)
+    {
+        return;
+    }
+
     eraseFor(p, height, length);
     StringNode *last = list.last;
     for (int i = 0, lines = height; i < list.nodes; i++) {
@@ -551,7 +554,10 @@ void display_achievements(const Position p, const short length, const short heig
     refresh();
 }
 
-void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map) {
+void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map)
+{
+    if (curr.x == last.x && curr.y == last.y) return;
+
     const int pair = alloc_pair(fg, getAreaFromY(GET_MAP_Y(curr.y, map)));
     const int old_pair = alloc_pair(COLOR_BLACK, getAreaFromY(GET_MAP_Y(last.y, map)));
     const int length = strlen(art.art[0]);
@@ -611,12 +617,8 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
     map->width = width;
 }
 
-MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
+MapSkeleton display_map(const Position sp, const int width, MapSkeleton _map) {
     int current_pair = -1;
-    MapSkeleton _map; 
-
-    if (!map) make_MapSkeleton(&_map, sp, width);
-    else _map = *map;
 
     for (int i = 0, current_bg = -1, tmp_bg = -1, tmp_pair = 0; i < MAP_HEIGHT; i++) {
         tmp_bg = getAreaFromY(i);
@@ -661,38 +663,38 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton* map) {
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
 {
     Position POSITION_MAP = {
-        getCenteredX(MAP_WIDTH),
-        5
+        MAP_START_X,
+        MAP_START_Y
     };
 
     Position POSITION_ACHIEVEMENTS_TITLE = {
-        getCenteredX(12) + 72,
-        getCenteredY(25) - 2
+        100 + MAP_START_X,
+        10
     };
 
     Position POSITION_ACHIEVEMENTS = {
-        getCenteredX(30) + 75,
-        getCenteredY(25)
+        100 + MAP_START_X,
+        10 + 2
     };
 
     Position POSITION_LIVES = {
-        getCenteredX(TOTAL_LIVES) - 45,
+        45 + MAP_START_X,
         3
     };
 
     Position POSITION_SCORE = {
-        getCenteredX(12),
+        MAP_START_X,
         3
     };
 
     Position POSITION_CLOCK = {
-        getCenteredX(0) + 25,
+        75 + MAP_START_X,
         2
     };
 
     if (drawAll)
     {
-        *map = display_map(POSITION_MAP, MAP_WIDTH, map);
+        *map = display_map(POSITION_MAP, MAP_WIDTH, *map);
         display_string(POSITION_ACHIEVEMENTS_TITLE, COLOR_RED, "Achievements", 12);
     }
 
@@ -702,18 +704,35 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
     display_clock(POSITION_CLOCK, timer->current, timer->starting);
     display_achievements(POSITION_ACHIEVEMENTS, 34, 25, *achievements);
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++)
+    {
         struct entities_list *ec = es;
-        while (ec != NULL) {
-            if (getPriorityByEntityType(ec->e->type) == i) {
+        while (ec != NULL)
+        {
+            Entity *target = ec->e;
+            if (getPriorityByEntityType(target->type) == i)
+            {
                 /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
-                display_entity(COLORCODES_CROC_A, getArtOfEntity(ec->e), ec->e->current, ec->e->last, *map);
+                display_entity(COLORCODES_CROC_A, getArtOfEntity(target), target->current, target->last, *map);
             }
             ec = ec->next;
         }
     }
 }
 
+void display_debug_string(int y, const char *__restrict __format, int stringLength, ...)
+{
+    static int x = 120;
+
+    char *string = MALLOC(char, stringLength);
+    va_list args;
+    va_start(args, stringLength);
+    vsnprintf(string, stringLength, __format, args);
+    va_end(args);
+
+    display_string(getPosition(x, y), COLOR_CYAN, string, stringLength);
+    free(string);
+}
 
 // todo
 void display_game_over(Screen screen, int result)

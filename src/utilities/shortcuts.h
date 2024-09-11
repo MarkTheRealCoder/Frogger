@@ -66,9 +66,6 @@ bool choose_between_bool();
 
 char *concat(int n, ...);
 bool str_eq(char *expected, char *toCompare);
-char *str_direction(Action direction);
-char *str_entity_type(EntityType entityType);
-char *str_coords(Entity entity);
 
 enum AVAILABLE_ARTS {
     ART_BIG_FROG,
@@ -87,11 +84,10 @@ StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, int length);
 bool isActionMovement(Action action);
 
 int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entityWidth);
-Position getPositionWithInnerMiddleX(int width, int targetHeight, int divTimes, int indexToPick, int entityWidth);
+Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int indexToPick, int entityWidth);
 
-int countHideouts(const MapSkeleton *map);
 bool areHideoutsClosed(const MapSkeleton *map);
 Component getDefaultClockComponent(enum ClockType clockType);
-int isEntityInsideOfHideout(const Entity *entity, const MapSkeleton *map);
+int isEntityPositionHideoutValid(const Entity *entity, const MapSkeleton *map);
 
 #endif // !FROGGER_SHORTCUTS_H

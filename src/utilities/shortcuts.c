@@ -68,31 +68,6 @@ bool str_eq(char *expected, char *toCompare)
 }
 
 /**
- * Restituisce la stringa corrispondente alla direzione.
- * @param direction La direzione.
- * @return          La stringa corrispondente alla direzione.
- */
-char *str_direction(const Action direction)
-{
-    #define DIRECTION_COUNT 5
-
-    if (direction > DIRECTION_COUNT - 1)
-    {
-        return "INVALID";
-    }
-
-    static char *directions[] = {
-        "NORTH",
-        "SOUTH",
-        "EAST",
-        "WEST",
-        "STILL"
-    };
-
-    return directions[direction];
-}
-
-/**
  * Concatena due o più stringhe in base al numero di stringhe specificato e alle stringhe specificate.
  * @param n     Il numero di stringhe da concatenare.
  * @param ...   Le stringhe in ordine di comparizione da concatenare.
@@ -267,25 +242,10 @@ int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entit
 
 Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int indexToPick, int entityWidth)
 {
-    int x = getInnerMiddleWithOffset(width, divTimes, indexToPick, entityWidth);
+    int x = MAP_START_X + getInnerMiddleWithOffset(width, divTimes, indexToPick, entityWidth);
     int y = height;
 
     return getPosition(x, y);
-}
-
-int countHideouts(const MapSkeleton *map)
-{
-    int counter = 0;
-
-    for (int i = 0; map->hideouts[i].x != -1; ++i)
-    {
-        if (map->hideouts[i].x != 0 && map->hideouts[i].y != 0)
-        {
-            counter++;
-        }
-    }
-
-    return counter;
 }
 
 bool areHideoutsClosed(const MapSkeleton *map)
@@ -303,20 +263,18 @@ bool areHideoutsClosed(const MapSkeleton *map)
     return counter;
 }
 
-int isEntityInsideOfHideout(const Entity *entity, const MapSkeleton *map)
+int isEntityPositionHideoutValid(const Entity *entity, const MapSkeleton *map)
 {
     if (entity->type != ENTITY_TYPE__FROG || entity->current.y != (map->garden.y - FROG_HEIGHT))
     {
-        return false;
+        return true;
     }
 
-    int hideoutsCount = countHideouts(map);
-
-    for (int i = 0; i < hideoutsCount; i++)
+    for (int i = 0; map->hideouts[i].x != -1; i++)
     {
         if (entity->current.x == map->hideouts[i].x && entity->current.y == map->hideouts[i].y)
         {
-            return i + 1;
+            return i + 2;
         }
     }
 

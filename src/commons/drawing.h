@@ -44,16 +44,18 @@
 #define SIDEWALK_COLOR 204, 102, 0
 
 #define TOTAL_LIVES 3
-#define MAP_WIDTH 100
+
+#define MAP_START_X 6
+#define MAP_START_Y 6
+#define MAP_WIDTH 99
 
 #define CLOCK_DISPLAY_TRUE_SIZE 10
 #define CLOCK_DISPLAY_SIZE 20
 
-#define GET_MAP_Y(_y, map) (_y) - (map.hideouts[0].y - 3)
+#define GET_MAP_Y(_y, map) (_y) - (map.garden.y - 6)
 
-#define WITHIN_BOUNDARIES(_x, _y, map)                                      \
-((map.sidewalk.x) <= (_x) && ((_x) < ((map.sidewalk.x) + (map.width)))) &&  \
-((map.hideouts[0].y) <= (_y) && ((_y) < ((map.sidewalk.y) + (3))))
+#define WITHIN_BOUNDARIES(_x, _y, map) (((map).sidewalk.x <= (_x)) && ((_x) < (map).sidewalk.x + (map).width) && ((map).garden.y - FROG_HEIGHT <= (_y)) && ((_y) < (map).sidewalk.y + FROG_HEIGHT))
+// ((((map).sidewalk.x) <= (_x)) && ((_x) < (((map).sidewalk.x) + ((map).width)))) && ((((map).garden.y - FROG_HEIGHT) <= (_y)) && ((_y) <= (((map).sidewalk.y))))
 
 /* COLOR CODES */
 
@@ -83,8 +85,8 @@ typedef struct {
 } Cuboid;
 
 typedef struct {
-    EntityType e1;
-    EntityType e2;
+    TrueType e1;
+    TrueType e2;
 
     int e1_priority;
     int e2_priority;
@@ -220,17 +222,19 @@ static char _FROGGER_SCREEN_CORRECT_SIZE[_FROGGER_SCREEN_CORRECT_LENGTH] =
 WINDOW *init_screen(Screen *screen);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(Screen screen, enum PS prog_state, int *output);
-void display_clock(Position p, short value, short max);
-void display_hps(Position position, short lives);
+void display_clock(Position p, int value, unsigned int max);
+void display_hps(Position position, int lives);
 void addStringToList(StringNode **list, int color, char *string);
 
-void display_string(const Position position, const int color, const char *string, int length);
+void display_string(Position position, int color, const char *string, int length);
 void display_achievements(Position p, short length, short height, StringList list);
 void display_entity(int fg, StringArt art, Position curr, Position last, MapSkeleton map);
-MapSkeleton display_map(Position sp, int width, MapSkeleton* map);
+
+void make_MapSkeleton(MapSkeleton *map, Position sp, int width);
+MapSkeleton display_map(Position sp, int width, MapSkeleton map);
 
 void center_string(char str[], int max, int cuy);
-void eraseFor(Position sp, short height, short length);
+void eraseFor(Position sp, int height, int length);
 
 void handle_screen_resize();
 
@@ -247,5 +251,7 @@ CollisionPacket areColliding(Entity e1, Entity e2);
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
 void display_game_over(Screen screen, int result);
+
+void display_debug_string(int y, const char *__restrict __format, int stringLength, ...);
 
 #endif
