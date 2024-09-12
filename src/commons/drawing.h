@@ -12,6 +12,8 @@
 #define GAME_MANCHE_MAXTIME 120 // in secondi
 #define GAME_MANCHE_FRACTION 1 // in secondi
 
+#define GAME_SECONDARY_MAXTIME 2
+
 #define GAME_ENTITY_SIZE 3
 
 #define GAME_FROG_LIVES 5

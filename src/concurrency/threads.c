@@ -195,6 +195,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
 
     int *buffer = CALLOC(int, MAX_CONCURRENCY);
     for (int i = 0; i < MAX_CONCURRENCY; i++) buffer[i] = COMMS_EMPTY;
+
     int *lives = &game->lives;
     int *score = &game->score;
     int threadIds = 0;
@@ -205,17 +206,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
     make_MapSkeleton(&game->map, getPosition(MAP_START_X, MAP_START_Y), MAP_WIDTH);
     draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, true);
 
-
-    Entity* frog = ((Entity*) game->components[COMPONENT_FROG_INDEX].component);
-
-   // display_debug_string("START | CURR_X: %d CURR_Y: %d", 40, frog->current.x, frog->current.y);
-    //display_debug_string("START | LAST_X: %d LAST_Y: %d", 40, frog->last.x, frog->last.y);
-
-    display_debug_string(10, "sidewalk.y = %d", 30, game->map.sidewalk.y);
-
-
-    frog->current = getPositionWithInnerMiddleX(game->map.width, game->map.sidewalk.y, 1, 1, FROG_WIDTH);
-
+    reset_frog(game);
 
     while (true)
     {
@@ -250,9 +241,9 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
                 (*lives)--;
             case EVALUATION_MANCHE_WON:
             {
-                // reset_main_timer(game); // todo <-
-                // reset_secondary_timer(game); // todo <-
-                // reset_frog(game); // todo <-
+                reset_main_timer(game); // todo <-
+                reset_secondary_timer(game); // todo <-
+                reset_frog(game); // todo <-
                 // reset_entities(list, game); // todo <-
                 *score += 1000;
             } break;

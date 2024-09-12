@@ -664,7 +664,6 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton _map) {
     return _map;
 }
 
-/* todo : refactor */
 void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
 {
     Position POSITION_MAP = {

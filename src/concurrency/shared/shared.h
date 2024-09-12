@@ -64,4 +64,9 @@ SystemMessage create_message(SystemMessage action, int receivers);
 InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list);
 InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list);
 
+void reset_main_timer(GameSkeleton *game);
+void reset_secondary_timer(GameSkeleton *game);
+void reset_frog(GameSkeleton *game);
+void reset_entities(GameSkeleton *game, struct entities_list **list);
+
 #endif //COMMON_H
