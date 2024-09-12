@@ -228,6 +228,7 @@ void addStringToList(StringNode **list, int color, char *string);
 
 void display_string(Position position, int color, const char *string, int length);
 void display_achievements(Position p, short length, short height, StringList list);
+void delete_entity_pos(const int height, const int length, const Position last, const MapSkeleton map);
 void display_entity(int fg, StringArt art, Position curr, Position last, MapSkeleton map);
 
 void make_MapSkeleton(MapSkeleton *map, Position sp, int width);

@@ -89,7 +89,7 @@ void handle_screen_resize()
  * @param type Il tipo di entità.
  * @return Il colore corrispondente.
  */
-enum color_codes getEntityColor(const enum entity_type type)
+enum color_codes getEntityColor(const TrueType type)
 {
     enum color_codes color;
 
@@ -554,15 +554,8 @@ void display_achievements(const Position p, const short length, const short heig
     refresh();
 }
 
-void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map)
-{
-    if (curr.x == last.x && curr.y == last.y) return;
-
-    const int pair = alloc_pair(fg, getAreaFromY(GET_MAP_Y(curr.y, map)));
+void delete_entity_pos(const int height, const int length, const Position last, const MapSkeleton map) {
     const int old_pair = alloc_pair(COLOR_BLACK, getAreaFromY(GET_MAP_Y(last.y, map)));
-    const int length = strlen(art.art[0]);
-    const int height = art.length; 
-
     attron(COLOR_PAIR(old_pair));
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < length; j++) {
@@ -572,6 +565,18 @@ void display_entity(const int fg, const StringArt art, const Position curr, cons
         }
     }
     attroff(COLOR_PAIR(old_pair));
+}
+
+void display_entity(const int fg, const StringArt art, const Position curr, const Position last, const MapSkeleton map)
+{
+    if (curr.x == last.x && curr.y == last.y) return;
+
+    const int pair = alloc_pair(fg, getAreaFromY(GET_MAP_Y(curr.y, map)));
+    const int length = strlen(art.art[0]);
+    const int height = art.length; 
+
+    delete_entity_pos(height, length, last, map);
+
     attron(COLOR_PAIR(pair));
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < length; j++) {
@@ -713,7 +718,7 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
             if (getPriorityByEntityType(target->type) == i)
             {
                 /*Bisogna modificare la struct entity: bisogna inserire più informazioni, come il tipo dell'entità (DISPLAY) e la vecchia posizione*/
-                display_entity(COLORCODES_CROC_A, getArtOfEntity(target), target->current, target->last, *map);
+                display_entity(getEntityColor(target->trueType), getArtOfEntity(target), target->current, target->last, *map);
             }
             ec = ec->next;
         }

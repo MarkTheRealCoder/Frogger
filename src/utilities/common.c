@@ -208,22 +208,25 @@ void create_new_entities(struct entities_list **list, Component components[MAX_C
     while (entity) {
         Entity *e = entity->e;
         if (e->readyToShoot) {
-            Entity *new = CALLOC(Entity, 1);
-            CRASH_IF_NULL(new);
-            *new = create_projectile(e);
-            // Adding entity to the main list
-            struct entities_list *node = CALLOC(struct entities_list, 1);
-            node->next = *list;
-            node->e = new;
-            *list = node;
-            // Adding entity to its component's list
-            node = CALLOC(struct entities_list, 1);
             int index = (e->type == ENTITY_TYPE__FROG) ? COMPONENT_FROG_PROJECTILES_INDEX : COMPONENT_PROJECTILES_INDEX;
             Entities *es = (Entities *) components[index].component;
-            es->entity_num++;
-            node->next = es->entities;
-            node->e = new;
-            es->entities = node;
+            if (es->entity_num <= 2) {
+                Entity *new = CALLOC(Entity, 1);
+                CRASH_IF_NULL(new);
+                *new = create_projectile(e);
+                // Adding entity to the main list
+                struct entities_list *node = CALLOC(struct entities_list, 1);
+                node->next = *list;
+                node->e = new;
+                *list = node;
+                // Adding entity to its component's list
+                node = CALLOC(struct entities_list, 1);
+                es->entity_num++;
+                node->next = es->entities;
+                node->e = new;
+                es->entities = node;
+            }
+            e->readyToShoot = false;
         }
         entity = entity->next;
     }

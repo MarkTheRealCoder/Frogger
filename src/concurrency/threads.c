@@ -122,7 +122,7 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
             t->rules.rules = CALLOC(int, 1);
             CRASH_IF_NULL(t->rules.rules)
             t->rules.rules[0] = ACTION_NORTH;
-            packet->ms = 500;
+            packet->ms = 200;
         } break;
         case COMPONENT_CLOCK:
         {
@@ -258,14 +258,10 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
             } break;
         }
 
-
         create_new_entities(list, game->components); // todo <-
 
-        // todo: Maybe together?
-            // Collisioni
-            // Rimozione entità e aggiornamento
-
-        // Display
+        apply_physics(game, list);
+        
         draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, false);
 
         sleepy(50, TIMEFRAME_MILLIS);

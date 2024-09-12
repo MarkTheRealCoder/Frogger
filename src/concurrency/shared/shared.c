@@ -47,7 +47,7 @@ InnerMessages handle_entities(Component *component, int value)
     while (list != NULL)
     {
         Component entityComponent = {
-            .component = &list->e,
+            .component = list->e,
             .type = COMPONENT_ENTITY
         };
 
@@ -227,7 +227,7 @@ Position reset_croc_position(MapSkeleton map, int y)
 Position invalidate_position(Entity *e, struct entities_list *list)
 {
     Position lastEntityPos = e->last;
-
+    static int pos = 0;
     while (list)
     {
         Entity *comparison = list->e;
@@ -236,11 +236,12 @@ Position invalidate_position(Entity *e, struct entities_list *list)
 
         if (e != comparison)
         {
-            bool collisionInRangeX = x <= lastEntityPos.x && lastEntityPos.x <= x + width;
-            bool collisionInRangeY = y <= lastEntityPos.y && lastEntityPos.y <= y + height;
+            bool collisionInRangeX = x <= lastEntityPos.x && lastEntityPos.x < x + width;
+            bool collisionInRangeY = y <= lastEntityPos.y && lastEntityPos.y < y + height;
 
-            if (collisionInRangeX && collisionInRangeY)
+            if (collisionInRangeX && collisionInRangeY && (lastEntityPos.x != 0 && lastEntityPos.y != 0))
             {
+                display_debug_string(24 + (pos++ % 3), "POSITION INVALIDATED FOR %i BY %i (THEY ARE DIFFERENT %i)", 80, e->trueType, comparison->trueType, e != comparison);
                 return getPosition(0, 0);
             }
         }
@@ -334,7 +335,7 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
         } break;
         case ENTITY_TYPE__PROJECTILE:
         {
-            if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map)) || *y < map->garden.y)
             {
                 return INNER_MESSAGE_DESTROY_ENTITY;
             }
@@ -387,9 +388,12 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) 
                 struct entities_list *el = entities->entities;
                 while (el) {
                     entityValidationResult = validate_entity(el->e, &game->map, list);
-                    if (result == INNER_MESSAGE_DESTROY_ENTITY) {
+                    if (entityValidationResult == INNER_MESSAGE_DESTROY_ENTITY) {
+                        display_debug_string(12, "DESTROYED ENTITY: %i", 20, el->e->trueType);
                         struct entities_list *prev = el;
+                        entities->entity_num--;
                         el = el->next;
+                        delete_entity_pos(prev->e->height, prev->e->width, prev->e->last, game->map);
                         destroy_entity(&entities->entities, list, prev->e);
                     } else el = el->next;
                 }
@@ -439,6 +443,7 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                     innerEntity->hps--;
                     evaluate_entity(&message, entity, list, game->components);
                     evaluate_entity(&message, innerEntity, list, game->components);
+                    display_debug_string(12, "HPS 1: %i HPS 2: %i", 30, entity->hps, innerEntity->hps);
                 } break;
                 case COLLISION_DESTROYING: {
                     bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;

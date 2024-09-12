@@ -3,6 +3,7 @@
 
 #include "../../commons/imports.h"
 #include "../../commons/structures.h"
+#include "../../commons/drawing.h"
 
 #pragma once
 // Rappresenta il caso in cui una cella del buffer di comunicazione e' vuota.
@@ -61,5 +62,6 @@ void timer_counter(void *_rules);
 SystemMessage create_message(SystemMessage action, int receivers);
 
 InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list);
+InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list);
 
 #endif //COMMON_H
