@@ -187,10 +187,30 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
     return threads_list;
 }
 
+void common_timer_reset(Thread *threadList, GameSkeleton *game, int index)
+{
+    Clock *clock = (Clock*) game->components[index].component;
+    clock->current = clock->starting;
+    sem_wait(&POLLING_WRITING);
+    threadList[index].rules.rules[0] = clock->current;
+    sem_post(&POLLING_WRITING);
+}
+
+void reset_main_timer(Thread *threadList, GameSkeleton *game)
+{
+    common_timer_reset(threadList, game, COMPONENT_CLOCK_INDEX);
+}
+
+void reset_secondary_timer(Thread *threadList, GameSkeleton *game)
+{
+    common_timer_reset(threadList, game, COMPONENT_TEMPORARY_CLOCK_INDEX);
+}
+
 void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list **list) {
     Entity *croc, *previousCroc;
     int padding = 0;
     int y = game->map.river.y;
+    getDefaultActionByY(game->map, y, true);
     bool noRemainder;
     for (int i = 1, j = 0, z = y; i <= COMPONENT_CROC_INDEXES; ++i, z = y + j * 3) {
         int currentPadding = gen_num(4, 8);
@@ -203,11 +223,12 @@ void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list
 
         padding += ((action == ACTION_WEST) ? 0 : croc->width * 5) + currentPadding + (noRemainder ? 0 : previousCroc->width);
 
-        sem_wait(&POLLING_READING);
+        sem_wait(&POLLING_WRITING);
         threadList[i].rules.rules[0] = action;
-        sem_post(&POLLING_READING);
+        sem_post(&POLLING_WRITING);
 
         croc->current = set_croc_position(game->map, z, padding);
+        croc->trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC);
         display_debug_string(12 + i - 1, "croc[%d] x=%d y=%d", 30, i - 1, croc->current.x, croc->current.y);
         if ((i - 1) % 2 == 1) {
             j++;
@@ -271,8 +292,8 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 (*lives)--;
             case EVALUATION_MANCHE_WON:
             {
-                reset_main_timer(game);
-                reset_secondary_timer(game);
+                reset_main_timer(threadList, game);
+                reset_secondary_timer(threadList, game);
                 reset_frog(game);
                 reset_entities(threadList, game, entitiesList);
                 *score += 1000;

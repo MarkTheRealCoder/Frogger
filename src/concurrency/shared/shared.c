@@ -460,22 +460,6 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
     return INNER_MESSAGE_NONE;
 }
 
-void common_timer_reset(GameSkeleton *game, int index)
-{
-    Clock *clock = (Clock*) game->components[index].component;
-    clock->current = clock->starting;
-}
-
-void reset_main_timer(GameSkeleton *game)
-{
-    common_timer_reset(game, COMPONENT_CLOCK_INDEX);
-}
-
-void reset_secondary_timer(GameSkeleton *game)
-{
-    common_timer_reset(game, COMPONENT_TEMPORARY_CLOCK_INDEX);
-}
-
 void reset_frog(GameSkeleton *game)
 {
     Entity *frog = (Entity *) game->components[COMPONENT_FROG_INDEX].component;
