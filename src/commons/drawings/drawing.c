@@ -646,11 +646,15 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton _map) {
         
         
         for (int j = 0, k = 0; j < width; j++) {
-            if (sp.y + i >= _map.hideouts[0].y && sp.y + i < _map.hideouts[0].y + FROG_HEIGHT) {
+            if (sp.y + i >= _map.garden.y - 3 && sp.y + i < _map.garden.y - 3 + FROG_HEIGHT) {
                 bool ho = false;
+                if (_map.hideouts[k].x == 0)
+                    k++;
+                
                 if (sp.x + j >= _map.hideouts[k].x && sp.x + j < _map.hideouts[k].x + FROG_WIDTH) {
                     ho = true;
-                    if (sp.x + j == _map.hideouts[k].x + FROG_WIDTH - 1) k++;
+                    if (sp.x + j == _map.hideouts[k].x + FROG_WIDTH - 1)
+                        k++;
                 }
                 if (ho) {
                     attroff(COLOR_PAIR(current_pair));

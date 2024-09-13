@@ -40,7 +40,7 @@ static sem_t POLLING_READING;
        `-------------'
           "BAK BAK"
  */
-InnerMessages thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *game);
+InnerMessages thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *game, Thread *threadList);
 int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList);
 
 void init_semaphores();

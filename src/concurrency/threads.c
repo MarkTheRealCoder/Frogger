@@ -1,20 +1,16 @@
 #include "threads.h"
 
-InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game)
-{
+InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *threadList) {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
     sem_wait(&POLLING_READING);
     sem_wait(&POLLING_WRITING);
+    sem_wait(&POLLING_READING);
 
-    //printf("Qualcuno ha prodotto? Siotto!\n");
-
-    for (int i = 0; i < MAX_CONCURRENCY; i++)
-    {
+    for (int i = 0; i < MAX_CONCURRENCY; i++) {
         int value = buffer[i];
 
-        if (value == COMMS_EMPTY)
-        {
+        if (value == COMMS_EMPTY) {
             continue;
         }
 
@@ -22,10 +18,10 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game)
 
         buffer[i] = COMMS_EMPTY;
         Component *c = find_component(i, game);
-        switch(c->type)
-        {
+        switch(c->type) {
             case COMPONENT_CLOCK:
                 otherMessage = handle_clock(c, value);
+                threadList[i].rules.rules[0] = value;
                 break;
             case COMPONENT_ENTITY:
                 otherMessage = handle_entity(c, value, true);
@@ -35,8 +31,7 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game)
                 break;
         }
 
-        if (otherMessage != INNER_MESSAGE_NONE)
-        {
+        if (otherMessage != INNER_MESSAGE_NONE) {
             innerMessage = otherMessage;
         }
     }
@@ -46,8 +41,7 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game)
     return innerMessage;
 }
 
-void *generic_thread(void *packet)
-{
+void *generic_thread(void *packet) {
     Packet *p = (Packet*) packet;
     void (*producer)(void*) = p->producer;
     unsigned int id = p->id;
@@ -59,18 +53,16 @@ void *generic_thread(void *packet)
     ProductionRules rules = carriage->rules;
 
     SystemMessage action = MESSAGE_NONE;
-    while (true)
-    {
-        if (MATCH_ID(id, COMMUNICATIONS))
-        {
+    while (true) {
+        if (MATCH_ID(id, COMMUNICATIONS)) {
             SystemMessage msg = COMMUNICATIONS & MESSAGE_RUN;
             action = (msg != action && msg != MESSAGE_NONE) ? msg : action;
         }
 
-        if (action == MESSAGE_RUN)
-        {
+        if (action == MESSAGE_RUN) {
             sem_wait(&POLLING_WRITING);
             sem_post(&POLLING_WRITING);
+
 
             producer(&rules);
 
@@ -79,8 +71,7 @@ void *generic_thread(void *packet)
 
             sem_post(&POLLING_READING);
         }
-        else if (action == MESSAGE_STOP)
-        {
+        else if (action == MESSAGE_STOP) {
             break;
         }
 
@@ -250,7 +241,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
 
     while (running)
     {
-        InnerMessages result = thread_polling_routine(buffer, game);
+        InnerMessages result = thread_polling_routine(buffer, game, threadList);
         bool skipValidation = false;
 
         switch (result)
@@ -285,6 +276,8 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 reset_frog(game);
                 reset_entities(threadList, game, entitiesList);
                 *score += 1000;
+                erase();
+                drawAll = true;
             } break;
             case EVALUATION_GAME_LOST:
             case EVALUATION_GAME_WON:
