@@ -53,12 +53,6 @@ InnerMessages handle_entities(Component *component, int value)
 
         handle_entity(&entityComponent, value, false);
         list = list->next;
-
-        /*
-        if (isActionMovement(value)) update_position(&el->e, value);
-        else if (value == ACTION_SHOOT) el->e.readyToShoot = true;
-        el = el->next;
-         */
     }
 
     return INNER_MESSAGE_NONE;
@@ -67,42 +61,6 @@ InnerMessages handle_entities(Component *component, int value)
 Component *find_component(const int index, GameSkeleton *game)
 {
     return &game->components[index];
-}
-
-Component **find_components(GameSkeleton *game, ...)
-{
-    Component **foundComponents = NULL;
-
-    va_list args;
-    va_start(args, game);
-
-    int index;
-    int counter = 0;
-
-    while ((index = va_arg(args, int)) != -1)
-    {
-        if (index < 0 || index >= MAX_CONCURRENCY)
-        {
-            break;
-        }
-
-        if (counter == 0)
-        {
-            foundComponents = MALLOC(Component *, 1);
-        }
-        else
-        {
-            foundComponents = REALLOC(Component *, foundComponents, counter + 1);
-        }
-        CRASH_IF_NULL(foundComponents)
-
-        foundComponents[counter] = find_component(index, game);
-        counter++;
-    }
-
-    va_end(args);
-
-    return foundComponents;
 }
 
 void update_position(Entity *e, const Action action)
@@ -241,7 +199,7 @@ Position invalidate_position(Entity *e, struct entities_list *list)
 
             if (collisionInRangeX && collisionInRangeY && (lastEntityPos.x != 0 && lastEntityPos.y != 0))
             {
-                display_debug_string(24 + (pos++ % 3), "POSITION INVALIDATED FOR %i BY %i (THEY ARE DIFFERENT %i)", 80, e->trueType, comparison->trueType, e != comparison);
+                //display_debug_string(24 + (pos++ % 3), "POSITION INVALIDATED FOR %i BY %i (THEY ARE DIFFERENT %i)", 80, e->trueType, comparison->trueType, e != comparison);
                 return getPosition(0, 0);
             }
         }
@@ -253,21 +211,20 @@ Position invalidate_position(Entity *e, struct entities_list *list)
 
 void remove_entity_from_list(struct entities_list **list, Entity *e) {
     struct entities_list *pivot = *list;
+    struct entities_list *prev = NULL;
     bool isFirst = true;
-    while (pivot && pivot->e != e) {
-        if (pivot->next->e == e) {
-            isFirst = false;
-            break;
-        }
+    while (pivot) {
+        if (pivot->e == e) break;
+        prev = pivot;
         pivot = pivot->next;
     }
-    if (isFirst) {
-        *list = pivot->next;
-    } else {
-        struct entities_list *next = pivot->next;
-        pivot->next = pivot->next->next;
-        free(next);
-    }
+
+    if (!pivot) return;
+
+    if (prev) prev->next = pivot->next;
+    else *list = pivot->next;
+
+    free(pivot);
 }
 
 void destroy_entity(struct entities_list **el, struct entities_list **list, Entity *e) {
@@ -292,11 +249,11 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
             int entityInsideOfHideout = isEntityPositionHideoutValid(entity, map);
 
             //display_debug_string(1, "FROG: nw=%d, h=%d sidewalk.y: %i - Y: %i", 40, notWithinBoundaries, entityInsideOfHideout, map->sidewalk.y, *y);
-            display_debug_string(2, "LY: %i - FY: %i", 40, map->sidewalk.y, *y);
+            //display_debug_string(2, "LY: %i - FY: %i", 40, map->sidewalk.y, *y);
 
             if (notWithinBoundaries || !entityInsideOfHideout)
             {
-                display_debug_string(5, "PROVA", 40);
+                //display_debug_string(5, "PROVA", 40);
                 *x = *lastX;
                 *y = *lastY;
             }
@@ -318,7 +275,7 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
             if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
             {
                 bool isActionWest = getDefaultActionByY(*map, *y, false) == ACTION_WEST;
-                bool invalid = (isActionWest && *x + entity->width < map->sidewalk.x) || !isActionWest;
+                bool invalid = (isActionWest && *x + entity->width < map->sidewalk.x) || (!isActionWest && *x > map->sidewalk.x + map->width);
 
                 if (invalid)
                 {
@@ -370,12 +327,10 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) 
         return EVALUATION_GAME_WON;
     }
 
-    // display_debug_string("AFTER HIDEOUT CLOSED", 40);
 
     for (int i = 0; i < MAX_CONCURRENCY; i++) {
         Component *c = &game->components[i];
 
-        // display_debug_string("COMPONENT %d is %d", 40, i, c->type);
 
         switch (c->type) {
             case COMPONENT_ENTITY: {
@@ -389,7 +344,6 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) 
                 while (el) {
                     entityValidationResult = validate_entity(el->e, &game->map, list);
                     if (entityValidationResult == INNER_MESSAGE_DESTROY_ENTITY) {
-                        display_debug_string(12, "DESTROYED ENTITY: %i", 20, el->e->trueType);
                         struct entities_list *prev = el;
                         entities->entity_num--;
                         el = el->next;
@@ -406,8 +360,24 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) 
     return result;
 }
 
-void evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **list, Component *components) {
+void evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **list, Component *components, MapSkeleton map) {
     if (e->hps != 0) return;
+    switch (e->type) {
+        case ENTITY_TYPE__FROG: {
+            *message = EVALUATION_MANCHE_LOST;
+        } break;
+        case ENTITY_TYPE__PROJECTILE: {
+            Entities *es = (Entities*) components[(e->trueType == TRUETYPE_PROJ_FROG) ? COMPONENT_FROG_PROJECTILES_INDEX : COMPONENT_PROJECTILES_INDEX].component;
+            struct entities_list *el = (struct entities_list *)es->entities;
+            delete_entity_pos(e->height, e->width, e->current, map);
+            destroy_entity(&el, list, e);
+            es->entity_num--;
+        } break;
+        case ENTITY_TYPE__PLANT: {
+            delete_entity_pos(e->height, e->width, e->current, map);
+            e->current = getPosition(0, 0);
+        } break;
+    }
 }
 
 InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
@@ -424,9 +394,11 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
     {
         Entity *entity = el->e;
         struct entities_list *innerEl = el->next;
+        bool isEntityRemoved = false;
 
         while (innerEl)
         {
+            bool isInnerEntityRemoved = false;
             Entity *innerEntity = innerEl->e;
 
             collisionPacket = areColliding(*entity, *innerEntity);
@@ -441,28 +413,48 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                 case COLLISION_DAMAGING: {
                     entity->hps--;
                     innerEntity->hps--;
-                    evaluate_entity(&message, entity, list, game->components);
-                    evaluate_entity(&message, innerEntity, list, game->components);
-                    display_debug_string(12, "HPS 1: %i HPS 2: %i", 30, entity->hps, innerEntity->hps);
+                    evaluate_entity(&message, entity, list, game->components, game->map);
+                    evaluate_entity(&message, innerEntity, list, game->components, game->map);
                 } break;
                 case COLLISION_DESTROYING: {
                     bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
                     Entities *frog_projs = (Entities*) game->components[COMPONENT_FROG_PROJECTILES_INDEX].component;
-                    destroy_entity(&(frog_projs->entities), list, (isEntityOneProj) ? entity : innerEntity);
+                    if (!isEntityOneProj) {
+                        innerEl = innerEl->next;
+                        isInnerEntityRemoved = true;
+                    } else {
+                        el = el->next;
+                        isEntityRemoved = true;
+                    }
+                    Entity *toBeDestroyed = (isEntityOneProj) ? entity : innerEntity;
+                    delete_entity_pos(toBeDestroyed->height, toBeDestroyed->width, toBeDestroyed->last, game->map);
+                    destroy_entity(&(frog_projs->entities), list, toBeDestroyed);
+                    frog_projs->entity_num--;
                 } break;
                 case COLLISION_TRANSFORM: {
                     bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
                     if (isEntityOneProj) innerEntity->trueType = TRUETYPE_CROC;
                     else entity->trueType = TRUETYPE_CROC;
                     Entities *frog_projs = (Entities*) game->components[COMPONENT_FROG_PROJECTILES_INDEX].component;
-                    destroy_entity(&(frog_projs->entities), list, (isEntityOneProj) ? entity : innerEntity);
+                    if (!isEntityOneProj) {
+                        innerEl = innerEl->next;
+                        isInnerEntityRemoved = true;
+                    } else {
+                        el = el->next;
+                        isEntityRemoved = true;
+                    }
+                    Entity *toBeDestroyed = (isEntityOneProj) ? entity : innerEntity;
+                    delete_entity_pos(toBeDestroyed->height, toBeDestroyed->width, toBeDestroyed->last, game->map);
+                    destroy_entity(&(frog_projs->entities), list, toBeDestroyed);
+                    frog_projs->entity_num--;
                 } break;
             }
 
-            innerEl = innerEl->next;
+            if (isEntityRemoved) break;
+            if (!isInnerEntityRemoved) innerEl = innerEl->next;
         }
 
-        el = el->next;
+        if (!isEntityRemoved) el = el->next;
     }
 
     return INNER_MESSAGE_NONE;
@@ -487,12 +479,38 @@ void reset_secondary_timer(GameSkeleton *game)
 void reset_frog(GameSkeleton *game)
 {
     Entity *frog = (Entity *) game->components[COMPONENT_FROG_INDEX].component;
-    destroy_entity()
-    *frog = entities_default_frog(); // mhhh peccato
-    frog->current = getPositionWithInnerMiddleX(game->map.width, game->map.sidewalk.y, 1, 1, FROG_WIDTH);
+    delete_entity_pos(frog->height, frog->width, frog->last, game->map);
+    *frog = entities_default_frog(game->map);
 }
 
-void reset_entities(GameSkeleton *game, struct entities_list **list)
-{
+void free_entities_list(struct entities_list **list, bool full) {
+    while (*list) {
+        struct entities_list *next = (*list)->next;
+        if (full) free((*list)->e);
+        free((*list));
+        *list = next;
+    }
+}
 
+void free_memory(GameSkeleton *game, struct entities_list **list) {
+    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+        Component *c = &game->components[i];
+        switch(c->type) {
+            case COMPONENT_CLOCK: {
+                Clock *content = (Clock*)c->component;
+                free(content);
+            } break;
+            case COMPONENT_ENTITY: {
+                Entity *content = (Entity*)c->component;
+                free(content);
+            } break;
+            case COMPONENT_ENTITIES: {
+                Entities *entities = (Entities*) c->component;
+                free_entities_list(&entities->entities, true);
+                free(entities);
+            } break;
+        }
+    }
+    free_entities_list(list, false);
+    free(game->map.hideouts);
 }

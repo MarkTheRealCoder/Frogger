@@ -60,6 +60,7 @@ void user_listener(void *_rules);
 void entity_move(void *_rules);
 void timer_counter(void *_rules);
 SystemMessage create_message(SystemMessage action, int receivers);
+Action getDefaultActionByY(MapSkeleton map, int y, bool reset);
 
 InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list);
 InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list);
@@ -67,6 +68,9 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list);
 void reset_main_timer(GameSkeleton *game);
 void reset_secondary_timer(GameSkeleton *game);
 void reset_frog(GameSkeleton *game);
-void reset_entities(GameSkeleton *game, struct entities_list **list);
+Position set_croc_position(MapSkeleton map, int y, int padding);
+Position reset_croc_position(MapSkeleton map, int y);
+
+void free_memory(GameSkeleton *game, struct entities_list **list);
 
 #endif //COMMON_H

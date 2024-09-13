@@ -87,7 +87,7 @@ char *concat(const int n, ...)
         char *str = (char*) va_arg(args, char *);
         int tlen = strlen(str);
 
-        if (!output) 
+        if (!output)
         {
             output = CALLOC(char, tlen + 1);
         }
@@ -291,5 +291,13 @@ Component getDefaultClockComponent(const enum ClockType clockType)
     return (Component) {
         .type = COMPONENT_CLOCK,
         .component = create_clock(value, clockType)
+    };
+}
+
+Component getDefaultEntitiesComponent()
+{
+    return (Component) {
+        .type = COMPONENT_ENTITIES,
+        .component = create_entities_group()
     };
 }

@@ -33,15 +33,15 @@ static char *_FROG_PLAY_ART[ART_OF_LENGTH_3] = {
 };
 
 static char *_CROC_X3_PLAY_ART[ART_OF_LENGTH_3] = {
-        "█████████",
-        "█████████",
-        "█████████"
+        "/-------\\",
+        "<------->",
+        "\\-------/"
 };
 
 static char *_CROC_X2_PLAY_ART[ART_OF_LENGTH_3] = {
-        "██████",
-        "██████",
-        "██████"
+        "/----\\",
+        "8----|",
+        "\\----/"
 };
 
 static char *_PLANT_PLAY_ART[ART_OF_LENGTH_3] = {

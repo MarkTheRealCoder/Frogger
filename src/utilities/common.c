@@ -1,14 +1,9 @@
 #include "common.h"
 
-Entity entities_default_frog()
+Entity entities_default_frog(MapSkeleton map)
 {
-    //int x = getInnerMiddleWithOffset(mapSkeleton.width, 1, 1, GAME_ENTITY_SIZE);
-    //int y = getCenteredY(GAME_ENTITY_SIZE) + 15; // todo edit
-
-    //Position startPosition = getPosition(x, y);
-
     Entity entity = {
-        .current = getPosition(0, 0),
+        .current = getPositionWithInnerMiddleX(map.width, map.sidewalk.y, 1, 1, FROG_WIDTH),
         .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__FROG,
         .trueType = TRUETYPE_FROG,
@@ -44,18 +39,13 @@ Entity entities_default_plant()
 
 Entity new_entities_default_croc()
 {
-    //#define OFFSET 0
-
-    //static int x = 0; // todo edit
-    //static int y = 0; // todo edit
-
     Entity entity = {
         .current = getPosition(0, 0),
         .last = getPosition(-1, -1),
         .type = ENTITY_TYPE__CROC,
-        .trueType = TRUETYPE_CROC,
+        .trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC),
         .hps = 1,
-        .width = 0,
+        .width = GAME_CROCS_MAX_WIDTH, // choose_between(2, GAME_CROCS_MIN_WIDTH, GAME_CROCS_MAX_WIDTH)
         .height = GAME_ENTITY_SIZE,
         .readyToShoot = false
     };
@@ -63,11 +53,18 @@ Entity new_entities_default_croc()
     return entity;
 }
 
-Entity create_projectile(Entity *master) {
+Entity create_projectile(Entity *master, MapSkeleton map)
+{
     bool masterIsFrog = master->type == ENTITY_TYPE__FROG;
     Position p = master->current;
     p.x += 1;
     p.y += (masterIsFrog) ? -1 : FROG_HEIGHT;
+
+    if (WITHIN_BOUNDARIES(p.x, p.y, map) && p.y <= map.garden.y)
+    {
+        p = getPosition(-1, -1);
+    }
+
     return (Entity) {
             .current = p,
             .last = getPosition(-1, -1),
@@ -113,6 +110,7 @@ void **getEntitiesFromComponent(Component c)
         {
             Entity *e = (Entity*) c.component;
             entities = CALLOC(void*, 2);
+            CRASH_IF_NULL(entities)
             entities[0] = e;
             entities[1] = NULL;
         }
@@ -121,6 +119,7 @@ void **getEntitiesFromComponent(Component c)
         {
             Entities *e = (Entities*) c.component;
             entities = CALLOC(void*, e->entity_num + 1);
+            CRASH_IF_NULL(entities)
             entities[e->entity_num] = NULL;
             struct entities_list *en = e->entities;
 
@@ -136,7 +135,7 @@ void **getEntitiesFromComponent(Component c)
     return entities;
 }
 
-struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSkeleton)
+struct entities_list *create_default_entities(GameSkeleton *game)
 {
     struct entities_list *entities = NULL;
     int index = 0;
@@ -146,63 +145,32 @@ struct entities_list *create_default_entities(GameSkeleton *game, int loadFromSk
         struct entities_list *node = CALLOC(struct entities_list, 1);
         CRASH_IF_NULL(node)
 
-        if (loadFromSkeleton)
+        if (index == COMPONENT_CLOCK_INDEX) {
+            free(node);
+            break;
+        }
+
+        if (index < COMPONENT_CLOCK_INDEX)
         {
-            if (index == MAX_CONCURRENCY)
-            {
-                free(node);
-                break;
-            }
-
-            void **binded = getEntitiesFromComponent(game->components[index]);
-
-            index++;
-
-            if (!binded) {
-                free(node);
-                continue;
-            }
-
-            int inner_index = 0;
-            while (binded[inner_index]) {
-                if (inner_index) {
-                    struct entities_list *inner_node = CALLOC(struct entities_list, 1);
-                    inner_node->next = node;
-                    node = inner_node;
-                }
-                node->e = binded[inner_index];
-                if (!inner_index) node->next = entities;
-                inner_index++;
-            }
-            free(binded);
+            node->e = CALLOC(Entity, 1);
+            CRASH_IF_NULL(node->e)
         }
-        else {
-            if (index == COMPONENT_CLOCK_INDEX) {
-                free(node);
-                break;
-            }
 
-            if (index < COMPONENT_CLOCK_INDEX)
-            {
-                node->e = CALLOC(Entity, 1);
-                CRASH_IF_NULL(node->e)
-            }
+        if (index == COMPONENT_FROG_INDEX)          *(node->e) = entities_default_frog(game->map);
+        else if (index <= COMPONENT_CROC_INDEXES)   *(node->e) = new_entities_default_croc();
+        else if (index < COMPONENT_CLOCK_INDEX)     *(node->e) = entities_default_plant();
 
-            if (index == COMPONENT_FROG_INDEX)          *(node->e) = entities_default_frog();
-            else if (index <= COMPONENT_CROC_INDEXES)   *(node->e) = new_entities_default_croc();
-            else if (index < COMPONENT_CLOCK_INDEX)     *(node->e) = entities_default_plant();
+        game->components[index] = (Component){.type=COMPONENT_ENTITY, .component=node->e};
+        node->next = entities;
+        index++;
 
-            game->components[index] = (Component){.type=COMPONENT_ENTITY, .component=node->e};
-            node->next = entities;
-            index++;
-        }
         entities = node;
     }
 
     return entities;
 }
 
-void create_new_entities(struct entities_list **list, Component components[MAX_CONCURRENCY]) {
+void create_new_entities(struct entities_list **list, Component components[MAX_CONCURRENCY], MapSkeleton map) {
     struct entities_list *entity = *list;
     Position p = {0, 0};
     while (entity) {
@@ -213,14 +181,20 @@ void create_new_entities(struct entities_list **list, Component components[MAX_C
             if (es->entity_num <= 2) {
                 Entity *new = CALLOC(Entity, 1);
                 CRASH_IF_NULL(new);
-                *new = create_projectile(e);
+                *new = create_projectile(e, map);
+                if (new->current.x == -1 && new->current.y == -1) {
+                    free(new);
+                    return;
+                }
                 // Adding entity to the main list
                 struct entities_list *node = CALLOC(struct entities_list, 1);
+                CRASH_IF_NULL(node)
                 node->next = *list;
                 node->e = new;
                 *list = node;
                 // Adding entity to its component's list
                 node = CALLOC(struct entities_list, 1);
+                CRASH_IF_NULL(node)
                 es->entity_num++;
                 node->next = es->entities;
                 node->e = new;

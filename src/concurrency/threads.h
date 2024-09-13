@@ -41,7 +41,7 @@ static sem_t POLLING_READING;
           "BAK BAK"
  */
 InnerMessages thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *game);
-int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list);
+int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList);
 
 void init_semaphores();
 void close_semaphores();

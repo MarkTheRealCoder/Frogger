@@ -16,8 +16,13 @@ int main(int argc, char *argv[])
     WINDOW *w = init_screen(&screen);
 
     // Se il terminale è troppo piccolo, comunica a schermo.
-    handle_screen_resize();
-    signal(SIGWINCH, handle_screen_resize);
+    //handle_screen_resize();
+    //
+    // signal(SIGWINCH, handle_screen_resize);
+
+
+
+
 
 
     int threadsOrProcessesMenu = 0, mainMenu = -1;
@@ -77,8 +82,9 @@ int main(int argc, char *argv[])
         }
     } while (mainMenu == -1);
 
+    make_MapSkeleton(&game.map, getPosition(MAP_START_X, MAP_START_Y), MAP_WIDTH);
     int result;
-    struct entities_list *entities = create_default_entities(&game, loadedFromFile);
+    struct entities_list *entities = create_default_entities(&game);
     if (!threadsOrProcessesMenu) result = thread_main(screen, &game, &entities);
     else result = process_main(&game, &entities);
 

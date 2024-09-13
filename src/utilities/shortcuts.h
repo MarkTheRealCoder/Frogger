@@ -87,7 +87,10 @@ int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entit
 Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int indexToPick, int entityWidth);
 
 bool areHideoutsClosed(const MapSkeleton *map);
+
 Component getDefaultClockComponent(enum ClockType clockType);
+Component getDefaultEntitiesComponent();
+
 int isEntityPositionHideoutValid(const Entity *entity, const MapSkeleton *map);
 
 #endif // !FROGGER_SHORTCUTS_H

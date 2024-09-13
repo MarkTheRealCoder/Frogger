@@ -30,7 +30,6 @@ WINDOW *init_screen(Screen *screen)
     init_extended_color(COLORCODES_CROC_B, CROC_B_COLOR);
     init_extended_color(COLORCODES_CROC_A, CROC_A_COLOR);
     init_extended_color(COLORCODES_FROG_B, FROG_B_COLOR);
-    init_extended_color(COLORCODES_FROG_A, FROG_A_COLOR);
     init_extended_color(COLORCODES_PLANT_B, PLANT_B_COLOR);
     init_extended_color(COLORCODES_PLANT_A, PLANT_A_COLOR);
     init_extended_color(COLORCODES_PROJECTILE_F, PROJECTILE_F_COLOR);
@@ -243,8 +242,8 @@ Cuboid getCuboidFromEntity(const Entity e)
 CollisionPacket areColliding(const Entity e1, const Entity e2)
 {
     CollisionPacket collisionPacket = {
-        .e1 = e1.type,
-        .e2 = e2.type,
+        .e1 = e1.trueType,
+        .e2 = e2.trueType,
         .e1_priority = getPriorityByEntityType(e1.type),
         .e2_priority = getPriorityByEntityType(e2.type)
     };
@@ -483,6 +482,7 @@ void display_score(const Position position, const int score)
 void addStringToList(StringNode **list, int color, char *string) 
 {
     StringNode *new = CALLOC(StringNode, 1);
+    CRASH_IF_NULL(new)
     new->length = strlen(string);
     new->color = color;
     new->next = NULL;
@@ -580,6 +580,7 @@ void display_entity(const int fg, const StringArt art, const Position curr, cons
     attron(COLOR_PAIR(pair));
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < length; j++) {
+            //display_debug_string(12 + i, "X: %i - Y: %i : RESULT: %i", 50, curr.x+j, curr.y+i, WITHIN_BOUNDARIES(curr.x+j, curr.y+i, map));
             if (WITHIN_BOUNDARIES(curr.x+j, curr.y+i, map)) {
                 mvaddch(curr.y+i, curr.x+j, art.art[i][j]);
             }
@@ -592,17 +593,23 @@ void display_entity(const int fg, const StringArt art, const Position curr, cons
 
 /* * * * * * */
 
-void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
+void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width)
+{
     int hideouts = GAME_HIDEOUTS;
     while (!(width > hideouts * FROG_WIDTH)) hideouts--;
     map->hideouts = CALLOC(Position, hideouts + 1);
+    CRASH_IF_NULL(map->hideouts)
+
     int total_left = width - hideouts * FROG_WIDTH;
     int spaces = hideouts + 1;
     int left_per_space = (int) (total_left / spaces);
     int extra_left = total_left % spaces;
+
     extra_left = extra_left % 2 == 0 ? extra_left : extra_left - 1;
     spaces = spaces % 2 == 0;
-    for (int i = 0, spacing = 0; i < hideouts; i++) {
+
+    for (int i = 0, spacing = 0; i < hideouts; i++)
+    {
         map->hideouts[i].y = sp.y + FROG_HEIGHT; 
         spacing += left_per_space;
         if (extra_left) {
@@ -613,7 +620,6 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width) {
         spacing += FROG_WIDTH;
     }
     map->hideouts[hideouts].y = map->hideouts[hideouts].x = -1;
-
 
     map->garden.x = map->sidewalk.x = map->river.x = sp.x;
     map->garden.y = map->hideouts[0].y + FROG_HEIGHT;

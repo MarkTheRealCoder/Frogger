@@ -81,6 +81,8 @@ bool menu_listener(int *choice, int choices_num)
         case '\n':
             not_exit = false;
             break;
+        default:
+            break;
     }
 
     return not_exit;
@@ -107,7 +109,7 @@ int generic_menu(const Screen screen, StringArt choices, StringArt logo, StringA
 
         cuy += 4;
         print_choices(choices.art, choices.length, choice, screen.x, &cuy);
-    } while(menu_listener(&choice, choices.length));
+    } while (menu_listener(&choice, choices.length));
 
     erase();
 
@@ -156,6 +158,8 @@ int thread_or_processes_menu(const Screen screen)
 
 unsigned int show(const Screen screen, const enum PS state, int *output)
 {
+    erase();
+
     switch (state)
     {
         case PS_MAIN_MENU: 
@@ -171,5 +175,6 @@ unsigned int show(const Screen screen, const enum PS state, int *output)
             return 1;
     }
 
+    erase();
     return 0;
 }

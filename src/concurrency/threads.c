@@ -1,6 +1,6 @@
 #include "threads.h"
 
-InnerMessages  thread_polling_routine(int *buffer, GameSkeleton *game)
+InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game)
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
@@ -18,19 +18,26 @@ InnerMessages  thread_polling_routine(int *buffer, GameSkeleton *game)
             continue;
         }
 
+        InnerMessages otherMessage = INNER_MESSAGE_NONE;
+
         buffer[i] = COMMS_EMPTY;
         Component *c = find_component(i, game);
         switch(c->type)
         {
             case COMPONENT_CLOCK:
-                innerMessage = handle_clock(c, value);
+                otherMessage = handle_clock(c, value);
                 break;
             case COMPONENT_ENTITY:
-                innerMessage = handle_entity(c, value, true);
+                otherMessage = handle_entity(c, value, true);
                 break;
             case COMPONENT_ENTITIES:
-                innerMessage = handle_entities(c, value);
+                otherMessage = handle_entities(c, value);
                 break;
+        }
+
+        if (otherMessage != INNER_MESSAGE_NONE)
+        {
+            innerMessage = otherMessage;
         }
     }
 
@@ -74,13 +81,15 @@ void *generic_thread(void *packet)
         }
         else if (action == MESSAGE_STOP)
         {
-            //printf("STOP=%d\n", id);
             break;
         }
 
-        //printf("SLEEP at INDEX=%d | TIME=%dms\n", index, p->ms);
-        sleepy(p->ms, TIMEFRAME_MILLIS);
+        sleepy(p->ms + ((rules.buffer == ACTION_PAUSE) ? 500 : 0), TIMEFRAME_MILLIS);
     }
+
+    free(rules.rules);
+    free(carriage);
+    free(p);
 
     return NULL;
 }
@@ -112,8 +121,8 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
                 packet->producer = &entity_move;
                 t->rules.rules = CALLOC(int, 1);
                 CRASH_IF_NULL(t->rules.rules)
-                t->rules.rules[0] = ACTION_WEST;
-                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 1000 + gen_num(1000, 5000) : 1000;
+                t->rules.rules[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
+                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 1000 + gen_num(1000, 5000) : 125; // TODO EDIT
             }
         } break;
         case COMPONENT_ENTITIES:
@@ -164,7 +173,7 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
         {
             if (!clocks && projectiles)
             {
-                comps[i] = (Component) {.type=COMPONENT_ENTITIES, .component=create_entities_group()};
+                comps[i] = getDefaultEntitiesComponent();
                 projectiles--;
             }
 
@@ -187,32 +196,60 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
     return threads_list;
 }
 
-int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
+void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list **list) {
+    Entity *croc, *previousCroc;
+    int padding = 0;
+    int y = game->map.river.y;
+    bool noRemainder;
+    for (int i = 1, j = 0, z = y; i <= COMPONENT_CROC_INDEXES; ++i, z = y + j * 3) {
+        int currentPadding = gen_num(4, 8);
+        Action action = getDefaultActionByY(game->map, z, false);
+        noRemainder = (i - 1) % 2 == 0;
+
+        croc = (Entity *) game->components[i].component;
+
+        if (!noRemainder) previousCroc = croc;
+
+        padding += ((action == ACTION_WEST) ? 0 : croc->width * 5) + currentPadding + (noRemainder ? 0 : previousCroc->width);
+
+        sem_wait(&POLLING_READING);
+        threadList[i].rules.rules[0] = action;
+        sem_post(&POLLING_READING);
+
+        croc->current = set_croc_position(game->map, z, padding);
+        display_debug_string(12 + i - 1, "croc[%d] x=%d y=%d", 30, i - 1, croc->current.x, croc->current.y);
+        if ((i - 1) % 2 == 1) {
+            j++;
+            padding = 0;
+        }
+        else padding = currentPadding;
+    }
+}
+
+int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList)
 {
     erase();
     init_semaphores();
     COMMUNICATIONS = MESSAGE_RUN;
 
     int *buffer = CALLOC(int, MAX_CONCURRENCY);
+    CRASH_IF_NULL(buffer)
     for (int i = 0; i < MAX_CONCURRENCY; i++) buffer[i] = COMMS_EMPTY;
 
     int *lives = &game->lives;
     int *score = &game->score;
     int threadIds = 0;
+    bool running = true, drawAll = true;
 
     Thread *threadList = create_threads(game->components, buffer, &threadIds);
     Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
 
-    make_MapSkeleton(&game->map, getPosition(MAP_START_X, MAP_START_Y), MAP_WIDTH);
-    draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, true);
+    reset_entities(threadList, game, entitiesList);
 
-    reset_frog(game);
+    draw(*entitiesList, &game->map, mainClock, &game->achievements, game->score, game->lives, drawAll);
 
-    while (true)
+    while (running)
     {
-        //display_debug_string("LOOP | CURR_X: %d CURR_Y: %d", 40, frog->current.x, frog->current.y);
-        //display_debug_string("LOOP | LAST_X: %d LAST_Y: %d", 40, frog->last.x, frog->last.y);
-
         InnerMessages result = thread_polling_routine(buffer, game);
         bool skipValidation = false;
 
@@ -227,12 +264,14 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
                 COMMUNICATIONS = MESSAGE_HALT;
                 int output;
                 show(screen, PS_PAUSE_MENU, &output);
-                draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, true);
+                drawAll = true;
                 COMMUNICATIONS = MESSAGE_RUN;
             } break;
+            default:
+                break;
         }
 
-        if (!skipValidation) result = apply_validation(game, list);
+        if (!skipValidation) result = apply_validation(game, entitiesList);
 
         switch (result)
         {
@@ -241,24 +280,44 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **list)
                 (*lives)--;
             case EVALUATION_MANCHE_WON:
             {
-                reset_main_timer(game); // todo <-
-                reset_secondary_timer(game); // todo <-
-                reset_frog(game); // todo <-
-                // reset_entities(list, game); // todo <-
+                reset_main_timer(game);
+                reset_secondary_timer(game);
+                reset_frog(game);
+                reset_entities(threadList, game, entitiesList);
                 *score += 1000;
             } break;
+            case EVALUATION_GAME_LOST:
+            case EVALUATION_GAME_WON:
+                running = false;
+                break;
+            default:
+                break;
         }
 
-        create_new_entities(list, game->components); // todo <-
+        if (!running) break;
 
-        apply_physics(game, list);
+        create_new_entities(entitiesList, game->components, game->map);
+
+        apply_physics(game, entitiesList);
         
-        draw(*list, &game->map, mainClock, &game->achievements, game->score, game->lives, false);
-
+        draw(*entitiesList, &game->map, mainClock, &game->achievements, game->score, game->lives, drawAll);
+        drawAll = false;
         sleepy(50, TIMEFRAME_MILLIS);
     }
 
-    // todo cleanup
+    COMMUNICATIONS = MESSAGE_STOP;
+    erase();
+    center_string_colored("Press any key to continue...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
+
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        pthread_join(threadList[i].id, NULL);
+    }
+    free(threadList);
+
+    free(buffer);
+
+    free_memory(game, entitiesList);
 
     close_semaphores();
 
