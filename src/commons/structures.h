@@ -132,9 +132,9 @@ typedef struct {
     unsigned int y;
 } Screen;
 
-typedef struct generic_node {
-    void *current;
-    struct generic_node *next;
-} GenericNode;
+enum MAIN_TASK {
+    KEEP_GOING,
+    TERMINATE,
+};
 
 #endif

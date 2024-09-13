@@ -83,7 +83,7 @@ Clock *create_clock(unsigned int value, enum ClockType type)
     CRASH_IF_NULL(c)
 
     c->type = type;
-    c->current = c->starting = value * 1000 * 100;
+    c->current = c->starting = value * 1000;
     c->fraction = (int) (c->starting / CLOCK_DISPLAY_SIZE);
 
     return c;

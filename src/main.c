@@ -1,8 +1,14 @@
 #include "commons/imports.h"
 
+enum MAIN_TASK propose_version_menu(Screen screen, int *menuOutput);
+enum MAIN_TASK propose_main_menu(Screen screen, int *menuOutput);
+void checkForTerminate(enum MAIN_TASK task, WINDOW *window);
+int slaveMain(Screen screen, WINDOW *window, enum MAIN_TASK *currentTask);
+
 int main(int argc, char *argv[])
 {
     struct program_args parsed_program_args = addons_parse_args(argc, argv);
+    enum MAIN_TASK currentTask = KEEP_GOING;
 
     if (parsed_program_args.help)
     {
@@ -13,46 +19,29 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     Screen screen;
-    WINDOW *w = init_screen(&screen);
+    WINDOW *window = init_screen(&screen);
 
     // Se il terminale è troppo piccolo, comunica a schermo.
-    //handle_screen_resize();
-    //
-    // signal(SIGWINCH, handle_screen_resize);
+    handle_screen_resize();
+    signal(SIGWINCH, handle_screen_resize);
 
+    int exitCode = EXIT_FAILURE;
 
+    do {
+        exitCode = slaveMain(screen, window, &currentTask);
+    } while (currentTask != TERMINATE);
 
+    return exitCode;
+}
 
+int slaveMain(Screen screen, WINDOW *window, enum MAIN_TASK *currentTask)
+{
+    int threadsOrProcessesMenu = 0;
 
+    *currentTask = propose_version_menu(screen, &threadsOrProcessesMenu);
+    checkForTerminate(*currentTask, window);
 
-    int threadsOrProcessesMenu = 0, mainMenu = -1;
-
-    /*
-     * Version menu.
-     */
-
-     do {
-        show(screen, PS_VERSION_MENU, &threadsOrProcessesMenu);
-
-        switch (threadsOrProcessesMenu)
-        {
-            case VMO_THREADS:
-                threadsOrProcessesMenu = 0;
-                break;
-            case VMO_PROCESSES:
-                threadsOrProcessesMenu = 1;
-                break;
-            case VMO_QUIT:
-                goto TERMINATE;
-            default:
-                break;
-        }
-    } while (threadsOrProcessesMenu == -1);
-
-
-    /*
-     * Main menu.
-     */
+    int mainMenu = -1;
 
     GameSkeleton game = {
             .lives = TOTAL_LIVES,
@@ -63,100 +52,75 @@ int main(int argc, char *argv[])
             }
     };
 
-    bool loadedFromFile = false;
-
-    do {
-        show(screen, PS_MAIN_MENU, &mainMenu);
-
-        switch (mainMenu)
-        {
-            case MMO_START_NEW:
-                {
-                }
-                break;
-            case MMO_QUIT:
-                goto TERMINATE;
-            default:
-                mainMenu = 0;
-                break;
-        }
-    } while (mainMenu == -1);
+    *currentTask = propose_main_menu(screen, &mainMenu);
+    checkForTerminate(*currentTask, window);
 
     make_MapSkeleton(&game.map, getPosition(MAP_START_X, MAP_START_Y), MAP_WIDTH);
-    int result;
+
+    int finalScore;
     struct entities_list *entities = create_default_entities(&game);
-    if (!threadsOrProcessesMenu) result = thread_main(screen, &game, &entities);
-    else result = process_main(&game, &entities);
+    if (!threadsOrProcessesMenu) finalScore = thread_main(screen, &game, &entities);
+    else finalScore = process_main(&game, &entities);
 
-    display_game_over(screen, result);
+    show(screen, (finalScore > 0 ? PS_WIN : PS_LOST), &finalScore);
 
-    TERMINATE:
-        reset_color_pairs();
-        endwin();
-        delwin(w);
     return EXIT_SUCCESS;
 }
 
-/*
-    struct game_threads game = { };
-    setup_map(&game);
-    init_game_threads(&game);
+enum MAIN_TASK propose_version_menu(Screen screen, int *menuOutput)
+{
+    enum MAIN_TASK resultTask = KEEP_GOING;
 
+    do {
+        show(screen, PS_VERSION_MENU, menuOutput);
 
-    Packet *startupPacket = NULL;
-
-    do 
-    {
-        startupPacket = create_threads(&game);
-        lockMancheEndedMutex();
-        run_threads(&game);
-
-        lockMancheEndedMutex();
-        destroy_packet(startupPacket);
-        unlockMancheEndedMutex();
-    } while (isGameEnded());
-    */
-/*
-int main(int argc, char **argv) {
-    int prodLeft    = LEFT;
-    int prodRight   = RIGHT;
-
-    int *buffer = (int*) calloc(25, sizeof(int));
-    buffer[0] = SAFE_VALUE;
-    sem_t reading, writing;
-    sem_init(&reading, 0, 1);
-    sem_init(&writing, 0, 1);
-
-    DataBuffer data = {.datas=&prodRight, .buffer=0};
-    Carriage c = {.data=data, .buffer=buffer, .reading=&reading, .writing=&writing};
-
-    Packet p = {.carriage=&c, .producer=&produttore};
-    int threads = 0;
-    AVAILABLE_DYNPID(p.id, threads);
-
-    pthread_t t;
-    pthread_create(&t, NULL, &generic_thread, &p);
-
-    COMMUNICATIONS = MESSAGE_RUN;
-    for (int i = 0; i < 10; i++) {
-        sem_wait(&writing);
-        sem_wait(&reading);
-        if (buffer[0] == SAFE_VALUE && i == 0) {
-            i--;
+        switch (*menuOutput)
+        {
+            case VMO_THREADS:
+                *menuOutput = 0;
+                break;
+            case VMO_PROCESSES:
+                *menuOutput = 1;
+                break;
+            case VMO_QUIT:
+                resultTask = TERMINATE;
+            default:
+                break;
         }
-        else {
-            printf("Print numero %i: %i\n", i, buffer[0]);
-            buffer[0] = SAFE_VALUE;
-        }
-        sem_post(&reading);
-        sem_post(&writing);
-        sleep(1);
-        if (i == 3) {
-            COMMUNICATIONS = MESSAGE_HALT;
-        }
-        if (i == 6) COMMUNICATIONS = MESSAGE_RUN;
-    }
-    COMMUNICATIONS = MESSAGE_STOP;
-    pthread_join(t, NULL);
+    } while (*menuOutput == -1);
+
+    return resultTask;
 }
-*/
+
+enum MAIN_TASK propose_main_menu(Screen screen, int *menuOutput)
+{
+    enum MAIN_TASK resultTask = KEEP_GOING;
+
+    do {
+        show(screen, PS_MAIN_MENU, menuOutput);
+
+        switch (*menuOutput)
+        {
+            case MMO_START_NEW:
+                break;
+            case MMO_QUIT:
+                resultTask = TERMINATE;
+            default:
+                *menuOutput = 0;
+                break;
+        }
+    } while (*menuOutput == -1);
+
+    return resultTask;
+}
+
+void checkForTerminate(enum MAIN_TASK task, WINDOW *window)
+{
+    if (task == TERMINATE)
+    {
+        reset_color_pairs();
+        endwin();
+        delwin(window);
+        exit(EXIT_SUCCESS);
+    }
+}

@@ -220,6 +220,7 @@ static char _FROGGER_SCREEN_CORRECT_SIZE[_FROGGER_SCREEN_CORRECT_LENGTH] =
 #define FROG_ART_LOGO_COLOR_Q 255, 51, 51 // 153 0 0
 #define FROG_ART_SELECTED_COLOR 255, 124, 9 // 255 153 51
 
+void clear_screen();
 WINDOW *init_screen(Screen *screen);
 void center_string_colored(char *string, int pair, int max, int cuy);
 unsigned int show(Screen screen, enum PS prog_state, int *output);
@@ -255,5 +256,6 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList 
 void display_game_over(Screen screen, int result);
 
 void display_debug_string(int y, const char *__restrict __format, int stringLength, ...);
+
 
 #endif

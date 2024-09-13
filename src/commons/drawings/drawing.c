@@ -1,6 +1,13 @@
 #include "../drawing.h"
 
 
+void clear_screen() {
+    attrset(A_NORMAL);
+    clear();
+    erase();
+    refresh();
+}
+
 /**
  * Inizializza lo schermo insieme ai colori.
  * @param screen Lo schermo da inizializzare.
@@ -697,7 +704,7 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
     };
 
     Position POSITION_SCORE = {
-        MAP_START_X,
+        MAP_START_X + 2,
         3
     };
 
@@ -736,7 +743,7 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
 
 void display_debug_string(int y, const char *__restrict __format, int stringLength, ...)
 {
-    static int x = 120;
+    static int x = 140;
 
     char *string = MALLOC(char, stringLength);
     va_list args;

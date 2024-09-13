@@ -22,6 +22,7 @@ static int COMMUNICATIONS = 0;
 static sem_t COMMUNICATION_SEMAPHORE;
 static sem_t POLLING_WRITING;
 static sem_t POLLING_READING;
+static pthread_mutex_t MUTEX;
 
 
 /*

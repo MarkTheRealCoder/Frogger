@@ -308,10 +308,8 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton  *map, struct en
     return INNER_MESSAGE_NONE;
 }
 
-InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) {
-
-    // display_debug_string("APPLY VALIDATION", 40);
-
+InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
+{
     InnerMessages result = INNER_MESSAGE_NONE;
     InnerMessages entityValidationResult;
 
@@ -327,10 +325,8 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list) 
         return EVALUATION_GAME_WON;
     }
 
-
     for (int i = 0; i < MAX_CONCURRENCY; i++) {
         Component *c = &game->components[i];
-
 
         switch (c->type) {
             case COMPONENT_ENTITY: {
@@ -460,13 +456,6 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
     return INNER_MESSAGE_NONE;
 }
 
-void reset_frog(GameSkeleton *game)
-{
-    Entity *frog = (Entity *) game->components[COMPONENT_FROG_INDEX].component;
-    delete_entity_pos(frog->height, frog->width, frog->last, game->map);
-    *frog = entities_default_frog(game->map);
-}
-
 void free_entities_list(struct entities_list **list, bool full) {
     while (*list) {
         struct entities_list *next = (*list)->next;
@@ -497,4 +486,83 @@ void free_memory(GameSkeleton *game, struct entities_list **list) {
     }
     free_entities_list(list, false);
     free(game->map.hideouts);
+}
+
+void common_timer_reset(int *buffer, GameSkeleton *game, int index)
+{
+    Clock *clock = (Clock*) game->components[index].component;
+    clock->current = clock->starting;
+    *buffer = clock->current;
+}
+
+void reset_main_timer(int *buffer, GameSkeleton *game)
+{
+    common_timer_reset(buffer, game, COMPONENT_CLOCK_INDEX);
+}
+
+void reset_secondary_timer(int *buffer, GameSkeleton *game)
+{
+    common_timer_reset(buffer, game, COMPONENT_TEMPORARY_CLOCK_INDEX);
+}
+
+void reset_frog(GameSkeleton *game)
+{
+    Entity *frog = (Entity *) game->components[COMPONENT_FROG_INDEX].component;
+    delete_entity_pos(frog->height, frog->width, frog->last, game->map);
+    *frog = entities_default_frog(game->map);
+}
+
+int reset_crocodile(int *buffer, int index, GameSkeleton *game, int prevPadding) {
+    int line = (index == 0) ? 0 : (int)(index / 2);
+    int y = game->map.river.y + (line * 3);
+    Action action = getDefaultActionByY(game->map, y, (!index));
+    Entity *croc = (Entity *) game->components[index + 1].component;
+
+    int currentPadding = gen_num(4, 8);
+    int padding = ((action == ACTION_WEST) ? 0 : croc->width * 5) + currentPadding + (index % 2 ? prevPadding : 0);
+
+    *buffer = action;
+
+    croc->current = set_croc_position(game->map, y, padding);
+    croc->trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC);
+
+    return currentPadding + croc->width;
+}
+
+void reset_crocodiles(int *buffer, GameSkeleton *game) {
+    for (int i = 0, prevPadding = 0; i < COMPONENT_CROC_INDEXES; i++) {
+        prevPadding = reset_crocodile(&buffer[i+1], i, game, prevPadding);
+    }
+}
+
+void reset_plants(GameSkeleton *game) {
+    for (int i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++) {
+        Component *c = &game->components[i];
+        Entity *plant = (Entity *) c->component;
+        plant->current = getPosition(0, 0);
+        plant->readyToShoot = false;
+    }
+}
+
+void destroy_all_projectiles(GameSkeleton *game, struct entities_list **list) {
+    for (int i = COMPONENT_FROG_PROJECTILES_INDEX; i <= COMPONENT_PROJECTILES_INDEX; i++) {
+        Component *c = &game->components[i];
+        Entities *projs = (Entities *) c->component;
+        projs->entity_num = 0;
+        while (projs->entities) {
+            destroy_entity(&projs->entities, list, projs->entities->e);
+        }
+    }
+}
+
+int *reset_game(GameSkeleton *game, struct entities_list **list) {
+    int *buffer = CALLOC(int, MAX_CONCURRENCY);
+    for (int i = 0; i < MAX_CONCURRENCY; i++) buffer[i] = COMMS_EMPTY;
+    reset_main_timer(&buffer[COMPONENT_CLOCK_INDEX], game);
+    reset_secondary_timer(&buffer[COMPONENT_TEMPORARY_CLOCK_INDEX], game);
+    reset_frog(game);
+    reset_crocodiles(buffer, game);
+    reset_plants(game);
+    destroy_all_projectiles(game, list);
+    return buffer;
 }

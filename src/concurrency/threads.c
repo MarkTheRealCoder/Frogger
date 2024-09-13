@@ -5,7 +5,7 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
 
     sem_wait(&POLLING_READING);
     sem_wait(&POLLING_WRITING);
-    sem_wait(&POLLING_READING);
+    //sem_wait(&POLLING_READING);
 
     for (int i = 0; i < MAX_CONCURRENCY; i++) {
         int value = buffer[i];
@@ -53,7 +53,12 @@ void *generic_thread(void *packet) {
     ProductionRules rules = carriage->rules;
 
     SystemMessage action = MESSAGE_NONE;
-    while (true) {
+
+    while (true)
+    {
+        pthread_mutex_lock(&MUTEX);
+        pthread_mutex_unlock(&MUTEX);
+
         if (MATCH_ID(id, COMMUNICATIONS)) {
             SystemMessage msg = COMMUNICATIONS & MESSAGE_RUN;
             action = (msg != action && msg != MESSAGE_NONE) ? msg : action;
@@ -62,7 +67,6 @@ void *generic_thread(void *packet) {
         if (action == MESSAGE_RUN) {
             sem_wait(&POLLING_WRITING);
             sem_post(&POLLING_WRITING);
-
 
             producer(&rules);
 
@@ -113,7 +117,7 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
                 t->rules.rules = CALLOC(int, 1);
                 CRASH_IF_NULL(t->rules.rules)
                 t->rules.rules[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
-                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 1000 + gen_num(1000, 5000) : 125; // TODO EDIT
+                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 1000 + gen_num(1000, 5000) : 125; // TODO EDIT 125
             }
         } break;
         case COMPONENT_ENTITIES:
@@ -173,7 +177,7 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
                 case 1:
                 case 2:
                 {
-                    comps[i] = getDefaultClockComponent(clocks == 2 ? CLOCK_SECONDARY : CLOCK_MAIN);
+                    comps[i] = getDefaultClockComponent(clocks == 1 ? CLOCK_SECONDARY : CLOCK_MAIN);
                     clocks--;
                 } break;
                 default:
@@ -187,25 +191,20 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
     return threads_list;
 }
 
-void common_timer_reset(Thread *threadList, GameSkeleton *game, int index)
-{
-    Clock *clock = (Clock*) game->components[index].component;
-    clock->current = clock->starting;
+void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, struct entities_list **list) {
+    int *tmp_buffer = reset_game(game, list);
+
     sem_wait(&POLLING_WRITING);
-    threadList[index].rules.rules[0] = clock->current;
+    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+        if (tmp_buffer[i] != COMMS_EMPTY) threadList[i].rules.rules[0] = tmp_buffer[i];
+        buffer[i] = COMMS_EMPTY;
+    }
     sem_post(&POLLING_WRITING);
+
+    free(tmp_buffer);
 }
 
-void reset_main_timer(Thread *threadList, GameSkeleton *game)
-{
-    common_timer_reset(threadList, game, COMPONENT_CLOCK_INDEX);
-}
-
-void reset_secondary_timer(Thread *threadList, GameSkeleton *game)
-{
-    common_timer_reset(threadList, game, COMPONENT_TEMPORARY_CLOCK_INDEX);
-}
-
+/*
 void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list **list) {
     Entity *croc, *previousCroc;
     int padding = 0;
@@ -229,7 +228,7 @@ void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list
 
         croc->current = set_croc_position(game->map, z, padding);
         croc->trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC);
-        display_debug_string(12 + i - 1, "croc[%d] x=%d y=%d", 30, i - 1, croc->current.x, croc->current.y);
+
         if ((i - 1) % 2 == 1) {
             j++;
             padding = 0;
@@ -237,28 +236,31 @@ void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list
         else padding = currentPadding;
     }
 }
+ */
 
 int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList)
 {
     erase();
     init_semaphores();
-    COMMUNICATIONS = MESSAGE_RUN;
 
     int *buffer = CALLOC(int, MAX_CONCURRENCY);
     CRASH_IF_NULL(buffer)
-    for (int i = 0; i < MAX_CONCURRENCY; i++) buffer[i] = COMMS_EMPTY;
 
     int *lives = &game->lives;
     int *score = &game->score;
     int threadIds = 0;
     bool running = true, drawAll = true;
 
+    pthread_mutex_lock(&MUTEX);
+
     Thread *threadList = create_threads(game->components, buffer, &threadIds);
     Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
 
-    reset_entities(threadList, game, entitiesList);
-
     draw(*entitiesList, &game->map, mainClock, &game->achievements, game->score, game->lives, drawAll);
+
+    COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+    reset_game_threads(buffer, threadList, game, entitiesList);
+    pthread_mutex_unlock(&MUTEX);
 
     while (running)
     {
@@ -273,11 +275,22 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 break;
             case POLLING_GAME_PAUSE:
             {
+                pthread_mutex_lock(&MUTEX);
                 COMMUNICATIONS = MESSAGE_HALT;
+                pthread_mutex_unlock(&MUTEX);
                 int output;
                 show(screen, PS_PAUSE_MENU, &output);
-                drawAll = true;
-                COMMUNICATIONS = MESSAGE_RUN;
+                if (output)
+                {
+                    running = false;
+                    *score = 0;
+                }
+                else {
+                    drawAll = true;
+                    pthread_mutex_lock(&MUTEX);
+                    COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+                    pthread_mutex_unlock(&MUTEX);
+                }
             } break;
             default:
                 break;
@@ -290,14 +303,17 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
             case POLLING_FROG_DEAD:
             case POLLING_MANCHE_LOST:
                 (*lives)--;
+                if (!*lives)
+                {
+                    running = false;
+                    *score = -*score;
+                    break;
+                }
             case EVALUATION_MANCHE_WON:
             {
-                reset_main_timer(threadList, game);
-                reset_secondary_timer(threadList, game);
-                reset_frog(game);
-                reset_entities(threadList, game, entitiesList);
-                *score += 1000;
-                erase();
+                reset_game_threads(buffer, threadList, game, entitiesList);
+                *score += result == EVALUATION_MANCHE_WON ? 1000 : 0;
+                clear_screen();
                 drawAll = true;
             } break;
             case EVALUATION_GAME_LOST:
@@ -320,8 +336,11 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
     }
 
     COMMUNICATIONS = MESSAGE_STOP;
-    erase();
-    center_string_colored("Press any key to continue...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
+
+    clear_screen();
+
+    center_string_colored("The frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
+    center_string_colored("Wait a few seconds!", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 21);
 
     for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
@@ -346,6 +365,7 @@ void init_semaphores()
     sem_init(&COMMUNICATION_SEMAPHORE, 0, 1);
     sem_init(&POLLING_WRITING, 0, 1);
     sem_init(&POLLING_READING, 0, 1);
+    pthread_mutex_init(&MUTEX, NULL);
 }
 
 /**
@@ -356,5 +376,5 @@ void close_semaphores()
     sem_close(&COMMUNICATION_SEMAPHORE);
     sem_close(&POLLING_WRITING);
     sem_close(&POLLING_READING);
+    pthread_mutex_destroy(&MUTEX);
 }
-

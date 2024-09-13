@@ -65,9 +65,9 @@ Action getDefaultActionByY(MapSkeleton map, int y, bool reset);
 InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list);
 InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list);
 
-void reset_frog(GameSkeleton *game);
 Position set_croc_position(MapSkeleton map, int y, int padding);
 Position reset_croc_position(MapSkeleton map, int y);
+int *reset_game(GameSkeleton *game, struct entities_list **list);
 
 void free_memory(GameSkeleton *game, struct entities_list **list);
 

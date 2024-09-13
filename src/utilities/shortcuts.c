@@ -204,6 +204,14 @@ StringArt getArtOfThing(const enum AVAILABLE_ARTS artid, char **art, const int l
             result.art = _FROGGER_LOGO,
             result.length = _FROGGER_LOGO_LENGTH;
             break;
+        case ART_LOST_LOGO:
+            result.art = _FROGGER_LOST_LOGO,
+            result.length = _FROGGER_LOST_LOGO_LENGTH;
+            break;
+        case ART_WIN_LOGO:
+            result.art = _FROGGER_WIN_LOGO,
+            result.length = _FROGGER_WIN_LOGO_LENGTH;
+            break;
         default:
             result.art = art;
             result.length = length;
@@ -300,4 +308,20 @@ Component getDefaultEntitiesComponent()
         .type = COMPONENT_ENTITIES,
         .component = create_entities_group()
     };
+}
+
+char *numToString(int num) {
+    char *numb = (char*) calloc(11, sizeof(char));
+    numb[0] = '0';
+    int dim = 0;
+    while (num != 0) {
+        for (int i = dim; dim != 0 && i > -1; i--) {
+            numb[i] = numb[i - 1];
+        }
+        numb[0] = (char)((num % 10) + 48);
+        num /= 10;
+        dim++;
+    }
+    numb = (char*) realloc(numb, sizeof(char)*(strlen(numb) + 1));
+    return numb;
 }

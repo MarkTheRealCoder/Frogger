@@ -72,6 +72,8 @@ enum AVAILABLE_ARTS {
     ART_TWO_FROGS,
     ART_PAUSE_LOGO,
     ART_MAIN_LOGO,
+    ART_LOST_LOGO,
+    ART_WIN_LOGO,
     ART_UNKNOWN
 };
 
@@ -92,5 +94,6 @@ Component getDefaultClockComponent(enum ClockType clockType);
 Component getDefaultEntitiesComponent();
 
 int isEntityPositionHideoutValid(const Entity *entity, const MapSkeleton *map);
+char *numToString(int num);
 
 #endif // !FROGGER_SHORTCUTS_H

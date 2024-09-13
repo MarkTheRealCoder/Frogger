@@ -38,8 +38,8 @@ void print_choices(char **choices, int choices_num, int current_choice, int max,
     int standard    = alloc_pair(COLORCODES_FROG_ART_LOGO, COLOR_BLACK);
     int quit        = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
     int selected    = alloc_pair(COLORCODES_FROG_ART_SELECTED, COLOR_BLACK);
-    int starting_choice = current_choice <= 0 ? 0 : current_choice > choices_num - 3 && choices_num - 3 >= 0 ? choices_num - 3 : current_choice - 1;
-    for (size_t i = starting_choice; i <= starting_choice + 2; i++)
+    int starting_choice = 0;
+    for (size_t i = starting_choice; i < choices_num; i++)
     {
         (*cuy)++;
         if (current_choice == i)
@@ -90,7 +90,7 @@ bool menu_listener(int *choice, int choices_num)
 
 int generic_menu(const Screen screen, StringArt choices, StringArt logo, StringArt art)
 {
-    erase();
+    clear_screen();
 
     int standard = alloc_pair(COLORCODES_FROG_ART_LOGO, COLOR_BLACK);
     int quit = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
@@ -111,54 +111,79 @@ int generic_menu(const Screen screen, StringArt choices, StringArt logo, StringA
         print_choices(choices.art, choices.length, choice, screen.x, &cuy);
     } while (menu_listener(&choice, choices.length));
 
-    erase();
+    clear_screen();
 
     return choice;
 }
 
 int main_menu(const Screen screen)
 {
-    #define MM_LEN 2
-    static char *choices[MM_LEN] = {
+    #define MENU_MAIN_LEN 2
+    static char *choices[MENU_MAIN_LEN] = {
         "Start new game",
         "Quit"
     };
 
-    return generic_menu(screen, getArtOfThing(ART_UNKNOWN ,choices, MM_LEN),
-                                getArtOfThing(ART_MAIN_LOGO, _FROGGER_LOGO, 0),
-                                getArtOfThing(ART_BIG_FROG, _FROG_ART, 0));
+    return generic_menu(screen, getArtOfThing(ART_UNKNOWN , choices, MENU_MAIN_LEN),
+                                getArtOfThing(ART_MAIN_LOGO, NULL, 0),
+                                getArtOfThing(ART_BIG_FROG, NULL, 0));
 }
 
 int pause_menu(const Screen screen)
 {
-    #define PM_LEN 2
-    static char *choices[PM_LEN] = {
+    #define MENU_PAUSE_LEN 2
+    static char *choices[MENU_PAUSE_LEN] = {
         "Resume",
         "Quit"
     };
 
-    return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MM_LEN),
-                                getArtOfThing(ART_PAUSE_LOGO, _FROGGER_PAUSE_LOGO, 0),
-                                getArtOfThing(ART_TWO_FROGS, _FROGGER_PAUSE_ART, 0));
+    return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MENU_PAUSE_LEN),
+                                getArtOfThing(ART_PAUSE_LOGO, NULL, 0),
+                                getArtOfThing(ART_TWO_FROGS, NULL, 0));
 }
 
 int thread_or_processes_menu(const Screen screen)
 {
-    #define TOPM_LEN 3
-    static char *choices[TOPM_LEN] = {
+    #define MENU_THREAD_OR_PROCESSES_LEN 3
+    static char *choices[MENU_THREAD_OR_PROCESSES_LEN] = {
         "Threads version",
         "Processes version",
         "Quit"
     };
 
-    return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, TOPM_LEN),
-                                getArtOfThing(ART_MAIN_LOGO, _FROGGER_LOGO, 0),
-                                getArtOfThing(ART_BIG_FROG, _FROG_ART, 0));
+    return generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MENU_THREAD_OR_PROCESSES_LEN),
+                                getArtOfThing(ART_MAIN_LOGO, NULL, 0),
+                                getArtOfThing(ART_BIG_FROG, NULL, 0));
+}
+
+int game_over_menu(const Screen screen, const enum PS state, const int score)
+{
+    #define MENU_GAME_OVER_LEN 2
+
+    static char *choices[MENU_GAME_OVER_LEN] = {
+            "Play Again",
+            "Quit"
+    };
+
+    static char *partOfMessage = "You scored: ";
+
+    enum AVAILABLE_ARTS art = state == PS_LOST ? ART_LOST_LOGO : ART_WIN_LOGO;
+
+    char *scoreString = numToString(score);
+    char *scoreMessage = concat(2, partOfMessage, scoreString);
+
+    int menuResult = generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MENU_GAME_OVER_LEN),
+                                  getArtOfThing(ART_UNKNOWN, &scoreMessage, 1),
+                                  getArtOfThing(art, NULL, 0));
+    free(scoreMessage);
+    free(scoreString);
+
+    return menuResult;
 }
 
 unsigned int show(const Screen screen, const enum PS state, int *output)
 {
-    erase();
+    clear_screen();
 
     switch (state)
     {
@@ -171,10 +196,14 @@ unsigned int show(const Screen screen, const enum PS state, int *output)
         case PS_VERSION_MENU:
             *output = thread_or_processes_menu(screen);
             break;
+        case PS_WIN:
+        case PS_LOST:
+            *output = game_over_menu(screen, state, *output);
+            break;
         default: 
             return 1;
     }
 
-    erase();
+    clear_screen();
     return 0;
 }
