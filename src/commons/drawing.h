@@ -188,7 +188,7 @@ static char *_FROGGER_PAUSE_LOGO[_FROGGER_PAUSE_LOGO_LENGTH] =
 #define _FROGGER_LOST_LOGO_LENGTH 5
 static char *_FROGGER_LOST_LOGO[_FROGGER_LOST_LOGO_LENGTH] =
         {
-                "__   __                    _                     _",
+                "__   __                    _                     _   ",
                 "\\ \\ / /   ___    _   _    | |       ___    ___  | |_",
                 " \\ V /   / _ \\  | | | |   | |      / _ \\  / __| | __|",
                 "  | |   | (_) | | |_| |   | |___  | (_) | \\__ \\ | |_",
@@ -198,9 +198,9 @@ static char *_FROGGER_LOST_LOGO[_FROGGER_LOST_LOGO_LENGTH] =
 #define _FROGGER_WIN_LOGO_LENGTH 5
 static char *_FROGGER_WIN_LOGO[_FROGGER_WIN_LOGO_LENGTH] =
         {
-                "__   __                   __        __  _",
-                "\\ \\ / /   ___    _   _    \\ \\      / / (_)  _ __",
-                " \\ V /   / _ \\  | | | |    \\ \\ /\\ / /  | | | '_ \\",
+                "__   __                   __        __  _         ",
+                "\\ \\ / /   ___    _   _    \\ \\      / / (_)  _ __  ",
+                " \\ V /   / _ \\  | | | |    \\ \\ /\\ / /  | | | '_ \\ ",
                 "  | |   | (_) | | |_| |     \\ V  V /   | | | | | |",
                 "  |_|    \\___/   \\__,_|      \\_/\\_/    |_| |_| |_|"
         };

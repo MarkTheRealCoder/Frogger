@@ -34,7 +34,7 @@ struct program_args addons_parse_args(int argc, char *argv[])
  */
 void addons_args_help()
 {
-    printf("Usage: frogger [options]\n");
+    printf("Usage: frogger [options]\n ");
     printf("Options:\n");
     printf("\t-h, --help\t\tShows this help message\n");
     printf("\t-s, --save_game_stats\tSaves the last game's statistics to file.\n");
@@ -49,7 +49,7 @@ void addons_args_save_stats(GameSkeleton *game)
     FILE *file;
 
     char date[24];
-    char file_name[34];
+    char file_name[37];
 
     time_t current_time = time(NULL);
 

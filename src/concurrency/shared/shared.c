@@ -191,6 +191,7 @@ Position reset_croc_position(MapSkeleton map, int y)
 Position invalidate_position(Entity *e, struct entities_list *list)
 {
     Position lastEntityPos = e->last;
+    //if (e->trueType == TRUETYPE_FROG) display_debug_string(24, "X: %i, Y: %i", 80, lastEntityPos.x, lastEntityPos.y);
     static int pos = 0;
     while (list)
     {
@@ -205,7 +206,10 @@ Position invalidate_position(Entity *e, struct entities_list *list)
 
             if (collisionInRangeX && collisionInRangeY && (lastEntityPos.x != 0 && lastEntityPos.y != 0))
             {
-                //display_debug_string(24 + (pos++ % 3), "POSITION INVALIDATED FOR %i BY %i (THEY ARE DIFFERENT %i)", 80, e->trueType, comparison->trueType, e != comparison);
+                /*
+                if (e->trueType == TRUETYPE_FROG || comparison->trueType == TRUETYPE_FROG) {
+                    display_debug_string(12 + (pos++ % 10), "%i INVALIDATED FOR %i: %i", 80, pos, e->trueType == TRUETYPE_FROG, lastEntityPos.y);
+                }*/
                 return getPosition(0, 0);
             }
         }
@@ -236,7 +240,6 @@ void remove_entity_from_list(struct entities_list **list, Entity *e)
         *list = pivot->next;
 
     free(pivot);
-    printf("");
 }
 
 void invalidate_entity(Entity *e) {
@@ -400,12 +403,15 @@ bool evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **l
             Entities *es = (Entities*) components[(e->trueType == TRUETYPE_PROJ_FROG) ? COMPONENT_FROG_PROJECTILES_INDEX : COMPONENT_PROJECTILES_INDEX].component;
             struct entities_list *el = (struct entities_list *) es->entities;
             delete_entity_pos(e->height, e->width, e->current, map);
+            delete_entity_pos(e->height, e->width, e->last, map);
             invalidate_entity(e);
             es->entity_num--;
         } break;
         case ENTITY_TYPE__PLANT: {
             delete_entity_pos(e->height, e->width, e->current, map);
+            delete_entity_pos(e->height, e->width, e->last, map);
             e->current = getPosition(0, 0);
+            e->hps = 2;
         } break;
     }
     return true;
@@ -448,7 +454,10 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                     if (anyEntityIsFrog && anyEntityIsAngryCroc && message == INNER_MESSAGE_NONE) message = EVALUATION_START_SECONDARY_CLOCK;
                     if (anyEntityIsFrog) {
                         Entity *notAFrog = (collisionPacket.e1 == TRUETYPE_FROG) ? innerEntity : entity;
-                        if (notAFrog->moved) handle_entity(&game->components[COMPONENT_FROG_INDEX], getDefaultActionByY(game->map, entity->current.y, false), false);
+                        if (notAFrog->moved) {
+                            delete_entity_pos(FROG_HEIGHT, FROG_WIDTH, ((Entity *)game->components[COMPONENT_FROG_INDEX].component)->last, game->map);
+                            handle_entity(&game->components[COMPONENT_FROG_INDEX], getDefaultActionByY(game->map, entity->current.y, false), false);
+                        }
                         eligibleForReset = ENTITY_TYPE__CROC;
                     }
                 } break;
@@ -693,13 +702,14 @@ int time_elapsed(unsigned int index) {
 
 void gen_plants(GameSkeleton *game) {
     for (int i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++) {
+        int zeroIndex = (i % (COMPONENT_CROC_INDEXES + 1));
         Component *c = &game->components[i];
         Entity *plant = (Entity *) c->component;
         unsigned int id = (1 << i);
-        if (!WITHIN_BOUNDARIES(plant->current.x, plant->current.y, game->map) && time_elapsed(id) >= 5) {
+        if (!WITHIN_BOUNDARIES(plant->current.x, plant->current.y, game->map) && time_elapsed(id) >= 6 + 3 * zeroIndex) {
             update_timer(id);
             int section = (int)(game->map.width / 3);
-            int x = (section * (i % (COMPONENT_CROC_INDEXES + 1))) + gen_num(5, section - 5) + game->map.garden.x;
+            int x = (section * zeroIndex) + gen_num(5, section - 5) + game->map.garden.x;
             plant->current = getPosition(x, game->map.garden.y + FROG_HEIGHT);
         }
     }
