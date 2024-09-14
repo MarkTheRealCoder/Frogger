@@ -204,9 +204,7 @@ Process palloc(int *processes, int service_comms, void (*_func)(void*), void *ar
     return p;
 }
 
-int process_main(GameSkeleton *game, struct entities_list **list) {
-    // ADD A GAME STRUCT FOR FAST LOADING DATA
-    int processes = 0;
+int process_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList) {
 
     int service_comms = shm_open(SERVICE_NAME, O_CREAT | O_RDWR, 0666);
     HANDLE_ERROR(service_comms);
@@ -218,12 +216,125 @@ int process_main(GameSkeleton *game, struct entities_list **list) {
         exit(EXIT_FAILURE);
     }
 
-    /*GAME*/
-    while (true) {
-        
+    erase();
+
+
+    int *lives = &game->lives;
+    int *score = &game->score;
+    bool running = true, drawAll = true;
+    int processes = 0;
+
+    Process *processList = create_processes(game->components, &processes);
+    Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
+    Clock *secClock = (Clock*) find_component(COMPONENT_TEMPORARY_CLOCK_INDEX, game)->component;
+
+    draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+
+    //COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))); todo
+    reset_game_processes(buffer, processList, game, entitiesList);
+
+    while (running)
+    {
+        InnerMessages result = process_polling_routine(buffer, game, processList);
+        bool skipValidation = false;
+
+        switch (result)
+        {
+            case POLLING_MANCHE_LOST:
+            case POLLING_FROG_DEAD:
+                skipValidation = true;
+                break;
+            case POLLING_GAME_PAUSE:
+            {
+                //COMMUNICATIONS = MESSAGE_HALT; todo
+                int output;
+                show(screen, PS_PAUSE_MENU, &output);
+                if (output)
+                {
+                    running = false;
+                    *score = 0;
+                }
+                else {
+                    drawAll = true;
+                    //COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))); todo
+                }
+            } break;
+            default:
+                break;
+        }
+
+        if (!skipValidation) {
+            gen_plants(game);
+            result = apply_validation(game, entitiesList);
+
+            create_new_entities(entitiesList, game->components, game->map);
+
+            if (result == INNER_MESSAGE_NONE) {
+                result = apply_physics(game, entitiesList);
+            }
+            handle_invalid_entities(entitiesList, game->components);
+        }
+
+        switch (result)
+        {
+            case EVALUATION_START_SECONDARY_CLOCK: {
+                //COMMUNICATIONS = create_message(MESSAGE_RUN, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))); todo
+            } break;
+            case EVALUATION_STOP_SECONDARY_CLOCK: {
+                //COMMUNICATIONS = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))); todo
+                reset_temporary_clock(processList, game);
+            } break;
+            case POLLING_FROG_DEAD:
+            case POLLING_MANCHE_LOST:
+            case EVALUATION_MANCHE_LOST:
+                (*lives)--;
+                if (!*lives)
+                {
+                    running = false;
+                    *score = -*score;
+                    break;
+                }
+            case EVALUATION_MANCHE_WON:
+            {
+                reset_game_processes(buffer, processList, game, entitiesList);
+                *score += result == EVALUATION_MANCHE_WON ? 1000 : 0;
+                clear_screen();
+                drawAll = true;
+            } break;
+            case EVALUATION_GAME_LOST:
+            case EVALUATION_GAME_WON:
+                running = false;
+                break;
+            default:
+                break;
+        }
+
+        if (!running) break;
+
+        draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+        reset_moved(*entitiesList);
+        drawAll = false;
+        sleepy(50, TIMEFRAME_MILLIS);
     }
-        /*PAUSE MENU*/
+
+    //COMMUNICATIONS = MESSAGE_STOP; todo
+
+    clear_screen();
+
+    center_string_colored("The frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
+    center_string_colored("Wait a few seconds!", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 21);
+
+    /*for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        pthread_join(processList[i].id, NULL); todo
+    }*/
+    free(processList);
+
+    free_memory(game, entitiesList);
+
 
     munmap(service_mem, SERVICE_SIZE);
     close(service_comms);
+    return *score;
+
 }
