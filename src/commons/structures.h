@@ -17,6 +17,7 @@ typedef enum {
     EVALUATION_GAME_WON,
     EVALUATION_GAME_LOST,
     EVALUATION_START_SECONDARY_CLOCK,
+    EVALUATION_STOP_SECONDARY_CLOCK,
     POLLING_MANCHE_LOST,
     POLLING_GAME_PAUSE = 69,
     POLLING_FROG_DEAD
@@ -48,9 +49,9 @@ typedef enum entity_type {
     TRUETYPE_CROC           = 3,        // 0000-0000-0000-0011
     TRUETYPE_ANGRY_CROC     = 195,      // 0000-0000-1100-0011
     TRUETYPE_PLANT          = 2096,     // 0000-1000-0011-0000
-    TRUETYPE_PLANT_HARMED   = 32752,    // 1000-0000-0011-0000
+    TRUETYPE_PLANT_HARMED   = 32816,    // 1000-0000-0011-0000
     TRUETYPE_FROG           = 16432,    // 0100-0000-0011-0000
-    TRUETYPE_PROJ_FROG      = 8395,     // 0010-0000-1111-0011
+    TRUETYPE_PROJ_FROG      = 8435,     // 0010-0000-1111-0011
     TRUETYPE_PROJ_PLANT     = 4144      // 0001-0000-0011-0000
 } TrueType;
 
@@ -86,6 +87,8 @@ typedef struct {
     int width;
     int height;
     short readyToShoot;
+    int valid;
+    int moved;
 } Entity;
 
 struct entities_list {

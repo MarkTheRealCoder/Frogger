@@ -48,7 +48,7 @@
 #define TOTAL_LIVES 3
 
 #define MAP_START_X 15
-#define MAP_START_Y 6
+#define MAP_START_Y 8
 #define MAP_WIDTH 99
 
 #define CLOCK_DISPLAY_TRUE_SIZE 10
@@ -252,7 +252,7 @@ int getHeightByEntityType(EntityType entityType);
 Cuboid getCuboidFromEntity(Entity e);
 CollisionPacket areColliding(Entity e1, Entity e2);
 
-void draw(struct entities_list *es, MapSkeleton *map, Clock *timers, StringList *achievements, int score, int lives, bool drawAll);
+void draw(struct entities_list *es, MapSkeleton *map, Clock *mainClock, Clock *secClock, StringList *achievements, int score, int lives, bool drawAll);
 void display_game_over(Screen screen, int result);
 
 void display_debug_string(int y, const char *__restrict __format, int stringLength, ...);

@@ -117,7 +117,10 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
                 t->rules.rules = CALLOC(int, 1);
                 CRASH_IF_NULL(t->rules.rules)
                 t->rules.rules[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
-                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 1000 + gen_num(1000, 5000) : 125; // TODO EDIT 125
+                packet->ms = entity->type == ENTITY_TYPE__PLANT ? 3000 + gen_num(2000, 5000) : 400;
+                if (entity->type == ENTITY_TYPE__PLANT) {
+                    add_timer(packet->id);
+                }
             }
         } break;
         case COMPONENT_ENTITIES:
@@ -125,7 +128,7 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
             packet->producer = &entity_move;
             t->rules.rules = CALLOC(int, 1);
             CRASH_IF_NULL(t->rules.rules)
-            t->rules.rules[0] = ACTION_NORTH;
+            t->rules.rules[0] = (packet->id & (1 << (COMPONENT_FROG_PROJECTILES_INDEX))) ? ACTION_NORTH : ACTION_SOUTH;
             packet->ms = 200;
         } break;
         case COMPONENT_CLOCK:
@@ -204,6 +207,12 @@ void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, str
     free(tmp_buffer);
 }
 
+void reset_temporary_clock(Thread* threads, GameSkeleton *game) {
+    sem_wait(&POLLING_WRITING);
+    reset_secondary_timer(&threads[COMPONENT_TEMPORARY_CLOCK_INDEX].rules.rules[0], game);
+    sem_post(&POLLING_WRITING);
+}
+
 /*
 void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list **list) {
     Entity *croc, *previousCroc;
@@ -255,8 +264,9 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
 
     Thread *threadList = create_threads(game->components, buffer, &threadIds);
     Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
+    Clock *secClock = (Clock*) find_component(COMPONENT_TEMPORARY_CLOCK_INDEX, game)->component;
 
-    draw(*entitiesList, &game->map, mainClock, &game->achievements, game->score, game->lives, drawAll);
+    draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
 
     COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
     reset_game_threads(buffer, threadList, game, entitiesList);
@@ -296,12 +306,34 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 break;
         }
 
-        if (!skipValidation) result = apply_validation(game, entitiesList);
+        if (!skipValidation) {
+            gen_plants(game);
+            result = apply_validation(game, entitiesList);
+
+            create_new_entities(entitiesList, game->components, game->map);
+
+            if (result == INNER_MESSAGE_NONE) {
+                result = apply_physics(game, entitiesList);
+            }
+            handle_invalid_entities(entitiesList, game->components);
+        }
 
         switch (result)
         {
+            case EVALUATION_START_SECONDARY_CLOCK: {
+                pthread_mutex_lock(&MUTEX);
+                COMMUNICATIONS = create_message(MESSAGE_RUN, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+                pthread_mutex_unlock(&MUTEX);
+            } break;
+            case EVALUATION_STOP_SECONDARY_CLOCK: {
+                pthread_mutex_lock(&MUTEX);
+                COMMUNICATIONS = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+                reset_temporary_clock(threadList, game);
+                pthread_mutex_unlock(&MUTEX);
+            } break;
             case POLLING_FROG_DEAD:
             case POLLING_MANCHE_LOST:
+            case EVALUATION_MANCHE_LOST:
                 (*lives)--;
                 if (!*lives)
                 {
@@ -326,11 +358,8 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
 
         if (!running) break;
 
-        create_new_entities(entitiesList, game->components, game->map);
-
-        apply_physics(game, entitiesList);
-        
-        draw(*entitiesList, &game->map, mainClock, &game->achievements, game->score, game->lives, drawAll);
+        draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+        reset_moved(*entitiesList);
         drawAll = false;
         sleepy(50, TIMEFRAME_MILLIS);
     }

@@ -10,7 +10,8 @@ Entity entities_default_frog(MapSkeleton map)
         .hps = 1,
         .width = FROG_WIDTH,
         .height = FROG_HEIGHT,
-        .readyToShoot = false
+        .readyToShoot = false,
+        .valid = true
     };
 
     return entity;
@@ -31,7 +32,8 @@ Entity entities_default_plant()
         .hps = 2,
         .width = PLANT_WIDTH,
         .height = PLANT_HEIGHT,
-        .readyToShoot = false
+        .readyToShoot = false,
+        .valid = true
     };
 
     return entity;
@@ -47,7 +49,8 @@ Entity new_entities_default_croc()
         .hps = 1,
         .width = GAME_CROCS_MAX_WIDTH, // choose_between(2, GAME_CROCS_MIN_WIDTH, GAME_CROCS_MAX_WIDTH)
         .height = GAME_ENTITY_SIZE,
-        .readyToShoot = false
+        .readyToShoot = false,
+        .valid = true
     };
 
     return entity;
@@ -73,7 +76,8 @@ Entity create_projectile(Entity *master, MapSkeleton map)
             .trueType = (masterIsFrog) ? TRUETYPE_PROJ_FROG : TRUETYPE_PROJ_PLANT,
             .hps = 1,
             .width = 1,
-            .height = 1
+            .height = 1,
+            .valid = true
     };
 }
 

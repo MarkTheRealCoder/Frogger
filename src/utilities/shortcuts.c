@@ -235,7 +235,7 @@ int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entit
 {
     int toDivide = divTimes * 2;
 
-    if (indexToPick > toDivide)
+    if (indexToPick >= toDivide)
     {
         return -1;
     }
@@ -325,3 +325,5 @@ char *numToString(int num) {
     numb = (char*) realloc(numb, sizeof(char)*(strlen(numb) + 1));
     return numb;
 }
+
+// todo funzione temporizzata

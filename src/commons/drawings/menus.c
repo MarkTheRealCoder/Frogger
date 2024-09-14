@@ -169,7 +169,7 @@ int game_over_menu(const Screen screen, const enum PS state, const int score)
 
     enum AVAILABLE_ARTS art = state == PS_LOST ? ART_LOST_LOGO : ART_WIN_LOGO;
 
-    char *scoreString = numToString(score);
+    char *scoreString = numToString(score ? score : -score);
     char *scoreMessage = concat(2, partOfMessage, scoreString);
 
     int menuResult = generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MENU_GAME_OVER_LEN),

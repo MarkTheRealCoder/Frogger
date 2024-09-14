@@ -25,6 +25,12 @@
     ids = ids | result;                 \
 }
 
+typedef struct _timer_t{
+    struct timeval start;
+    unsigned int id;
+    struct _timer_t *next;
+} Timer;
+
 typedef enum {
     MESSAGE_RUN = 3,
     MESSAGE_HALT = 2,
@@ -52,6 +58,9 @@ typedef struct {
 InnerMessages handle_clock(Component *component, int value);
 InnerMessages handle_entity(Component *component, int value, int canPause);
 InnerMessages handle_entities(Component *component, int value);
+void invalidate_entity(Entity *e);
+void handle_invalid_entities(struct entities_list **list, Component components[MAX_CONCURRENCY]);
+void reset_secondary_timer(int *buffer, GameSkeleton *game);
 
 Component *find_component(int index, GameSkeleton *game);
 Component **find_components(GameSkeleton *game, ...);
@@ -70,5 +79,15 @@ Position reset_croc_position(MapSkeleton map, int y);
 int *reset_game(GameSkeleton *game, struct entities_list **list);
 
 void free_memory(GameSkeleton *game, struct entities_list **list);
+
+void reset_moved(struct entities_list *list);
+
+void clear_timers();
+int destroy_timer(unsigned int index);
+void update_timer(unsigned int index);
+int add_timer(unsigned int index);
+int time_elapsed(unsigned int index);
+
+void gen_plants(GameSkeleton *game);
 
 #endif //COMMON_H

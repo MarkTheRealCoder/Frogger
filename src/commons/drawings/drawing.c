@@ -681,7 +681,7 @@ MapSkeleton display_map(const Position sp, const int width, MapSkeleton _map) {
     return _map;
 }
 
-void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *achievements, int score, int lives, bool drawAll)
+void draw(struct entities_list *es, MapSkeleton *map, Clock *mainClock, Clock *secClock, StringList *achievements, int score, int lives, bool drawAll)
 {
     Position POSITION_MAP = {
         MAP_START_X,
@@ -708,9 +708,14 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
         3
     };
 
-    Position POSITION_CLOCK = {
+    Position POSITION_MAIN_CLOCK = {
         75 + MAP_START_X,
         2
+    };
+
+    Position POSITION_SEC_CLOCK = {
+            75 + MAP_START_X,
+            5
     };
 
     if (drawAll)
@@ -722,7 +727,8 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *timer, StringList *
     display_hps(POSITION_LIVES, lives);
     display_score(POSITION_SCORE, score);
 
-    display_clock(POSITION_CLOCK, timer->current, timer->starting);
+    display_clock(POSITION_MAIN_CLOCK, mainClock->current, mainClock->starting);
+    display_clock(POSITION_SEC_CLOCK, secClock->current, secClock->starting);
     display_achievements(POSITION_ACHIEVEMENTS, 34, 25, *achievements);
 
     for (int i = 0; i < 5; i++)
@@ -753,10 +759,4 @@ void display_debug_string(int y, const char *__restrict __format, int stringLeng
 
     display_string(getPosition(x, y), COLOR_CYAN, string, stringLength);
     free(string);
-}
-
-// todo
-void display_game_over(Screen screen, int result)
-{
-
 }
