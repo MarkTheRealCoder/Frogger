@@ -60,7 +60,7 @@ int slaveMain(Screen screen, WINDOW *window, enum MAIN_TASK *currentTask)
     int finalScore;
     struct entities_list *entities = create_default_entities(&game);
     if (!threadsOrProcessesMenu) finalScore = thread_main(screen, &game, &entities);
-    else finalScore = process_main(&game, &entities);
+    else finalScore = process_main(screen, &game, &entities);
 
     show(screen, (finalScore > 0 ? PS_WIN : PS_LOST), &finalScore);
 

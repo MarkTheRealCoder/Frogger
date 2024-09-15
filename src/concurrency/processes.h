@@ -51,30 +51,20 @@ static struct timeval tv = {.tv_sec = 0, .tv_usec = 50};
     ids = ids | result;                 \
 }
 
-
-typedef enum {
-    STATUS_RUNNING, 
-    STATUS_IDLE, 
-    STATUS_ENDED
-} Status;
-
 typedef struct {
     int accesses[PIPE_SIZE];
-    char *name;
 } pipe_t;
 
 typedef struct {
-    pipe_t * pipes;
-    unsigned int size;
-} Pipes;
-
-typedef struct {
     pid_t pid;
-    int dynamic_pid;
-    Status status;
+    pipe_t *comms;
 } Process;
 
+typedef struct {
+    ProductionRules rules;
+    pipe_t comms[PIPE_SIZE];
+} ProcessCarriage;
 
-int process_main(GameSkeleton *game, struct entities_list **list);
+int process_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList);
 
 #endif

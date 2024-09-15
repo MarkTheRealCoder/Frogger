@@ -11,8 +11,8 @@
 #include <semaphore.h>
 #include <sys/time.h>
 #include <signal.h>
-#include <fcntl.h>    // For O_* constants
-#include <sys/mman.h> // For shm_open, mmap, PROT_* constants
+#include <fcntl.h>
+#include <sys/mman.h>
 #include <ncurses.h>
 #include <locale.h>
 

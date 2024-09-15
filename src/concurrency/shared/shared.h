@@ -55,7 +55,7 @@ typedef struct {
     int ms;
 } Packet;
 
-InnerMessages handle_clock(Component *component, int value);
+InnerMessages handle_clock(Component *component, int *value);
 InnerMessages handle_entity(Component *component, int value, int canPause);
 InnerMessages handle_entities(Component *component, int value);
 void invalidate_entity(Entity *e);

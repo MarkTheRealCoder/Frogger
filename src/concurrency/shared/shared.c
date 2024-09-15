@@ -1,14 +1,12 @@
 #include "shared.h"
 
-
 static Timer *GLOBAL_TIMERS = NULL;
 
-
-
-InnerMessages handle_clock(Component *component, int value)
+InnerMessages handle_clock(Component *component, int *value)
 {
     Clock *clock = (Clock*) component->component;
-    clock->current = value;
+    clock->current = (clock->current - clock->fraction == *value) ? *value : clock->current;
+    *value = clock->current;
 
     if (clock->type == CLOCK_MAIN && value <= 0)
     {
@@ -17,7 +15,6 @@ InnerMessages handle_clock(Component *component, int value)
 
     if (clock->type == CLOCK_SECONDARY && value <= 0)
     {
-        // todo: must be checked by collision checker
         return POLLING_FROG_DEAD;
     }
 
@@ -36,7 +33,7 @@ InnerMessages handle_entity(Component *component, int value, int canPause)
     {
         entity->readyToShoot = true;
     }
-    else if (canPause)
+    else if (value != COMMS_EMPTY && canPause)
     {
         return POLLING_GAME_PAUSE;
     }
@@ -688,6 +685,7 @@ int add_timer(unsigned int index) {
     if (pivot) pivot->next = new;
     else GLOBAL_TIMERS = new;
     update_timer(index);
+    return 1;
 }
 
 int time_elapsed(unsigned int index) {

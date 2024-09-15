@@ -1,6 +1,7 @@
 #include "threads.h"
 
-InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *threadList) {
+InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *threadList)
+{
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
     sem_wait(&POLLING_READING);
@@ -20,7 +21,7 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
         Component *c = find_component(i, game);
         switch(c->type) {
             case COMPONENT_CLOCK:
-                otherMessage = handle_clock(c, value);
+                otherMessage = handle_clock(c, &value);
                 threadList[i].rules.rules[0] = value;
                 break;
             case COMPONENT_ENTITY:
@@ -207,45 +208,11 @@ void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, str
     free(tmp_buffer);
 }
 
-void reset_temporary_clock(Thread* threads, GameSkeleton *game) {
+void reset_temporary_clock_threads(Thread* threads, GameSkeleton *game) {
     sem_wait(&POLLING_WRITING);
     reset_secondary_timer(&threads[COMPONENT_TEMPORARY_CLOCK_INDEX].rules.rules[0], game);
     sem_post(&POLLING_WRITING);
 }
-
-/*
-void reset_entities(Thread *threadList, GameSkeleton *game, struct entities_list **list) {
-    Entity *croc, *previousCroc;
-    int padding = 0;
-    int y = game->map.river.y;
-    getDefaultActionByY(game->map, y, true);
-    bool noRemainder;
-    for (int i = 1, j = 0, z = y; i <= COMPONENT_CROC_INDEXES; ++i, z = y + j * 3) {
-        int currentPadding = gen_num(4, 8);
-        Action action = getDefaultActionByY(game->map, z, false);
-        noRemainder = (i - 1) % 2 == 0;
-
-        croc = (Entity *) game->components[i].component;
-
-        if (!noRemainder) previousCroc = croc;
-
-        padding += ((action == ACTION_WEST) ? 0 : croc->width * 5) + currentPadding + (noRemainder ? 0 : previousCroc->width);
-
-        sem_wait(&POLLING_WRITING);
-        threadList[i].rules.rules[0] = action;
-        sem_post(&POLLING_WRITING);
-
-        croc->current = set_croc_position(game->map, z, padding);
-        croc->trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC);
-
-        if ((i - 1) % 2 == 1) {
-            j++;
-            padding = 0;
-        }
-        else padding = currentPadding;
-    }
-}
- */
 
 int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList)
 {
@@ -328,7 +295,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
             case EVALUATION_STOP_SECONDARY_CLOCK: {
                 pthread_mutex_lock(&MUTEX);
                 COMMUNICATIONS = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
-                reset_temporary_clock(threadList, game);
+                reset_temporary_clock_threads(threadList, game);
                 pthread_mutex_unlock(&MUTEX);
             } break;
             case POLLING_FROG_DEAD:
@@ -369,16 +336,16 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
     clear_screen();
 
     center_string_colored("The frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
-    center_string_colored("Wait a few seconds!", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 21);
+    center_string_colored("Wait a few seconds, then press a button!", alloc_pair(COLOR_RED, COLOR_BLACK), 41, 21);
 
     for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
         pthread_join(threadList[i].id, NULL);
     }
+
     free(threadList);
-
     free(buffer);
-
+    clear_timers();
     free_memory(game, entitiesList);
 
     close_semaphores();
