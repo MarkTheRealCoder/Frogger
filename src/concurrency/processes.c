@@ -168,6 +168,9 @@ void generic_process(void *service_comms, void *args) {
     CLOSE_WRITE(comms[WRITE]);
     SystemMessage action = MESSAGE_NONE;
 
+    struct timeval starting, comparator;
+    gettimeofday(&starting, NULL);
+
     while (true)
     {
         SystemMessage new_action = check_for_comms(id, service_comms);
@@ -181,8 +184,17 @@ void generic_process(void *service_comms, void *args) {
                 readIfReady(&(tmp), comms[WRITE], sizeof(int));
                 if (tmp != -1) rules.rules[0] = tmp;
             }
+
             producer(&rules);
-            writeIfReady(&(rules.buffer), comms[READ], sizeof(int));
+
+            gettimeofday(&comparator, NULL);
+            int delay = comparator.tv_sec - starting.tv_sec;
+            int udelay = comparator.tv_usec - starting.tv_usec;
+
+            if (index || (udelay >= 100000 || delay >= 1)) {
+                writeIfReady(&(rules.buffer), comms[READ], sizeof(int));
+                gettimeofday(&starting, NULL);
+            }
         }
         else if (action == MESSAGE_STOP) {
             munmap(service_comms, sizeof(int));

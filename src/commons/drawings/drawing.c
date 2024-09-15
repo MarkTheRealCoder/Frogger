@@ -17,6 +17,7 @@ WINDOW *init_screen(Screen *screen)
     setlocale(LC_ALL, "");
     WINDOW *w = initscr();
     noecho();
+    cbreak();
     curs_set(false);
     keypad(stdscr, true);
     timeout(100);

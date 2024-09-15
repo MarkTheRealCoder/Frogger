@@ -372,7 +372,6 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
                     entityValidationResult = validate_entity(el->e, &game->map, list, i);
                     if (entityValidationResult == INNER_MESSAGE_DESTROY_ENTITY) {
                         struct entities_list *prev = el;
-                        entities->entity_num--;
                         el = el->next;
                         delete_entity_pos(prev->e->height, prev->e->width, prev->e->last, game->map);
                         invalidate_entity(prev->e);
@@ -389,8 +388,10 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
 
 bool evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **list, Component *components, MapSkeleton map)
 {
-    if (e->hps > 0)
+    if (e->hps > 0) {
+        if (e->type == ENTITY_TYPE__PLANT) e->trueType = TRUETYPE_PLANT_HARMED;
         return false;
+    }
 
     switch (e->type) {
         case ENTITY_TYPE__FROG: {
@@ -402,13 +403,16 @@ bool evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **l
             delete_entity_pos(e->height, e->width, e->current, map);
             delete_entity_pos(e->height, e->width, e->last, map);
             invalidate_entity(e);
-            es->entity_num--;
         } break;
         case ENTITY_TYPE__PLANT: {
             delete_entity_pos(e->height, e->width, e->current, map);
             delete_entity_pos(e->height, e->width, e->last, map);
             e->current = getPosition(0, 0);
             e->hps = 2;
+            e->trueType = TRUETYPE_PLANT;
+            int i;
+            for (i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++) if (components[i].component == e) break;
+            update_timer(1 << i);
         } break;
     }
     return true;
@@ -472,7 +476,6 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                     Entity *toBeDestroyed = (isEntityOneProj) ? entity : innerEntity;
                     delete_entity_pos(toBeDestroyed->height, toBeDestroyed->width, toBeDestroyed->last, game->map);
                     invalidate_entity(toBeDestroyed);
-                    frog_projs->entity_num--;
                 } break;
                 case COLLISION_TRANSFORM: {
                     bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
@@ -482,7 +485,6 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                     Entity *toBeDestroyed = (isEntityOneProj) ? entity : innerEntity;
                     delete_entity_pos(toBeDestroyed->height, toBeDestroyed->width, toBeDestroyed->last, game->map);
                     invalidate_entity(toBeDestroyed);
-                    frog_projs->entity_num--;
                 } break;
             }
 
@@ -587,6 +589,7 @@ void reset_plants(GameSkeleton *game) {
         Entity *plant = (Entity *) c->component;
         plant->current = getPosition(0, 0);
         plant->readyToShoot = false;
+        update_timer(1<<i);
     }
 }
 
