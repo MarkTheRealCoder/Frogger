@@ -21,7 +21,7 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
         Component *c = find_component(i, game);
         switch(c->type) {
             case COMPONENT_CLOCK:
-                otherMessage = handle_clock(c, &value);
+                otherMessage = handle_clock(c, value);
                 threadList[i].rules.rules[0] = value;
                 break;
             case COMPONENT_ENTITY:

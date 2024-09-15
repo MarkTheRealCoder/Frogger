@@ -2,19 +2,21 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <unistd.h>
 #include <stdbool.h>
-#include <pthread.h>
 #include <string.h>
-#include <time.h>
+#include <unistd.h>
+#include <pthread.h>
 #include <stdatomic.h>
 #include <semaphore.h>
-#include <sys/time.h>
 #include <signal.h>
+#include <time.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <ncurses.h>
 #include <locale.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/mman.h>
 
 #ifndef IMPORT
 #define IMPORT
@@ -57,8 +59,6 @@
 #endif
 
 #endif
-
-static bool GLOBAL_SCREEN_INVALID_SIZE = false;
 
 #define TEST_MODE true
 #define DEBUG_MODE false

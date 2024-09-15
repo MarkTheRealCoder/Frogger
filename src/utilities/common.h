@@ -3,6 +3,10 @@
 
 #include "../commons/imports.h"
 
+/*
+ * Indexes dei componenti.
+ */
+
 #define COMPONENT_FROG_INDEX                        0
 #define COMPONENT_CROC_INDEXES                      16 // da 1 a 16
 #define COMPONENT_CLOCK_INDEX                       20

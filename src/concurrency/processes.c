@@ -83,7 +83,7 @@ bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
     return result;
 }
 
-InnerMessages process_polling_routine(GameSkeleton *game, Process *processList)
+InnerMessages process_polling_routine(GameSkeleton *game, Process *processList, bool isResetted[PIPE_SIZE])
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
@@ -91,16 +91,24 @@ InnerMessages process_polling_routine(GameSkeleton *game, Process *processList)
         int value = COMMS_EMPTY;
 
         readIfReady(&value, processList[i].comms[READ], sizeof(int));
+
         if (value == COMMS_EMPTY) {
             continue;
         }
 
         InnerMessages otherMessage = INNER_MESSAGE_NONE;
-
         Component *c = find_component(i, game);
+
+        if ((i == COMPONENT_CLOCK_INDEX || i == COMPONENT_TEMPORARY_CLOCK_INDEX) && isResetted[i - COMPONENT_CLOCK_INDEX]) {
+            Clock *cl = (Clock*) c->component;
+            display_debug_string(20, "Clock resetted? %i %i %i", 35, i, value != (cl->current - cl->fraction) , value);
+            isResetted[i - COMPONENT_CLOCK_INDEX] = value != (cl->current - cl->fraction);
+            continue;
+        }
+
         switch(c->type) {
             case COMPONENT_CLOCK:
-                otherMessage = handle_clock(c, &value);
+                otherMessage = handle_clock(c, value);
                 writeTo(&value, processList[i].comms[WRITE], sizeof(int));
                 break;
             case COMPONENT_ENTITY:
@@ -192,8 +200,8 @@ void generic_process(void *service_comms, void *args) {
             int udelay = comparator.tv_usec - starting.tv_usec;
 
             if (index || (udelay >= 100000 || delay >= 1)) {
-                writeIfReady(&(rules.buffer), comms[READ], sizeof(int));
                 gettimeofday(&starting, NULL);
+                writeIfReady(&(rules.buffer), comms[READ], sizeof(int));
             }
         }
         else if (action == MESSAGE_STOP) {
@@ -365,7 +373,6 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
 
     erase();
 
-
     int *lives = &game->lives;
     int *score = &game->score;
     bool running = true, drawAll = true;
@@ -382,8 +389,10 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
 
     //display_debug_string(10, "Processes created", 20);
 
+    bool isResetted[PIPE_SIZE] = {false};
+
     while (running){
-        InnerMessages result = process_polling_routine(game, processList);
+        InnerMessages result = process_polling_routine(game, processList, isResetted);
         bool skipValidation = false;
 
         switch (result) {
@@ -428,6 +437,7 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
             case EVALUATION_STOP_SECONDARY_CLOCK: {
                 send_message(create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))), service_comms);
                 reset_temporary_clock_process(processList, game);
+                isResetted[1] = true;
             } break;
             case POLLING_FROG_DEAD:
             case POLLING_MANCHE_LOST:
@@ -445,8 +455,10 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
                 *score += result == EVALUATION_MANCHE_WON ? 1000 : 0;
                 clear_screen();
                 drawAll = true;
+                for (int i = 0; i < PIPE_SIZE; i++) isResetted[i] = true;
             } break;
             case EVALUATION_GAME_LOST:
+                *score = -*score;
             case EVALUATION_GAME_WON:
                 running = false;
                 break;
@@ -462,7 +474,6 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
         sleepy(50, TIMEFRAME_MILLIS);
     }
 
-    //COMMUNICATIONS = MESSAGE_STOP; todo
     send_message(create_message(MESSAGE_STOP, processes), service_comms);
 
     clear_screen();
@@ -470,13 +481,16 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
     center_string_colored("The frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
     center_string_colored("Wait a few seconds, then press a button!", alloc_pair(COLOR_RED, COLOR_BLACK), 41, 21);
 
-    /*for (int i = 0; i < MAX_CONCURRENCY; i++)
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
-        pthread_join(processList[i].id, NULL); todo
-    }*/
+        CLOSE_READ(processList[i].comms[READ]);
+        CLOSE_WRITE(processList[i].comms[WRITE]);
+        waitpid(processList[i].pid, NULL, 0);
+    }
     free(processList);
 
     free_memory(game, entitiesList);
+    wait(NULL);
 
 
     munmap(service_comms, sizeof(int));

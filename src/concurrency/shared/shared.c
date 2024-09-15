@@ -2,39 +2,33 @@
 
 static Timer *GLOBAL_TIMERS = NULL;
 
-InnerMessages handle_clock(Component *component, int *value)
+InnerMessages handle_clock(Component *component, const int value)
 {
     Clock *clock = (Clock*) component->component;
-    clock->current = (clock->current - clock->fraction == *value) ? *value : clock->current;
-    *value = clock->current;
+    clock->current = value;
 
-    if (clock->type == CLOCK_MAIN && value <= 0)
-    {
+    if (clock->type == CLOCK_MAIN && value <= 0) {
         return POLLING_MANCHE_LOST;
     }
 
-    if (clock->type == CLOCK_SECONDARY && value <= 0)
-    {
+    if (clock->type == CLOCK_SECONDARY && value <= 0) {
         return POLLING_FROG_DEAD;
     }
 
     return INNER_MESSAGE_NONE;
 }
 
-InnerMessages handle_entity(Component *component, int value, int canPause)
+InnerMessages handle_entity(Component *component, const int value, const int canPause)
 {
     Entity *entity = (Entity *) component->component;
 
-    if (isActionMovement(value))
-    {
+    if (isActionMovement(value)) {
         update_position(entity, value);
     }
-    else if (value == ACTION_SHOOT)
-    {
+    else if (value == ACTION_SHOOT) {
         entity->readyToShoot = true;
     }
-    else if (value != COMMS_EMPTY && canPause)
-    {
+    else if (value != COMMS_EMPTY && canPause) {
         return POLLING_GAME_PAUSE;
     }
 
@@ -67,25 +61,20 @@ Component *find_component(const int index, GameSkeleton *game)
 
 void update_position(Entity *e, const Action action)
 {
-    if (!isActionMovement(action))
-    {
+    if (!isActionMovement(action)) {
         return;
     }
 
     e->last = e->current;
 
-    if (action == ACTION_WEST || action == ACTION_EAST)
-    {
+    if (action == ACTION_WEST || action == ACTION_EAST) {
         e->current.x += (action == ACTION_WEST) ? -GAME_FROG_JUMP_X : GAME_FROG_JUMP_X;
     }
-    else
-    {
-        if (e->type == ENTITY_TYPE__FROG)
-        {
+    else {
+        if (e->type == ENTITY_TYPE__FROG) {
             e->current.y += (action == ACTION_NORTH) ? -GAME_FROG_JUMP_Y : GAME_FROG_JUMP_Y;
         }
-        else
-        {
+        else {
             e->current.y += (action == ACTION_NORTH) ? -GAME_FROG_JUMP_X : GAME_FROG_JUMP_X;
         }
     }
@@ -162,25 +151,24 @@ SystemMessage create_message(const SystemMessage action, const int receivers)
     return action + (receivers << 4);
 }
 
-Action getDefaultActionByY(MapSkeleton map, int y, bool reset)
+Action getDefaultActionByY(const MapSkeleton map, const int y, const bool reset)
 {
     static int RANDOMIC_SEED = -1;
 
-    if (reset)
-    {
+    if (reset) {
         RANDOMIC_SEED = gen_num(0, 1);
     }
 
     return (((y - map.river.y) + RANDOMIC_SEED) % 2 == 0) ? ACTION_EAST : ACTION_WEST;
 }
 
-Position set_croc_position(MapSkeleton map, int y, int padding)
+Position set_croc_position(const MapSkeleton map, const int y, const int padding)
 {
     int x = (getDefaultActionByY(map, y, false) == ACTION_WEST) ? map.sidewalk.x + map.width + padding : map.sidewalk.x - padding;
     return getPosition(x, y);
 }
 
-Position reset_croc_position(MapSkeleton map, int y)
+Position reset_croc_position(const MapSkeleton map, const int y)
 {
     return set_croc_position(map, y, 1);
 }
@@ -196,63 +184,68 @@ Position invalidate_position(Entity *e, struct entities_list *list)
         int x = comparison->current.x, y = comparison->current.y;
         int width = comparison->width, height = comparison->height;
 
-        if (e != comparison)
-        {
+        if (e != comparison) {
             bool collisionInRangeX = x <= lastEntityPos.x && lastEntityPos.x < x + width;
             bool collisionInRangeY = y <= lastEntityPos.y && lastEntityPos.y < y + height;
 
-            if (collisionInRangeX && collisionInRangeY && (lastEntityPos.x != 0 && lastEntityPos.y != 0))
-            {
-                /*
-                if (e->trueType == TRUETYPE_FROG || comparison->trueType == TRUETYPE_FROG) {
-                    display_debug_string(12 + (pos++ % 10), "%i INVALIDATED FOR %i: %i", 80, pos, e->trueType == TRUETYPE_FROG, lastEntityPos.y);
-                }*/
+            if (collisionInRangeX && collisionInRangeY && (lastEntityPos.x != 0 && lastEntityPos.y != 0)) {
                 return getPosition(0, 0);
             }
         }
+
         list = list->next;
     }
 
     return lastEntityPos;
 }
 
-void remove_entity_from_list(struct entities_list **list, Entity *e)
-{
+void remove_entity_from_list(struct entities_list **list, Entity *e) {
     struct entities_list *pivot = *list;
     struct entities_list *prev = NULL;
 
     while (pivot) {
-        if (pivot->e == e)
+        if (pivot->e == e) {
             break;
+        }
         prev = pivot;
         pivot = pivot->next;
     }
 
-    if (!pivot)
+    if (!pivot) {
         return;
+    }
 
-    if (prev)
+    if (prev) {
         prev->next = pivot->next;
-    else
+    }
+    else {
         *list = pivot->next;
+    }
 
     free(pivot);
 }
 
-void invalidate_entity(Entity *e) {
+void invalidate_entity(Entity *e)
+{
     e->valid = false;
 }
 
-void destroy_entity(struct entities_list **el, struct entities_list **list, Entity *e) {
+void destroy_entity(struct entities_list **el, struct entities_list **list, Entity *e)
+{
     if (*el) remove_entity_from_list(el, e);
     if (*list) remove_entity_from_list(list, e);
     free(e);
 }
 
-void handle_invalid_entities(struct entities_list **list, Component components[MAX_CONCURRENCY]) {
+void handle_invalid_entities(struct entities_list **list, Component components[MAX_CONCURRENCY])
+{
     struct entities_list *el = *list;
-    while (el) {
-        if (el->e->valid) el = el->next;
+
+    while (el)
+    {
+        if (el->e->valid) {
+            el = el->next;
+        }
         else {
             struct entities_list *current = el;
             el = el->next;
@@ -279,56 +272,43 @@ InnerMessages validate_entity(Entity *entity, const MapSkeleton *map, struct ent
             bool notWithinBoundaries = !WITHIN_BOUNDARIES(*x, *y, *map) || !WITHIN_BOUNDARIES(*x + 2, *y, *map);
             int entityInsideOfHideout = isEntityPositionHideoutValid(entity, map);
 
-            //display_debug_string(1, "FROG: nw=%d, h=%d sidewalk.y: %i - Y: %i", 40, notWithinBoundaries, entityInsideOfHideout, map->sidewalk.y, *y);
-            //display_debug_string(2, "LY: %i - FY: %i", 40, map->sidewalk.y, *y);
-
-            if (notWithinBoundaries || !entityInsideOfHideout)
-            {
-                //display_debug_string(5, "PROVA", 40);
+            if (notWithinBoundaries || !entityInsideOfHideout) {
                 *x = *lastX;
                 *y = *lastY;
             }
-            else
-            {
+            else {
                 entity->last = invalidate_position(entity, *list);
             }
 
-            if (entityInsideOfHideout >= 2)
-            {
+            if (entityInsideOfHideout >= 2) {
                 map->hideouts[entityInsideOfHideout - 2].x = 0;
                 map->hideouts[entityInsideOfHideout - 2].y = 0;
-
                 return EVALUATION_MANCHE_WON;
             }
         } break;
         case ENTITY_TYPE__CROC:
         {
-            if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
-            {
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map))) {
                 bool isActionWest = getDefaultActionByY(*map, *y, false) == ACTION_WEST;
                 bool invalid = (isActionWest && *x + entity->width < map->sidewalk.x) || (!isActionWest && *x > map->sidewalk.x + map->width);
 
-                if (invalid)
-                {
+                if (invalid) {
                     entity->current = reset_croc_position(*map, *y);
                 }
             }
         } break;
         case ENTITY_TYPE__PLANT:
         {
-            if (!WITHIN_BOUNDARIES(*x, *y, (*map)))
-            {
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map))) {
                 entity->readyToShoot = false;
             }
         } break;
         case ENTITY_TYPE__PROJECTILE:
         {
-            if (!WITHIN_BOUNDARIES(*x, *y, (*map)) || *y < map->garden.y)
-            {
+            if (!WITHIN_BOUNDARIES(*x, *y, (*map)) || *y < map->garden.y) {
                 return INNER_MESSAGE_DESTROY_ENTITY;
             }
-            else
-            {
+            else {
                 entity->last = invalidate_position(entity, *list);
             }
         } break;
@@ -356,26 +336,36 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
         return EVALUATION_GAME_WON;
     }
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
         Component *c = &game->components[i];
 
-        switch (c->type) {
-            case COMPONENT_ENTITY: {
+        switch (c->type)
+        {
+            case COMPONENT_ENTITY:
+            {
                 Entity *entity = (Entity *) c->component;
                 entityValidationResult = validate_entity(entity, &game->map, list, i);
                 result = entityValidationResult != INNER_MESSAGE_NONE ? entityValidationResult : result;
             } break;
-            case COMPONENT_ENTITIES: {
+            case COMPONENT_ENTITIES:
+            {
                 Entities *entities = (Entities *) c->component;
                 struct entities_list *el = entities->entities;
-                while (el) {
+
+                while (el)
+                {
                     entityValidationResult = validate_entity(el->e, &game->map, list, i);
+
                     if (entityValidationResult == INNER_MESSAGE_DESTROY_ENTITY) {
                         struct entities_list *prev = el;
                         el = el->next;
                         delete_entity_pos(prev->e->height, prev->e->width, prev->e->last, game->map);
                         invalidate_entity(prev->e);
-                    } else el = el->next;
+                    }
+                    else {
+                        el = el->next;
+                    }
                 }
             } break;
             default:
@@ -539,7 +529,7 @@ void free_memory(GameSkeleton *game, struct entities_list **list) {
 void common_timer_reset(int *buffer, GameSkeleton *game, int index)
 {
     Clock *clock = (Clock*) game->components[index].component;
-    clock->current = clock->starting;
+    clock->current = (int)clock->starting;
     *buffer = clock->current;
 }
 
@@ -701,12 +691,15 @@ int time_elapsed(unsigned int index) {
     return tmp.tv_sec - pivot->start.tv_sec;
 }
 
-void gen_plants(GameSkeleton *game) {
-    for (int i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++) {
+void gen_plants(GameSkeleton *game)
+{
+    for (int i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++)
+    {
         int zeroIndex = (i % (COMPONENT_CROC_INDEXES + 1));
         Component *c = &game->components[i];
         Entity *plant = (Entity *) c->component;
         unsigned int id = (1 << i);
+        
         if (!WITHIN_BOUNDARIES(plant->current.x, plant->current.y, game->map) && time_elapsed(id) >= 6 + 3 * zeroIndex) {
             update_timer(id);
             int section = (int)(game->map.width / 3);

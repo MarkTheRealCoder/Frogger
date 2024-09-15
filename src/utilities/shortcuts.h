@@ -5,9 +5,6 @@
 #include "../commons/imports.h"
 
 
-// Il valore di terminatore di stringa. ("\0")
-#define TERM 1
-
 // malloc() - Alloca la memoria.
 #define MALLOC(type, size) (type *)malloc(sizeof(type) * (size))
 
@@ -16,17 +13,6 @@
 
 // realloc() - Rialloca la memoria.
 #define REALLOC(type, arr, size) (type *)realloc(arr, sizeof(type) * (size))
-
-// memcpy() - Copia la memoria da una parte a un'altra.
-#define MEMCPY(from, to, type, size) memcpy(to, from, sizeof(type) * (size))
-
-
-// Alloca la memoria (malloc()) con terminatore.
-#define MALLOC_TERM(type, size) (type *)malloc(sizeof(type) * (size + TERM))
-// Alloca la memoria (calloc()) con terminatore.
-#define CALLOC_TERM(type, size) (type *)calloc((size + TERM), sizeof(type))
-// Rialloca la memoria (realloc()) con terminatore.
-#define REALLOC_TERM(type, arr, size) (type *)realloc(arr, (sizeof(type) * size) + TERM)
 
 /**
  * Crasha il programma se `pointer = NULL`.
@@ -37,6 +23,7 @@
         perror("Cannot allocate memory!\n");    \
         exit(EXIT_FAILURE);                     \
     }
+
 
 /**
  * Sleep function.
@@ -58,7 +45,7 @@ void sleepy(int quantity, TimeFrame timeFrame);
 
 int gen_num(int min, int max);
 int choose_between(int count, ...);
-bool choose_between_bool();
+
 
 /**
  * String utils.
@@ -82,7 +69,7 @@ int getCenteredX(int width);
 int getCenteredY(int height);
 
 StringArt getArtOfEntity(const Entity *entity);
-StringArt getArtOfThing(enum AVAILABLE_ARTS artid, char **art, int length);
+StringArt getArtOfThing(enum AVAILABLE_ARTS artId, char **art, int length);
 bool isActionMovement(Action action);
 
 int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entityWidth);

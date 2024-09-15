@@ -29,8 +29,7 @@ int choose_between(const int count, ...)
     {
         int current = va_arg(args, int);
         
-        if (i == random_index) 
-        {
+        if (i == random_index) {
             result = current;
         }
     }
@@ -38,11 +37,6 @@ int choose_between(const int count, ...)
     va_end(args);
 
     return result;
-}
-
-bool choose_between_bool()
-{
-    return gen_num(0, 1);
 }
 
 /**
@@ -87,12 +81,10 @@ char *concat(const int n, ...)
         char *str = (char*) va_arg(args, char *);
         int tlen = strlen(str);
 
-        if (!output)
-        {
+        if (!output) {
             output = CALLOC(char, tlen + 1);
         }
-        else 
-        {
+        else {
             output = REALLOC(char, output, tlen + strlen(output) + 1);
         }
 
@@ -115,10 +107,8 @@ char *concat(const int n, ...)
  */
 int *get_screen_size()
 {
-    static int size[2] = {0, 0};
-
+    static int size[2] = { 0, 0 };
     getmaxyx(stdscr, size[0], size[1]);
-
     return size;
 }
 
@@ -158,7 +148,7 @@ StringArt getArtOfEntity(const Entity *entity)
     switch (entity->type)
     {
         case ENTITY_TYPE__CROC:
-            result.art = _CROC_X3_PLAY_ART;
+            result.art = (entity->width == CROC_MIN) ? _CROC_X2_PLAY_ART : _CROC_X3_PLAY_ART;
             break;
         case ENTITY_TYPE__FROG:
             result.art = _FROG_PLAY_ART;
@@ -182,11 +172,11 @@ StringArt getArtOfEntity(const Entity *entity)
  * @param length    La lunghezza dell'icona.
  * @return          L'icona corrispondente all'entità'.
  */
-StringArt getArtOfThing(const enum AVAILABLE_ARTS artid, char **art, const int length)
+StringArt getArtOfThing(const enum AVAILABLE_ARTS artId, char **art, const int length)
 {
     StringArt result = { };
 
-    switch (artid)
+    switch (artId)
     {
         case ART_BIG_FROG:
             result.art = _FROG_ART;
@@ -231,12 +221,19 @@ bool isActionMovement(const Action action)
     return action >= ACTION_NORTH && action <= ACTION_WEST;
 }
 
+/**
+ * Restituisce il punto centrale interno con offset.
+ * @param width         La larghezza.
+ * @param divTimes      Il numero di divisioni.
+ * @param indexToPick   L'indice da scegliere.
+ * @param entityWidth   La larghezza dell'entità'.
+ * @return              Il punto centrale interno con offset.
+ */
 int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entityWidth)
 {
     int toDivide = divTimes * 2;
 
-    if (indexToPick >= toDivide)
-    {
+    if (indexToPick >= toDivide) {
         return -1;
     }
 
@@ -248,6 +245,15 @@ int getInnerMiddleWithOffset(int width, int divTimes, int indexToPick, int entit
     return point;
 }
 
+/**
+ * Restituisce la posizione (x,y) con il punto centrale interno con offset.
+ * @param width         La larghezza.
+ * @param height        L'altezza.
+ * @param divTimes      Il numero di divisioni.
+ * @param indexToPick   L'indice da scegliere.
+ * @param entityWidth   La larghezza dell'entità'.
+ * @return              La posizione con il punto centrale interno con offset.
+ */
 Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int indexToPick, int entityWidth)
 {
     int x = MAP_START_X + getInnerMiddleWithOffset(width, divTimes, indexToPick, entityWidth);
@@ -256,14 +262,18 @@ Position getPositionWithInnerMiddleX(int width, int height, int divTimes, int in
     return getPosition(x, y);
 }
 
+/**
+ * Controlla se i nascondigli sono chiusi.
+ * @param map   La mappa.
+ * @return      Se i nascondigli sono chiusi.
+ */
 bool areHideoutsClosed(const MapSkeleton *map)
 {
     int counter = 0;
 
     for (int i = 0; map->hideouts[i].x != -1; ++i)
     {
-        if (map->hideouts[i].x != 0 && map->hideouts[i].y != 0)
-        {
+        if (map->hideouts[i].x != 0 && map->hideouts[i].y != 0) {
             counter = counter | (1 << i);
         }
     }
@@ -271,17 +281,21 @@ bool areHideoutsClosed(const MapSkeleton *map)
     return counter;
 }
 
+/**
+ * Controlla se la posizione dell'entità è valida.
+ * @param entity    L'entità'.
+ * @param map       La mappa.
+ * @return          Se la posizione dell'entità' è valida.
+ */
 int isEntityPositionHideoutValid(const Entity *entity, const MapSkeleton *map)
 {
-    if (entity->type != ENTITY_TYPE__FROG || entity->current.y != (map->garden.y - FROG_HEIGHT))
-    {
+    if (entity->type != ENTITY_TYPE__FROG || entity->current.y != (map->garden.y - FROG_HEIGHT)) {
         return true;
     }
 
     for (int i = 0; map->hideouts[i].x != -1; i++)
     {
-        if (entity->current.x == map->hideouts[i].x && entity->current.y == map->hideouts[i].y)
-        {
+        if (entity->current.x == map->hideouts[i].x && entity->current.y == map->hideouts[i].y) {
             return i + 2;
         }
     }
@@ -289,6 +303,11 @@ int isEntityPositionHideoutValid(const Entity *entity, const MapSkeleton *map)
     return false;
 }
 
+/**
+ * Restituisce il componente dell'orologio predefinito.
+ * @param clockType Il tipo di orologio.
+ * @return          Il componente dell'orologio predefinito.
+ */
 Component getDefaultClockComponent(const enum ClockType clockType)
 {
     #define MAIN_VALUE 120
@@ -302,6 +321,10 @@ Component getDefaultClockComponent(const enum ClockType clockType)
     };
 }
 
+/**
+ * Restituisce il componente delle entità' predefinite.
+ * @return  Il componente delle entità' predefinite.
+ */
 Component getDefaultEntitiesComponent()
 {
     return (Component) {
@@ -310,20 +333,29 @@ Component getDefaultEntitiesComponent()
     };
 }
 
-char *numToString(int num) {
-    char *numb = (char*) calloc(11, sizeof(char));
+/**
+ * Converte un numero in una stringa.
+ * @param num   Il numero da convertire.
+ * @return      La stringa corrispondente al numero.
+ */
+char *numToString(int num)
+{
+    char *numb = CALLOC(char, 11);
     numb[0] = '0';
+
     int dim = 0;
-    while (num != 0) {
-        for (int i = dim; dim != 0 && i > -1; i--) {
+
+    while (num != 0)
+    {
+        for (int i = dim; dim != 0 && i > -1; i--)
+        {
             numb[i] = numb[i - 1];
         }
         numb[0] = (char)((num % 10) + 48);
         num /= 10;
         dim++;
     }
+
     numb = (char*) realloc(numb, sizeof(char)*(strlen(numb) + 1));
     return numb;
 }
-
-// todo funzione temporizzata

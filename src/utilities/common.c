@@ -1,6 +1,11 @@
 #include "common.h"
 
-Entity entities_default_frog(MapSkeleton map)
+/**
+ * Crea un'entità di tipo rana.
+ * @param map   La mappa di gioco.
+ * @return      L'entità creata.
+ */
+Entity entities_default_frog(const MapSkeleton map)
 {
     Entity entity = {
         .current = getPositionWithInnerMiddleX(map.width, map.sidewalk.y, 1, 1, FROG_WIDTH),
@@ -17,13 +22,12 @@ Entity entities_default_frog(MapSkeleton map)
     return entity;
 }
 
+/**
+ * Crea un'entità di tipo pianta.
+ * @return  L'entità creata.
+ */
 Entity entities_default_plant()
 {
-    //int x = getInnerMiddleWithOffset(mapSkeleton.width, 2, index + 1, PLANT_WIDTH);
-    //int y = getCenteredY(GAME_ENTITY_SIZE) - 12; // todo edit
-
-    //Position startPosition = getPosition(x, y);
-
     Entity entity = {
         .current = getPosition(0, 0),
         .last = getPosition(-1, -1),
@@ -39,6 +43,10 @@ Entity entities_default_plant()
     return entity;
 }
 
+/**
+ * Crea un'entità di tipo coccodrillo.
+ * @return  L'entità creata.
+ */
 Entity new_entities_default_croc()
 {
     Entity entity = {
@@ -47,7 +55,7 @@ Entity new_entities_default_croc()
         .type = ENTITY_TYPE__CROC,
         .trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC),
         .hps = 1,
-        .width = GAME_CROCS_MAX_WIDTH, // choose_between(2, GAME_CROCS_MIN_WIDTH, GAME_CROCS_MAX_WIDTH)
+        .width = GAME_CROCS_MAX_WIDTH, //choose_between(2, GAME_CROCS_MIN_WIDTH, GAME_CROCS_MAX_WIDTH),
         .height = GAME_ENTITY_SIZE,
         .readyToShoot = false,
         .valid = true
@@ -56,15 +64,21 @@ Entity new_entities_default_croc()
     return entity;
 }
 
+/**
+ * Crea un proiettile.
+ * @param master    L'entità che ha sparato il proiettile.
+ * @param map       La mappa di gioco.
+ * @return          Il proiettile creato.
+ */
 Entity create_projectile(Entity *master, MapSkeleton map)
 {
     bool masterIsFrog = master->type == ENTITY_TYPE__FROG;
+
     Position p = master->current;
     p.x += 1;
     p.y += (masterIsFrog) ? -1 : FROG_HEIGHT;
 
-    if (WITHIN_BOUNDARIES(p.x, p.y, map) && p.y <= map.garden.y)
-    {
+    if (WITHIN_BOUNDARIES(p.x, p.y, map) && p.y <= map.garden.y) {
         p = getPosition(-1, -1);
     }
 
@@ -81,7 +95,13 @@ Entity create_projectile(Entity *master, MapSkeleton map)
     };
 }
 
-Clock *create_clock(unsigned int value, enum ClockType type)
+/**
+ * Crea un orologio.
+ * @param value Il valore dell'orologio.
+ * @param type  Il tipo di orologio.
+ * @return      L'orologio creato.
+ */
+Clock *create_clock(const unsigned int value, const enum ClockType type)
 {
     Clock *c = CALLOC(Clock, 1);
     CRASH_IF_NULL(c)
@@ -93,6 +113,10 @@ Clock *create_clock(unsigned int value, enum ClockType type)
     return c;
 }
 
+/**
+ * Crea un gruppo di entità.
+ * @return  Il gruppo di entità creato.
+ */
 Entities *create_entities_group()
 {
     Entities *e = CALLOC(Entities, 1);
@@ -139,6 +163,11 @@ void **getEntitiesFromComponent(Component c)
     return entities;
 }
 
+/**
+ * Crea le entità predefinite.
+ * @param game  Il gioco.
+ * @return      Le entità create.
+ */
 struct entities_list *create_default_entities(GameSkeleton *game)
 {
     struct entities_list *entities = NULL;
@@ -154,8 +183,7 @@ struct entities_list *create_default_entities(GameSkeleton *game)
             break;
         }
 
-        if (index < COMPONENT_CLOCK_INDEX)
-        {
+        if (index < COMPONENT_CLOCK_INDEX) {
             node->e = CALLOC(Entity, 1);
             CRASH_IF_NULL(node->e)
         }

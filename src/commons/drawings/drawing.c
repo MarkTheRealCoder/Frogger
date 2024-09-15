@@ -722,7 +722,7 @@ void draw(struct entities_list *es, MapSkeleton *map, Clock *mainClock, Clock *s
     if (drawAll)
     {
         *map = display_map(POSITION_MAP, MAP_WIDTH, *map);
-        display_string(POSITION_ACHIEVEMENTS_TITLE, COLOR_RED, "Achievements", 12);
+        //display_string(POSITION_ACHIEVEMENTS_TITLE, COLOR_RED, "Achievements", 12);
     }
 
     display_hps(POSITION_LIVES, lives);

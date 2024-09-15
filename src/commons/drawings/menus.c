@@ -90,29 +90,44 @@ bool menu_listener(int *choice, int choices_num)
 
 int generic_menu(const Screen screen, StringArt choices, StringArt logo, StringArt art)
 {
+    // Pulisce lo schermo da ogni elemento disegnato in precedenza
     clear_screen();
 
+    // Ricerco e/o creo le coppie (BG/FG) per i colori da usare per il menù
     int standard = alloc_pair(COLORCODES_FROG_ART_LOGO, COLOR_BLACK);
     int quit = alloc_pair(COLORCODES_FROG_ART_LOGO_QUIT, COLOR_BLACK);
 
+    // Scelta iniziale del menù (default: 0 prima voce disponibile)
     int choice = 0;
+    // la y corrente da cui inizia la stampa.
     int cuy = 1;
 
+    // Stampa dell'immagine del menù (le StringArt sono molto flessibili e per arte possono contenere un insieme di stringhe generico)
     print_art(art, &cuy, screen.x);
+    // Incremento la y di una riga per spostare ulteriormente la stampa in basso e lasciare uno spazio dall'art.
     cuy++;
+
+    // Creo una variabile d'appoggio per comodità per resettare più agevolmente la y a ogni ciclo.
     int logo_cuy = cuy;
 
     do 
     {
+        // Resetto preventivamente la y a ogni inizio di ciclo.
         cuy = logo_cuy;
+        // Stampo il logo del gioco selezionando il colore in base all'opzione scelta dall'utente: di default l'opzione di uscita è l'ultima.
         print_logo(logo, choice == choices.length - 1 ? quit : standard, screen.x, &cuy);
 
+        // Incremento la y di 4 righe per dare spazio alla sezione delle scelta allontanandola dal logo.
         cuy += 4;
+        // Stampo le scelte del menù disponibili.
         print_choices(choices.art, choices.length, choice, screen.x, &cuy);
+        // Esco dal ciclo solo una volta che l'utente ha premuto invio, in caso contrario aggiorno solo l'indice della scelta.
     } while (menu_listener(&choice, choices.length));
 
+    // Pulisco nuovamente lo schermo da ogni elemento disegnato in precedenza
     clear_screen();
 
+    // Restituisco la scelta effettuata.
     return choice;
 }
 
@@ -169,7 +184,7 @@ int game_over_menu(const Screen screen, const enum PS state, const int score)
 
     enum AVAILABLE_ARTS art = state == PS_LOST ? ART_LOST_LOGO : ART_WIN_LOGO;
 
-    char *scoreString = numToString(score ? score : -score);
+    char *scoreString = numToString(score >= 0 ? score : -score);
     char *scoreMessage = concat(2, partOfMessage, scoreString);
 
     int menuResult = generic_menu(screen, getArtOfThing(ART_UNKNOWN, choices, MENU_GAME_OVER_LEN),
