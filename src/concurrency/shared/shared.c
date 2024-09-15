@@ -199,11 +199,13 @@ Position invalidate_position(Entity *e, struct entities_list *list)
     return lastEntityPos;
 }
 
-void remove_entity_from_list(struct entities_list **list, Entity *e) {
+void remove_entity_from_list(struct entities_list **list, Entity *e)
+{
     struct entities_list *pivot = *list;
     struct entities_list *prev = NULL;
 
-    while (pivot) {
+    while (pivot)
+    {
         if (pivot->e == e) {
             break;
         }
@@ -376,34 +378,47 @@ InnerMessages apply_validation(GameSkeleton *game, struct entities_list **list)
     return result;
 }
 
-bool evaluate_entity(InnerMessages *message, Entity *e, struct entities_list **list, Component *components, MapSkeleton map)
+bool evaluate_entity(InnerMessages *message, Entity *e, Component *components, const MapSkeleton map)
 {
     if (e->hps > 0) {
-        if (e->type == ENTITY_TYPE__PLANT) e->trueType = TRUETYPE_PLANT_HARMED;
+        if (e->type == ENTITY_TYPE__PLANT) {
+            e->trueType = TRUETYPE_PLANT_HARMED;
+        }
         return false;
     }
 
-    switch (e->type) {
-        case ENTITY_TYPE__FROG: {
+    switch (e->type)
+    {
+        case ENTITY_TYPE__FROG:
+        {
             *message = EVALUATION_MANCHE_LOST;
         } break;
-        case ENTITY_TYPE__PROJECTILE: {
-            Entities *es = (Entities*) components[(e->trueType == TRUETYPE_PROJ_FROG) ? COMPONENT_FROG_PROJECTILES_INDEX : COMPONENT_PROJECTILES_INDEX].component;
-            struct entities_list *el = (struct entities_list *) es->entities;
+        case ENTITY_TYPE__PROJECTILE:
+        {
             delete_entity_pos(e->height, e->width, e->current, map);
             delete_entity_pos(e->height, e->width, e->last, map);
             invalidate_entity(e);
         } break;
-        case ENTITY_TYPE__PLANT: {
+        case ENTITY_TYPE__PLANT:
+        {
             delete_entity_pos(e->height, e->width, e->current, map);
             delete_entity_pos(e->height, e->width, e->last, map);
+
             e->current = getPosition(0, 0);
             e->hps = 2;
             e->trueType = TRUETYPE_PLANT;
+
             int i;
-            for (i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++) if (components[i].component == e) break;
+            for (i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++)
+            {
+                if (components[i].component == e) {
+                    break;
+                }
+            }
             update_timer(1 << i);
         } break;
+        default:
+            break;
     }
     return true;
 }
@@ -413,25 +428,26 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
     InnerMessages message = INNER_MESSAGE_NONE;
     static InnerMessages backup = INNER_MESSAGE_NONE;
 
-    int *lives = &game->lives;
-    int *score = &game->score;
-
     struct entities_list *el = *list;
 
     CollisionPacket collisionPacket;
     EntityType eligibleForReset = ENTITY_TYPE__EMPTY;
 
-    while (el) {
+    while (el)
+    {
         Entity *entity = el->e;
         struct entities_list *innerEl = el->next;
 
-        while (innerEl) {
+        while (innerEl)
+        {
             Entity *innerEntity = innerEl->e;
 
             collisionPacket = areColliding(*entity, *innerEntity);
 
-            switch (collisionPacket.collision_type) {
-                case COLLISION_AVOIDED: {
+            switch (collisionPacket.collision_type)
+            {
+                case COLLISION_AVOIDED:
+                {
                     if (collisionPacket.e1 == TRUETYPE_FROG || collisionPacket.e2 == TRUETYPE_FROG) {
                         Entity *aFrog = (collisionPacket.e1 == TRUETYPE_FROG) ? entity : innerEntity;
                         if (eligibleForReset == ENTITY_TYPE__EMPTY && !(game->map.river.y <= aFrog->current.y && aFrog->current.y < game->map.sidewalk.y)) {
@@ -439,10 +455,14 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                         }
                     }
                 } break;
-                case COLLISION_OVERLAPPING: {
+                case COLLISION_OVERLAPPING:
+                {
                     bool anyEntityIsFrog = collisionPacket.e1 == TRUETYPE_FROG || collisionPacket.e2 == TRUETYPE_FROG;
                     bool anyEntityIsAngryCroc = collisionPacket.e1 == TRUETYPE_ANGRY_CROC || collisionPacket.e2 == TRUETYPE_ANGRY_CROC;
-                    if (anyEntityIsFrog && anyEntityIsAngryCroc && message == INNER_MESSAGE_NONE) message = EVALUATION_START_SECONDARY_CLOCK;
+
+                    if (anyEntityIsFrog && anyEntityIsAngryCroc && message == INNER_MESSAGE_NONE) {
+                        message = EVALUATION_START_SECONDARY_CLOCK;
+                    }
                     if (anyEntityIsFrog) {
                         Entity *notAFrog = (collisionPacket.e1 == TRUETYPE_FROG) ? innerEntity : entity;
                         if (notAFrog->moved) {
@@ -452,26 +472,32 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
                         eligibleForReset = ENTITY_TYPE__CROC;
                     }
                 } break;
-                case COLLISION_DAMAGING: {
+                case COLLISION_DAMAGING:
+                {
                     entity->hps--;
                     innerEntity->hps--;
 
-                    evaluate_entity(&message, entity, list, game->components, game->map);
-                    evaluate_entity(&message, innerEntity, list, game->components, game->map);
-
+                    evaluate_entity(&message, entity, game->components, game->map);
+                    evaluate_entity(&message, innerEntity, game->components, game->map);
                 } break;
-                case COLLISION_DESTROYING: {
+                case COLLISION_DESTROYING:
+                {
                     bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
-                    Entities *frog_projs = (Entities*) game->components[COMPONENT_FROG_PROJECTILES_INDEX].component;
                     Entity *toBeDestroyed = (isEntityOneProj) ? entity : innerEntity;
                     delete_entity_pos(toBeDestroyed->height, toBeDestroyed->width, toBeDestroyed->last, game->map);
                     invalidate_entity(toBeDestroyed);
                 } break;
-                case COLLISION_TRANSFORM: {
+                case COLLISION_TRANSFORM:
+                {
                     bool isEntityOneProj = collisionPacket.e1 == TRUETYPE_PROJ_FROG;
-                    if (isEntityOneProj) innerEntity->trueType = TRUETYPE_CROC;
-                    else entity->trueType = TRUETYPE_CROC;
-                    Entities *frog_projs = (Entities*) game->components[COMPONENT_FROG_PROJECTILES_INDEX].component;
+
+                    if (isEntityOneProj) {
+                        innerEntity->trueType = TRUETYPE_CROC;
+                    }
+                    else {
+                        entity->trueType = TRUETYPE_CROC;
+                    }
+
                     Entity *toBeDestroyed = (isEntityOneProj) ? entity : innerEntity;
                     delete_entity_pos(toBeDestroyed->height, toBeDestroyed->width, toBeDestroyed->last, game->map);
                     invalidate_entity(toBeDestroyed);
@@ -484,49 +510,70 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
         el = el->next;
     }
 
-    if (message == EVALUATION_START_SECONDARY_CLOCK) backup = message;
+    if (message == EVALUATION_START_SECONDARY_CLOCK) {
+        backup = message;
+    }
     else if (message == INNER_MESSAGE_NONE && backup == EVALUATION_START_SECONDARY_CLOCK) {
         message = EVALUATION_STOP_SECONDARY_CLOCK;
         backup = INNER_MESSAGE_NONE;
     }
-    if (eligibleForReset == ENTITY_TYPE__EMPTY && message == INNER_MESSAGE_NONE) message = EVALUATION_MANCHE_LOST;
+
+    if (eligibleForReset == ENTITY_TYPE__EMPTY && message == INNER_MESSAGE_NONE) {
+        message = EVALUATION_MANCHE_LOST;
+    }
 
     return message;
 }
 
-void free_entities_list(struct entities_list **list, bool full) {
-    while (*list) {
+void free_entities_list(struct entities_list **list, bool full)
+{
+    while (*list)
+    {
         struct entities_list *next = (*list)->next;
-        if (full) free((*list)->e);
+
+        if (full) {
+            free((*list)->e);
+        }
+
         free((*list));
         *list = next;
     }
 }
 
-void free_memory(GameSkeleton *game, struct entities_list **list) {
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+void free_memory(GameSkeleton *game, struct entities_list **list)
+{
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
         Component *c = &game->components[i];
-        switch(c->type) {
-            case COMPONENT_CLOCK: {
+
+        switch(c->type)
+        {
+            case COMPONENT_CLOCK:
+            {
                 Clock *content = (Clock*)c->component;
                 free(content);
             } break;
-            case COMPONENT_ENTITY: {
+            case COMPONENT_ENTITY:
+            {
                 Entity *content = (Entity*)c->component;
                 free(content);
             } break;
-            case COMPONENT_ENTITIES: {
+            case COMPONENT_ENTITIES:
+            {
                 Entities *entities = (Entities*) c->component;
                 free_entities_list(&entities->entities, true);
                 free(entities);
             } break;
+            default:
+                break;
         }
     }
+
     free_entities_list(list, false);
     free(game->map.hideouts);
 }
 
-void common_timer_reset(int *buffer, GameSkeleton *game, int index)
+void common_timer_reset(int *buffer, GameSkeleton *game, const int index)
 {
     Clock *clock = (Clock*) game->components[index].component;
     clock->current = (int)clock->starting;
@@ -550,9 +597,11 @@ void reset_frog(GameSkeleton *game)
     *frog = entities_default_frog(game->map);
 }
 
-int reset_crocodile(int *buffer, int index, GameSkeleton *game, int prevPadding) {
+int reset_crocodile(int *buffer, const int index, GameSkeleton *game, const int prevPadding)
+{
     int line = (index == 0) ? 0 : (int)(index / 2);
     int y = game->map.river.y + (line * 3);
+
     Action action = getDefaultActionByY(game->map, y, (!index));
     Entity *croc = (Entity *) game->components[index + 1].component;
 
@@ -567,14 +616,18 @@ int reset_crocodile(int *buffer, int index, GameSkeleton *game, int prevPadding)
     return currentPadding + croc->width;
 }
 
-void reset_crocodiles(int *buffer, GameSkeleton *game) {
-    for (int i = 0, prevPadding = 0; i < COMPONENT_CROC_INDEXES; i++) {
+void reset_crocodiles(int *buffer, GameSkeleton *game)
+{
+    for (int i = 0, prevPadding = 0; i < COMPONENT_CROC_INDEXES; i++)
+    {
         prevPadding = reset_crocodile(&buffer[i+1], i, game, prevPadding);
     }
 }
 
-void reset_plants(GameSkeleton *game) {
-    for (int i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++) {
+void reset_plants(GameSkeleton *game)
+{
+    for (int i = COMPONENT_CROC_INDEXES + 1; i < COMPONENT_CLOCK_INDEX; i++)
+    {
         Component *c = &game->components[i];
         Entity *plant = (Entity *) c->component;
         plant->current = getPosition(0, 0);
@@ -583,15 +636,18 @@ void reset_plants(GameSkeleton *game) {
     }
 }
 
-void destroy_all_projectiles(GameSkeleton *game, struct entities_list **list) {
-    for (int i = COMPONENT_FROG_PROJECTILES_INDEX; i <= COMPONENT_PROJECTILES_INDEX; i++) {
+void destroy_all_projectiles(GameSkeleton *game, struct entities_list **list)
+{
+    for (int i = COMPONENT_FROG_PROJECTILES_INDEX; i <= COMPONENT_PROJECTILES_INDEX; i++)
+    {
         Component *c = &game->components[i];
         Entities *projs = (Entities *) c->component;
         projs->entity_num = 0;
 
         struct entities_list *el = projs->entities;
 
-        while (el) {
+        while (el)
+        {
             struct entities_list *current = el;
             el = el->next;
             destroy_entity(&projs->entities, list, current->e);
@@ -599,15 +655,21 @@ void destroy_all_projectiles(GameSkeleton *game, struct entities_list **list) {
     }
 }
 
-int *reset_game(GameSkeleton *game, struct entities_list **list) {
+int *reset_game(GameSkeleton *game, struct entities_list **list)
+{
     int *buffer = CALLOC(int, MAX_CONCURRENCY);
-    for (int i = 0; i < MAX_CONCURRENCY; i++) buffer[i] = COMMS_EMPTY;
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        buffer[i] = COMMS_EMPTY;
+    }
+
     reset_main_timer(&buffer[COMPONENT_CLOCK_INDEX], game);
     reset_secondary_timer(&buffer[COMPONENT_TEMPORARY_CLOCK_INDEX], game);
     reset_frog(game);
     reset_crocodiles(buffer, game);
     reset_plants(game);
     destroy_all_projectiles(game, list);
+
     return buffer;
 }
 
@@ -620,71 +682,110 @@ void reset_moved(struct entities_list *list)
     }
 }
 
-void clear_timers() {
+void clear_timers()
+{
     Timer *pivot = GLOBAL_TIMERS;
-    while (pivot) {
+    while (pivot)
+    {
         Timer *current = pivot;
         pivot = pivot->next;
         free(current);
     }
 }
 
-int destroy_timer(unsigned int index) {
+int destroy_timer(const unsigned int index)
+{
     Timer *pivot = GLOBAL_TIMERS;
     Timer *prev = NULL;
-    while (pivot && pivot->id != index) {
+    while (pivot && pivot->id != index)
+    {
         prev = pivot;
         pivot = pivot->next;
     }
 
-    if (!pivot) return false;
+    if (!pivot) {
+        return false;
+    }
 
-    if (!prev) GLOBAL_TIMERS = pivot->next;
-    else prev->next = pivot->next;
+    if (!prev) {
+        GLOBAL_TIMERS = pivot->next;
+    }
+    else {
+        prev->next = pivot->next;
+    }
+
     free(pivot);
     return true;
 }
 
-Timer *scroll_timers(int *index) {
-    if (index && *index == 0) return NULL;
+Timer *scroll_timers(int *index)
+{
+    if (index && *index == 0) {
+        return NULL;
+    }
+
     Timer *pivot = GLOBAL_TIMERS;
-    while (pivot) {
-        if (index == NULL && pivot->next == NULL) break;
+    while (pivot)
+    {
+        if (index == NULL && pivot->next == NULL) {
+            break;
+        }
         else if (index) {
             if (*index < 0 && pivot->id == -*index) {
                 pivot = NULL;
                 break;
-            } else if (pivot->id == *index) break;
+            } else if (pivot->id == *index) {
+                break;
+            }
         }
         pivot = pivot->next;
     }
     return pivot;
 }
 
-void update_timer(unsigned int index) {
+void update_timer(const unsigned int index)
+{
     Timer *pivot = scroll_timers(&index);
-    if (!pivot) return;
+
+    if (!pivot) {
+        return;
+    }
+
     gettimeofday(&pivot->start, NULL);
 }
 
-int add_timer(unsigned int index) {
+int add_timer(const unsigned int index)
+{
     int tmp = -(int)index;
     Timer *pivot = scroll_timers(&tmp);
-    if (pivot) return -1;
+
+    if (pivot) {
+        return -1;
+    }
+
     pivot = scroll_timers(NULL);
     Timer *new = CALLOC(Timer, 1);
     new->id = index;
     new->next = NULL;
-    if (pivot) pivot->next = new;
-    else GLOBAL_TIMERS = new;
+
+    if (pivot) {
+        pivot->next = new;
+    }
+    else {
+        GLOBAL_TIMERS = new;
+    }
+
     update_timer(index);
     return 1;
 }
 
-int time_elapsed(unsigned int index) {
+int time_elapsed(unsigned int index)
+{
     Timer *pivot = scroll_timers(&index);
 
-    if (!pivot) return -1;
+    if (!pivot) {
+        return -1;
+    }
 
     struct timeval tmp;
     gettimeofday(&tmp, NULL);
@@ -699,7 +800,7 @@ void gen_plants(GameSkeleton *game)
         Component *c = &game->components[i];
         Entity *plant = (Entity *) c->component;
         unsigned int id = (1 << i);
-        
+
         if (!WITHIN_BOUNDARIES(plant->current.x, plant->current.y, game->map) && time_elapsed(id) >= 6 + 3 * zeroIndex) {
             update_timer(id);
             int section = (int)(game->map.width / 3);

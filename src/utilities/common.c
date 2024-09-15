@@ -55,6 +55,7 @@ Entity new_entities_default_croc()
         .type = ENTITY_TYPE__CROC,
         .trueType = choose_between(4, TRUETYPE_ANGRY_CROC, TRUETYPE_CROC, TRUETYPE_CROC, TRUETYPE_CROC),
         .hps = 1,
+        // scelta implementativa, i coccodrilli lunghi FROG_WIDTH * 2 rendono il gioco troppo difficile
         .width = GAME_CROCS_MAX_WIDTH, //choose_between(2, GAME_CROCS_MIN_WIDTH, GAME_CROCS_MAX_WIDTH),
         .height = GAME_ENTITY_SIZE,
         .readyToShoot = false,
@@ -128,41 +129,6 @@ Entities *create_entities_group()
     return e;
 }
 
-void **getEntitiesFromComponent(Component c)
-{
-    void **entities = NULL;
-
-    switch (c.type)
-    {
-        case COMPONENT_ENTITY:
-        {
-            Entity *e = (Entity*) c.component;
-            entities = CALLOC(void*, 2);
-            CRASH_IF_NULL(entities)
-            entities[0] = e;
-            entities[1] = NULL;
-        }
-        break;
-        case COMPONENT_ENTITIES:
-        {
-            Entities *e = (Entities*) c.component;
-            entities = CALLOC(void*, e->entity_num + 1);
-            CRASH_IF_NULL(entities)
-            entities[e->entity_num] = NULL;
-            struct entities_list *en = e->entities;
-
-            for (int i = 0; i < e->entity_num; i++)
-            {
-                entities[i] = en->e;
-                en = en->next;
-            }
-        }
-        break;
-    }
-
-    return entities;
-}
-
 /**
  * Crea le entità predefinite.
  * @param game  Il gioco.
@@ -202,28 +168,41 @@ struct entities_list *create_default_entities(GameSkeleton *game)
     return entities;
 }
 
-void create_new_entities(struct entities_list **list, Component components[MAX_CONCURRENCY], MapSkeleton map) {
+/**
+ * Crea i nuovi proiettili.
+ * @param list          La lista delle entità.
+ * @param components    I componenti.
+ * @param map           La mappa di gioco.
+ */
+void create_new_entities(struct entities_list **list, Component components[MAX_CONCURRENCY], MapSkeleton map)
+{
     struct entities_list *entity = *list;
-    Position p = {0, 0};
-    while (entity) {
+
+    while (entity)
+    {
         Entity *e = entity->e;
+
         if (e->readyToShoot) {
             int index = (e->type == ENTITY_TYPE__FROG) ? COMPONENT_FROG_PROJECTILES_INDEX : COMPONENT_PROJECTILES_INDEX;
             Entities *es = (Entities *) components[index].component;
+
             if (es->entity_num <= 2) {
                 Entity *new = CALLOC(Entity, 1);
                 CRASH_IF_NULL(new);
                 *new = create_projectile(e, map);
+
                 if (new->current.x == -1 && new->current.y == -1) {
                     free(new);
                     return;
                 }
+
                 // Adding entity to the main list
                 struct entities_list *node = CALLOC(struct entities_list, 1);
                 CRASH_IF_NULL(node)
                 node->next = *list;
                 node->e = new;
                 *list = node;
+
                 // Adding entity to its component's list
                 node = CALLOC(struct entities_list, 1);
                 CRASH_IF_NULL(node)

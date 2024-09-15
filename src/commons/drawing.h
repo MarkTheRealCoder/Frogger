@@ -7,32 +7,13 @@
 
 
 #define GAME_HIDEOUTS 5
-#define GAME_HIDEOUTS_SPACES_INBETWEEN 4
-
-#define GAME_MANCHE_MAXTIME 120 // in secondi
-#define GAME_MANCHE_FRACTION 1 // in secondi
-
-#define GAME_SECONDARY_MAXTIME 2
 
 #define GAME_ENTITY_SIZE 3
 
-#define GAME_FROG_LIVES 5
 #define GAME_FROG_JUMP_X 1
 #define GAME_FROG_JUMP_Y GAME_ENTITY_SIZE
 
-#define GAME_LAWN_TOP_LANES 2
-#define GAME_LAWN_BOTTOM_LANES 2
 #define GAME_RIVER_LANES 8
-
-#define CORE_GAME_MAP_WIDTH                               \
-    ((GAME_HIDEOUTS * GAME_ENTITY_SIZE) +                 \
-    (GAME_HIDEOUTS_SPACES_INBETWEEN * GAME_ENTITY_SIZE) + \
-    (2 * GAME_ENTITY_SIZE))
-
-#define GAME_PROJECTILE_WAIT 2 // in secondi
-
-#define GAME_PLANTS 3
-#define GAME_CROCS (2 * GAME_RIVER_LANES)
 
 #define GAME_CROCS_MIN_WIDTH (2 * GAME_ENTITY_SIZE)
 #define GAME_CROCS_MAX_WIDTH (3 * GAME_ENTITY_SIZE)
@@ -252,10 +233,8 @@ int getHeightByEntityType(EntityType entityType);
 Cuboid getCuboidFromEntity(Entity e);
 CollisionPacket areColliding(Entity e1, Entity e2);
 
-void draw(struct entities_list *es, MapSkeleton *map, Clock *mainClock, Clock *secClock, StringList *achievements, int score, int lives, bool drawAll);
-void display_game_over(Screen screen, int result);
+void draw(struct entities_list *es, MapSkeleton *map, Clock *mainClock, Clock *secClock, int score, int lives, bool drawAll);
 
 void display_debug_string(int y, const char *__restrict __format, int stringLength, ...);
-
 
 #endif

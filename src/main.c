@@ -2,8 +2,8 @@
 
 enum MAIN_TASK propose_version_menu(Screen screen, int *menuOutput);
 enum MAIN_TASK propose_main_menu(Screen screen, int *menuOutput);
-void handle_termination(const enum MAIN_TASK task, WINDOW *terminal);
-int game_main(Screen screen, WINDOW *window, enum MAIN_TASK *currentTask);
+void handle_termination(enum MAIN_TASK task, WINDOW *terminal);
+int game_main(Screen screen, WINDOW *terminal, enum MAIN_TASK *currentTask);
 
 int main(int argc, char *argv[])
 {

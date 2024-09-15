@@ -1,5 +1,12 @@
 #include "threads.h"
 
+/**
+ * Routine di polling dei thread.
+ * @param buffer        Il buffer di comunicazione.
+ * @param game          La struttura del gioco.
+ * @param threadList    La lista dei thread.
+ * @return              Il messaggio interno.
+ */
 InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *threadList)
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
@@ -8,18 +15,21 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
     sem_wait(&POLLING_WRITING);
     //sem_wait(&POLLING_READING);
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
         int value = buffer[i];
 
         if (value == COMMS_EMPTY) {
             continue;
         }
 
-        InnerMessages otherMessage = INNER_MESSAGE_NONE;
-
         buffer[i] = COMMS_EMPTY;
         Component *c = find_component(i, game);
-        switch(c->type) {
+
+        InnerMessages otherMessage = INNER_MESSAGE_NONE;
+
+        switch(c->type)
+        {
             case COMPONENT_CLOCK:
                 otherMessage = handle_clock(c, value);
                 threadList[i].rules.rules[0] = value;
@@ -29,6 +39,8 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
                 break;
             case COMPONENT_ENTITIES:
                 otherMessage = handle_entities(c, value);
+                break;
+            default:
                 break;
         }
 
@@ -42,7 +54,12 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
     return innerMessage;
 }
 
-void *generic_thread(void *packet) {
+/**
+ * Funzione generica per i thread.
+ * @param packet Il pacchetto.
+ */
+void *generic_thread(void *packet)
+{
     Packet *p = (Packet*) packet;
     void (*producer)(void*) = p->producer;
     unsigned int id = p->id;
@@ -71,8 +88,9 @@ void *generic_thread(void *packet) {
 
             producer(&rules);
 
-            if (buffer[index] == COMMS_EMPTY)
+            if (buffer[index] == COMMS_EMPTY) {
                 buffer[index] = rules.buffer;
+            }
 
             sem_post(&POLLING_READING);
         }
@@ -90,6 +108,13 @@ void *generic_thread(void *packet) {
     return NULL;
 }
 
+/**
+ * Factory per i thread.
+ * @param threads   Il numero di thread.
+ * @param comp      Il componente.
+ * @param t         Il thread.
+ * @param buffer    Il buffer.
+ */
 void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
 {
     Packet *packet = CALLOC(Packet, 1);
@@ -108,12 +133,10 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
         case COMPONENT_ENTITY:
         {
             Entity *entity = (Entity*) comp.component;
-            if (entity->type == ENTITY_TYPE__FROG)
-            {
+            if (entity->type == ENTITY_TYPE__FROG) {
                 packet->producer = &user_listener;
             }
-            else
-            {
+            else {
                 packet->producer = &entity_move;
                 t->rules.rules = CALLOC(int, 1);
                 CRASH_IF_NULL(t->rules.rules)
@@ -150,6 +173,13 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
     pthread_create(&t->id, NULL, &generic_thread, packet);
 }
 
+/**
+ * Crea i thread.
+ * @param comps     I componenti.
+ * @param buffer    Il buffer.
+ * @param threads   Il numero di thread.
+ * @return          La lista dei thread.
+ */
 Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threads)
 {
     Thread *threads_list = CALLOC(Thread, MAX_CONCURRENCY);
@@ -168,10 +198,8 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
         clocks += (type == COMPONENT_CLOCK) ? -1 : 0;
         projectiles += (type == COMPONENT_ENTITIES) ? -1 : 0;
 
-        if (!type)
-        {
-            if (!clocks && projectiles)
-            {
+        if (!type) {
+            if (!clocks && projectiles) {
                 comps[i] = getDefaultEntitiesComponent();
                 projectiles--;
             }
@@ -195,12 +223,23 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
     return threads_list;
 }
 
-void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, struct entities_list **list) {
+/**
+ * Resetta il gioco.
+ * @param buffer        Il buffer.
+ * @param threadList    La lista dei thread.
+ * @param game          La struttura del gioco.
+ * @param list          La lista delle entita'.
+ */
+void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, struct entities_list **list)
+{
     int *tmp_buffer = reset_game(game, list);
 
     sem_wait(&POLLING_WRITING);
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
-        if (tmp_buffer[i] != COMMS_EMPTY) threadList[i].rules.rules[0] = tmp_buffer[i];
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        if (tmp_buffer[i] != COMMS_EMPTY) {
+            threadList[i].rules.rules[0] = tmp_buffer[i];
+        }
         buffer[i] = COMMS_EMPTY;
     }
     sem_post(&POLLING_WRITING);
@@ -208,12 +247,25 @@ void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, str
     free(tmp_buffer);
 }
 
-void reset_temporary_clock_threads(Thread* threads, GameSkeleton *game) {
+/**
+ * Resetta il timer secondario.
+ * @param threads   I thread.
+ * @param game      Il gioco.
+ */
+void reset_temporary_clock_threads(Thread* threads, GameSkeleton *game)
+{
     sem_wait(&POLLING_WRITING);
     reset_secondary_timer(&threads[COMPONENT_TEMPORARY_CLOCK_INDEX].rules.rules[0], game);
     sem_post(&POLLING_WRITING);
 }
 
+/**
+ * Funzione principale dei thread.
+ * @param screen        La struttura dello schermo.
+ * @param game          La struttura del gioco.
+ * @param entitiesList  La lista delle entita'.
+ * @return              Il punteggio.
+ */
 int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList)
 {
     erase();
@@ -233,7 +285,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
     Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
     Clock *secClock = (Clock*) find_component(COMPONENT_TEMPORARY_CLOCK_INDEX, game)->component;
 
-    draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+    draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
 
     COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
     reset_game_threads(buffer, threadList, game, entitiesList);
@@ -255,10 +307,11 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 pthread_mutex_lock(&MUTEX);
                 COMMUNICATIONS = MESSAGE_HALT;
                 pthread_mutex_unlock(&MUTEX);
+
                 int output;
                 show(screen, PS_PAUSE_MENU, &output);
-                if (output)
-                {
+
+                if (output) {
                     running = false;
                     *score = 0;
                 }
@@ -287,12 +340,14 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
 
         switch (result)
         {
-            case EVALUATION_START_SECONDARY_CLOCK: {
+            case EVALUATION_START_SECONDARY_CLOCK:
+            {
                 pthread_mutex_lock(&MUTEX);
                 COMMUNICATIONS = create_message(MESSAGE_RUN, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
                 pthread_mutex_unlock(&MUTEX);
             } break;
-            case EVALUATION_STOP_SECONDARY_CLOCK: {
+            case EVALUATION_STOP_SECONDARY_CLOCK:
+            {
                 pthread_mutex_lock(&MUTEX);
                 COMMUNICATIONS = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
                 reset_temporary_clock_threads(threadList, game);
@@ -302,8 +357,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
             case POLLING_MANCHE_LOST:
             case EVALUATION_MANCHE_LOST:
                 (*lives)--;
-                if (!*lives)
-                {
+                if (!*lives) {
                     running = false;
                     *score = -*score;
                     break;
@@ -323,9 +377,11 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 break;
         }
 
-        if (!running) break;
+        if (!running) {
+            break;
+        }
 
-        draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+        draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
         reset_moved(*entitiesList);
         drawAll = false;
         sleepy(50, TIMEFRAME_MILLIS);

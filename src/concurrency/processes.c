@@ -83,11 +83,20 @@ bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
     return result;
 }
 
+/**
+ * Esegue il polling dei processi.
+ * @param game          Il gioco.
+ * @param processList   La lista dei processi.
+ * @param isResetted    I flag di reset dei timer -
+ *                      (prende l'ultimo input della pipe e lo rimuove essendo l'input prodotto con le regole non aggiornate)
+ * @return              Il messaggio interno.
+ */
 InnerMessages process_polling_routine(GameSkeleton *game, Process *processList, bool isResetted[PIPE_SIZE])
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
         int value = COMMS_EMPTY;
 
         readIfReady(&value, processList[i].comms[READ], sizeof(int));
@@ -101,12 +110,12 @@ InnerMessages process_polling_routine(GameSkeleton *game, Process *processList, 
 
         if ((i == COMPONENT_CLOCK_INDEX || i == COMPONENT_TEMPORARY_CLOCK_INDEX) && isResetted[i - COMPONENT_CLOCK_INDEX]) {
             Clock *cl = (Clock*) c->component;
-            display_debug_string(20, "Clock resetted? %i %i %i", 35, i, value != (cl->current - cl->fraction) , value);
             isResetted[i - COMPONENT_CLOCK_INDEX] = value != (cl->current - cl->fraction);
             continue;
         }
 
-        switch(c->type) {
+        switch(c->type)
+        {
             case COMPONENT_CLOCK:
                 otherMessage = handle_clock(c, value);
                 writeTo(&value, processList[i].comms[WRITE], sizeof(int));
@@ -116,6 +125,8 @@ InnerMessages process_polling_routine(GameSkeleton *game, Process *processList, 
                 break;
             case COMPONENT_ENTITIES:
                 otherMessage = handle_entities(c, value);
+                break;
+            default:
                 break;
         }
 
@@ -148,17 +159,23 @@ SystemMessage check_for_comms(const unsigned int id, void *service_mem)
     int message = MESSAGE_NONE;
     memcpy(&message, service_mem, sizeof(int));
 
-    if (MATCH_ID(id, message))
-    {
+    if (MATCH_ID(id, message)) {
         message = message & MESSAGE_RUN;
     }
-    else message = MESSAGE_NONE;
+    else {
+        message = MESSAGE_NONE;
+    }
 
     return message;
 }
 
-void generic_process(void *service_comms, void *args) {
-
+/**
+ * Processo generico.
+ * @param service_comms Il canale di comunicazione.
+ * @param args          Gli argomenti.
+ */
+void generic_process(void *service_comms, void *args)
+{
     Packet *p = (Packet*) args;
     void (*producer)(void*) = p->producer;
     unsigned int id = p->id;
@@ -226,12 +243,13 @@ void generic_process(void *service_comms, void *args) {
 */
 Process palloc(void *service_comms, Packet *packet)
 {
-    Process p = {.comms = ((ProcessCarriage*) packet->carriage)->comms};
+    Process p = {
+            .comms = ((ProcessCarriage*) packet->carriage)->comms
+    };
 
     p.pid = fork();
 
-    if (p.pid == 0)
-    {
+    if (p.pid == 0) {
         generic_process(service_comms, (void*)packet);
         exit(EXIT_SUCCESS);
     }
@@ -239,16 +257,24 @@ Process palloc(void *service_comms, Packet *packet)
     return p;
 }
 
-void process_factory(int *processes, void *service_comms, Process *p, Component c) {
+/**
+ * Crea un nuovo processo.
+ * @param processes     I processi.
+ * @param service_comms Il canale di comunicazione.
+ * @param p             Il processo.
+ * @param c             Il componente.
+ */
+void process_factory(int *processes, void *service_comms, Process *p, Component c)
+{
     Packet packet = {};
 
     AVAILABLE_DYNPID(packet.id, *processes);
 
     ProcessCarriage carriage = {};
 
-    int v[PIPE_SIZE] = {0};
+    int rules[PIPE_SIZE] = {0};
 
-    carriage.rules.rules = v;
+    carriage.rules.rules = rules;
     carriage.comms[READ] = create_pipe();
     carriage.comms[WRITE] = create_pipe();
     packet.ms = 0;
@@ -258,14 +284,12 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
         case COMPONENT_ENTITY:
         {
             Entity *entity = (Entity*) c.component;
-            if (entity->type == ENTITY_TYPE__FROG)
-            {
+            if (entity->type == ENTITY_TYPE__FROG) {
                 packet.producer = &user_listener;
             }
-            else
-            {
+            else {
                 packet.producer = &entity_move;
-                v[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
+                rules[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
                 packet.ms = entity->type == ENTITY_TYPE__PLANT ? 3000 + gen_num(2000, 5000) : 400;
                 if (entity->type == ENTITY_TYPE__PLANT) {
                     add_timer(packet.id);
@@ -275,15 +299,15 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
         case COMPONENT_ENTITIES:
         {
             packet.producer = &entity_move;
-            v[0] = (packet.id & (1 << (COMPONENT_FROG_PROJECTILES_INDEX))) ? ACTION_NORTH : ACTION_SOUTH;
+            rules[0] = (packet.id & (1 << (COMPONENT_FROG_PROJECTILES_INDEX))) ? ACTION_NORTH : ACTION_SOUTH;
             packet.ms = 200;
         } break;
         case COMPONENT_CLOCK:
         {
             packet.producer = &timer_counter;
             Clock *clock = (Clock*) c.component;
-            v[0] = clock->current;
-            v[1] = clock->fraction;
+            rules[0] = clock->current;
+            rules[1] = clock->fraction;
             packet.ms = clock->fraction;
         } break;
         default:
@@ -301,7 +325,15 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
     CLOSE_WRITE(p->comms[READ]);
 }
 
-Process *create_processes(GameSkeleton *game, void* service_comms, int *processes) {
+/**
+ * Crea i processi.
+ * @param game          Il gioco.
+ * @param service_comms Il canale di comunicazione.
+ * @param processes     I processi.
+ * @return              La lista dei processi.
+ */
+Process *create_processes(GameSkeleton *game, void* service_comms, int *processes)
+{
     Process *processList = CALLOC(Process, MAX_CONCURRENCY);
     CRASH_IF_NULL(processList)
 
@@ -318,10 +350,8 @@ Process *create_processes(GameSkeleton *game, void* service_comms, int *processe
         clocks += (type == COMPONENT_CLOCK) ? -1 : 0;
         projectiles += (type == COMPONENT_ENTITIES) ? -1 : 0;
 
-        if (!type)
-        {
-            if (!clocks && projectiles)
-            {
+        if (!type) {
+            if (!clocks && projectiles) {
                 comps[i] = getDefaultEntitiesComponent();
                 projectiles--;
             }
@@ -345,13 +375,19 @@ Process *create_processes(GameSkeleton *game, void* service_comms, int *processe
     return processList;
 }
 
+/**
+ * Resetta il gioco.
+ * @param processList   La lista dei processi.
+ * @param game          Il gioco.
+ * @param list          La lista delle entità.
+ */
 void reset_game_processes(Process *processList, GameSkeleton *game, struct entities_list **list)
 {
     int *tmp_buffer = reset_game(game, list);
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++) {
-        if (tmp_buffer[i] != COMMS_EMPTY)
-        {
+    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    {
+        if (tmp_buffer[i] != COMMS_EMPTY) {
             writeIfReady(&(tmp_buffer[i]), processList[i].comms[WRITE], sizeof(int));
         }
     }
@@ -359,6 +395,11 @@ void reset_game_processes(Process *processList, GameSkeleton *game, struct entit
     free(tmp_buffer);
 }
 
+/**
+ * Resetta il timer secondario.
+ * @param processList   La lista dei processi.
+ * @param game          Il gioco.
+ */
 void reset_temporary_clock_process(Process *processList, GameSkeleton *game)
 {
     int value;
@@ -366,7 +407,15 @@ void reset_temporary_clock_process(Process *processList, GameSkeleton *game)
     writeIfReady(&value, processList[COMPONENT_TEMPORARY_CLOCK_INDEX].comms[WRITE], sizeof(int));
 }
 
-int process_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList) {
+/**
+ * Processo principale.
+ * @param screen        Lo schermo.
+ * @param game          Il gioco.
+ * @param entitiesList  La lista delle entità.
+ * @return              Il punteggio finale.
+ */
+int process_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList)
+{
     void* service_comms = mmap(NULL, sizeof(int),
                                PROT_READ | PROT_WRITE,
                                MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -382,28 +431,31 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
     Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
     Clock *secClock = (Clock*) find_component(COMPONENT_TEMPORARY_CLOCK_INDEX, game)->component;
 
-    draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+    draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
 
     reset_game_processes(processList, game, entitiesList);
     send_message(create_message(MESSAGE_RUN, processes - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))), service_comms);
 
-    //display_debug_string(10, "Processes created", 20);
+    bool isResetted[PIPE_SIZE] = { false };
 
-    bool isResetted[PIPE_SIZE] = {false};
-
-    while (running){
+    while (running)
+    {
         InnerMessages result = process_polling_routine(game, processList, isResetted);
         bool skipValidation = false;
 
-        switch (result) {
+        switch (result)
+        {
             case POLLING_MANCHE_LOST:
             case POLLING_FROG_DEAD:
                 skipValidation = true;
                 break;
-            case POLLING_GAME_PAUSE: {
+            case POLLING_GAME_PAUSE:
+            {
                 send_message(MESSAGE_HALT, service_comms);
+
                 int output;
                 show(screen, PS_PAUSE_MENU, &output);
+
                 if (output) {
                     running = false;
                     *score = 0;
@@ -431,10 +483,12 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
 
         switch (result)
         {
-            case EVALUATION_START_SECONDARY_CLOCK: {
+            case EVALUATION_START_SECONDARY_CLOCK:
+            {
                 send_message(create_message(MESSAGE_RUN, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))), service_comms);
             } break;
-            case EVALUATION_STOP_SECONDARY_CLOCK: {
+            case EVALUATION_STOP_SECONDARY_CLOCK:
+            {
                 send_message(create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))), service_comms);
                 reset_temporary_clock_process(processList, game);
                 isResetted[1] = true;
@@ -443,8 +497,7 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
             case POLLING_MANCHE_LOST:
             case EVALUATION_MANCHE_LOST:
                 (*lives)--;
-                if (!*lives)
-                {
+                if (!*lives) {
                     running = false;
                     *score = -*score;
                     break;
@@ -455,7 +508,10 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
                 *score += result == EVALUATION_MANCHE_WON ? 1000 : 0;
                 clear_screen();
                 drawAll = true;
-                for (int i = 0; i < PIPE_SIZE; i++) isResetted[i] = true;
+                for (int i = 0; i < PIPE_SIZE; i++)
+                {
+                    isResetted[i] = true;
+                }
             } break;
             case EVALUATION_GAME_LOST:
                 *score = -*score;
@@ -466,9 +522,11 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
                 break;
         }
 
-        if (!running) break;
+        if (!running) {
+            break;
+        }
 
-        draw(*entitiesList, &game->map, mainClock, secClock, &game->achievements, game->score, game->lives, drawAll);
+        draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
         reset_moved(*entitiesList);
         drawAll = false;
         sleepy(50, TIMEFRAME_MILLIS);
@@ -492,8 +550,6 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
     free_memory(game, entitiesList);
     wait(NULL);
 
-
     munmap(service_comms, sizeof(int));
     return *score;
-
 }
