@@ -128,13 +128,13 @@ void user_listener(void *_rules)
 void entity_move(void *_rules)
 {
     ProductionRules *rules = (ProductionRules*)_rules;
-    rules->buffer = *rules->rules;
+    rules->buffer = *rules->rule;
 }
 
 void timer_counter(void *_rules)
 {
     ProductionRules *rules = (ProductionRules*)_rules;
-    rules->buffer = *rules->rules;
+    rules->buffer = *rules->rule;
 }
 
 /**

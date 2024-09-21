@@ -7,51 +7,40 @@ static int INNER_INDEX = 0;
  * Routine di polling dei thread.
  * @param buffer        Il buffer di comunicazione.
  * @param game          La struttura del gioco.
- * @param threadList    La lista dei thread.
  * @return              Il messaggio interno.
  */
-InnerMessages thread_polling_routine(Event *buffer, GameSkeleton *game, Thread *threadList)
+InnerMessages thread_polling_routine(Event *buffer, GameSkeleton *game)
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
+    InnerMessages otherMessage = INNER_MESSAGE_NONE;
 
-    sem_wait(&POLLING_READING);
-    sem_wait(&POLLING_WRITING);
+    wait_consumer(); // OCCUPIED
 
-    for (int i = 0; INNER_INDEX != GLOBAL_INDEX; i++)
+    Event value = buffer[INNER_INDEX];
+    INNER_INDEX = (INNER_INDEX + 1) % DOUBLE_MAX_CONCURRENCY;
+
+    Component *c = find_component(value.index, game);
+
+    switch(c->type)
     {
-        Event value = buffer[(INNER_INDEX + i) % DOUBLE_MAX_CONCURRENCY];
-
-        //buffer[i % DOUBLE_MAX_CONCURRENCY];
-
-        Component *c = find_component(value.index, game);
-
-        InnerMessages otherMessage = INNER_MESSAGE_NONE;
-
-        switch(c->type)
-        {
-            case COMPONENT_CLOCK:
-                otherMessage = handle_clock(c, value.action);
-                break;
-            case COMPONENT_ENTITY:
-                otherMessage = handle_entity(c, value.action, true);
-                break;
-            case COMPONENT_ENTITIES:
-                otherMessage = handle_entities(c, value.action);
-                break;
-            default:
-                break;
-        }
-
-        if (otherMessage != INNER_MESSAGE_NONE) {
-            innerMessage = otherMessage;
-        }
-
-        if ((INNER_INDEX + i) % DOUBLE_MAX_CONCURRENCY == GLOBAL_INDEX) break;
+        case COMPONENT_CLOCK:
+            otherMessage = handle_clock(c, value.action);
+            break;
+        case COMPONENT_ENTITY:
+            otherMessage = handle_entity(c, value.action, true);
+            break;
+        case COMPONENT_ENTITIES:
+            otherMessage = handle_entities(c, value.action);
+            break;
+        default:
+            break;
     }
 
-    INNER_INDEX = GLOBAL_INDEX;
-    sem_post(&POLLING_WRITING);
-    sem_post(&POLLING_READING);
+    if (otherMessage != INNER_MESSAGE_NONE) {
+        innerMessage = otherMessage;
+    }
+
+    signal_consumer(); // FREE
 
     return innerMessage;
 }
@@ -74,27 +63,32 @@ void *generic_thread(void *packet)
 
     SystemMessage action = MESSAGE_NONE;
 
+    // Si aspetta che il master thread termini l'inizializzazione.
+    pthread_mutex_lock(&MUTEX);
+    pthread_mutex_unlock(&MUTEX);
+
     while (true)
     {
-        pthread_mutex_lock(&MUTEX);
-        pthread_mutex_unlock(&MUTEX);
+        int load = read_thread_message();
 
-        if (MATCH_ID(id, COMMUNICATIONS)) {
-            SystemMessage msg = COMMUNICATIONS & MESSAGE_RUN;
+        if (MATCH_ID(id, load)) {
+            SystemMessage msg = load & MESSAGE_RUN;
             action = (msg != action && msg != MESSAGE_NONE) ? msg : action;
         }
 
         if (action == MESSAGE_RUN) {
-            sem_wait(&POLLING_READING);
-            sem_post(&POLLING_READING);
-            sem_wait(&POLLING_WRITING);
-
+            wait_producer(); // FREE
             producer(&rules);
 
-            buffer[GLOBAL_INDEX] = (Event){.index=index, .action=rules.buffer};
+            pthread_mutex_lock(&BUFFER_MUTEX);
+            buffer[GLOBAL_INDEX] = (Event) {
+                .index = index,
+                .action = rules.buffer
+            };
             GLOBAL_INDEX = (GLOBAL_INDEX + 1) % DOUBLE_MAX_CONCURRENCY;
+            pthread_mutex_unlock(&BUFFER_MUTEX);
 
-            sem_post(&POLLING_WRITING);
+            signal_producer(); // OCCUPIED
         }
         else if (action == MESSAGE_STOP) {
             break;
@@ -126,7 +120,7 @@ void thread_factory(int *threads, Component comp, Thread *t, Event *buffer)
     carriage->buffer = buffer;
     AVAILABLE_DYNPID(packet->id, *threads);
 
-    t->rules.rules = NULL;
+    t->rules.rule = NULL;
     packet->ms = 0;
 
     switch(comp.type)
@@ -139,9 +133,9 @@ void thread_factory(int *threads, Component comp, Thread *t, Event *buffer)
             }
             else {
                 packet->producer = &entity_move;
-                t->rules.rules = CALLOC(int, 1);
-                CRASH_IF_NULL(t->rules.rules)
-                t->rules.rules[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
+                t->rules.rule = CALLOC(int, 1);
+                CRASH_IF_NULL(t->rules.rule)
+                t->rules.rule[0] = (entity->type == ENTITY_TYPE__CROC) ? ACTION_WEST : ACTION_SHOOT;
                 packet->ms = entity->type == ENTITY_TYPE__PLANT ? 3000 + gen_num(2000, 5000) : 400;
                 if (entity->type == ENTITY_TYPE__PLANT) {
                     add_timer(packet->id);
@@ -151,18 +145,18 @@ void thread_factory(int *threads, Component comp, Thread *t, Event *buffer)
         case COMPONENT_ENTITIES:
         {
             packet->producer = &entity_move;
-            t->rules.rules = CALLOC(int, 1);
-            CRASH_IF_NULL(t->rules.rules)
-            t->rules.rules[0] = (packet->id & (1 << (COMPONENT_FROG_PROJECTILES_INDEX))) ? ACTION_NORTH : ACTION_SOUTH;
+            t->rules.rule = CALLOC(int, 1);
+            CRASH_IF_NULL(t->rules.rule)
+            t->rules.rule[0] = (packet->id & (1 << (COMPONENT_FROG_PROJECTILES_INDEX))) ? ACTION_NORTH : ACTION_SOUTH;
             packet->ms = 200;
         } break;
         case COMPONENT_CLOCK:
         {
             packet->producer = &timer_counter;
-            t->rules.rules = CALLOC(int, 1);
-            CRASH_IF_NULL(t->rules.rules)
+            t->rules.rule = CALLOC(int, 1);
+            CRASH_IF_NULL(t->rules.rule)
             Clock *clock = (Clock*) comp.component;
-            t->rules.rules[0] = clock->fraction;
+            t->rules.rule[0] = clock->fraction;
             packet->ms = clock->fraction;
         } break;
         default:
@@ -230,7 +224,7 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], Event *buffer, int *thr
  * @param game          La struttura del gioco.
  * @param list          La lista delle entita'.
  */
-void reset_game_threads(Event *buffer, Thread *threadList, GameSkeleton *game, struct entities_list **list)
+void reset_game_threads(Thread *threadList, GameSkeleton *game, struct entities_list **list)
 {
     int *tmp_buffer = reset_game(game, list);
 
@@ -238,7 +232,7 @@ void reset_game_threads(Event *buffer, Thread *threadList, GameSkeleton *game, s
     for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
         if (tmp_buffer[i] != COMMS_EMPTY) {
-            threadList[i].rules.rules[0] = tmp_buffer[i];
+            threadList[i].rules.rule[0] = tmp_buffer[i];
         }
     }
     GLOBAL_INDEX = 0;
@@ -260,7 +254,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
     erase();
     init_semaphores();
 
-    Event *buffer = CALLOC(Event, MAX_CONCURRENCY * 2);
+    Event *buffer = CALLOC(Event, DOUBLE_MAX_CONCURRENCY);
     CRASH_IF_NULL(buffer)
 
     int *lives = &game->lives;
@@ -276,13 +270,14 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
 
     draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
 
-    COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
-    reset_game_threads(buffer, threadList, game, entitiesList);
+    send_thread_message(create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))));
+    reset_game_threads(threadList, game, entitiesList);
+
     pthread_mutex_unlock(&MUTEX);
 
     while (running)
     {
-        InnerMessages result = thread_polling_routine(buffer, game, threadList);
+        InnerMessages result = thread_polling_routine(buffer, game);
         bool skipValidation = false;
 
         switch (result)
@@ -293,9 +288,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 break;
             case POLLING_GAME_PAUSE:
             {
-                pthread_mutex_lock(&MUTEX);
-                COMMUNICATIONS = MESSAGE_HALT;
-                pthread_mutex_unlock(&MUTEX);
+                send_thread_message(MESSAGE_HALT);
 
                 int output;
                 show(screen, PS_PAUSE_MENU, &output);
@@ -306,9 +299,8 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 }
                 else {
                     drawAll = true;
-                    pthread_mutex_lock(&MUTEX);
-                    COMMUNICATIONS = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
-                    pthread_mutex_unlock(&MUTEX);
+                    SystemMessage msg = create_message(MESSAGE_RUN, threadIds - (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+                    send_thread_message(msg);
                 }
             } break;
             default:
@@ -331,14 +323,15 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
         {
             case EVALUATION_START_SECONDARY_CLOCK:
             {
-                pthread_mutex_lock(&MUTEX);
-                COMMUNICATIONS = create_message(MESSAGE_RUN, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
-                pthread_mutex_unlock(&MUTEX);
+                SystemMessage msg = create_message(MESSAGE_RUN, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+                send_thread_message(msg);
             } break;
             case EVALUATION_STOP_SECONDARY_CLOCK:
             {
+                SystemMessage msg = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
+                send_thread_message(msg);
+
                 pthread_mutex_lock(&MUTEX);
-                COMMUNICATIONS = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
                 reset_secondary_timer(game);
                 pthread_mutex_unlock(&MUTEX);
             } break;
@@ -353,7 +346,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
                 }
             case EVALUATION_MANCHE_WON:
             {
-                reset_game_threads(buffer, threadList, game, entitiesList);
+                reset_game_threads(threadList, game, entitiesList);
                 *score += result == EVALUATION_MANCHE_WON ? 1000 : 0;
                 clear_screen();
                 drawAll = true;
@@ -373,10 +366,9 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
         draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
         reset_moved(*entitiesList);
         drawAll = false;
-        sleepy(50, TIMEFRAME_MILLIS);
     }
 
-    COMMUNICATIONS = MESSAGE_STOP;
+    send_thread_message(MESSAGE_STOP);
 
     clear_screen();
 
@@ -403,10 +395,12 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
  */
 void init_semaphores()
 {
-    sem_init(&COMMUNICATION_SEMAPHORE, 0, 1);
     sem_init(&POLLING_WRITING, 0, 1);
     sem_init(&POLLING_READING, 0, 1);
+    sem_init(&SEM_FREE, 0, DOUBLE_MAX_CONCURRENCY);
+    sem_init(&SEM_OCCUPIED, 0, 0);
     pthread_mutex_init(&MUTEX, NULL);
+    pthread_mutex_init(&BUFFER_MUTEX, NULL);
 }
 
 /**
@@ -414,8 +408,52 @@ void init_semaphores()
  */
 void close_semaphores()
 {
-    sem_close(&COMMUNICATION_SEMAPHORE);
     sem_close(&POLLING_WRITING);
     sem_close(&POLLING_READING);
+    sem_close(&SEM_FREE);
+    sem_close(&SEM_OCCUPIED);
     pthread_mutex_destroy(&MUTEX);
+    pthread_mutex_destroy(&BUFFER_MUTEX);
+}
+
+void send_thread_message(const int message)
+{
+    atomic_store(&COMMUNICATIONS, message);
+}
+
+int read_thread_message()
+{
+    return atomic_load(&COMMUNICATIONS);
+}
+
+/*
+ * Esegue la wait del produttore.
+ */
+void wait_producer()
+{
+    sem_wait(&SEM_FREE);
+}
+
+/*
+ * Esegue la signal del produttore.
+ */
+void signal_producer()
+{
+    sem_post(&SEM_OCCUPIED);
+}
+
+/*
+ * Esegue la wait del consumatore.
+ */
+void wait_consumer()
+{
+    sem_wait(&SEM_OCCUPIED);
+}
+
+/*
+ * Esegue la signal del consumatore.
+ */
+void signal_consumer()
+{
+    sem_post(&SEM_FREE);
 }

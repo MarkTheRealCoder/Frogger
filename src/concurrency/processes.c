@@ -92,11 +92,20 @@ bool isPipeReady(int mode, pipe_t _pipe) {
 
     /* Controlla se non sono presenti elementi nella pipe. */
 
+    bool result = false;
+
     switch (mode) {
-        case READ: return select(FD_SETSIZE, &set, NULL, NULL, ACCEPTABLE_WAITING_TIME) > 0;
-        case WRITE: return select(FD_SETSIZE, NULL, &set, NULL, ACCEPTABLE_WAITING_TIME) > 0;
-        default: return false;
+        case READ: {
+            result = select(FD_SETSIZE, &set, NULL, NULL, ACCEPTABLE_WAITING_TIME) > 0;
+        } break;
+        case WRITE: {
+            result = select(FD_SETSIZE, NULL, &set, NULL, ACCEPTABLE_WAITING_TIME) > 0;
+        } break;
+        default:
+            break;
     }
+
+    return result;
 }
 
 /**
@@ -193,9 +202,9 @@ void generic_process(void *service_comms, void *args)
     ProcessCarriage *carriage = (ProcessCarriage *) p->carriage;
     pipe_t *comms = carriage->comms;
     ProductionRules rules;
-    rules.rules = CALLOC(int, ((index == COMPONENT_CLOCK_INDEX || index == COMPONENT_TEMPORARY_CLOCK_INDEX) ? 2 : 1));
-    rules.rules[0] = carriage->rules.rules[0];
-    rules.rules[1] = carriage->rules.rules[1];
+    rules.rule = CALLOC(int, ((index == COMPONENT_CLOCK_INDEX || index == COMPONENT_TEMPORARY_CLOCK_INDEX) ? 2 : 1));
+    rules.rule[0] = carriage->rules.rule[0];
+    rules.rule[1] = carriage->rules.rule[1];
 
     CLOSE_READ(comms[READ]);
     CLOSE_WRITE(comms[WRITE]);
@@ -216,7 +225,7 @@ void generic_process(void *service_comms, void *args)
             int tmp = -1;
             if (index) {
                 readIfReady(&(tmp), comms[WRITE], sizeof(int));
-                if (tmp != -1) rules.rules[0] = tmp;
+                if (tmp != -1) rules.rule[0] = tmp;
             }
 
             producer(&rules);
@@ -236,7 +245,7 @@ void generic_process(void *service_comms, void *args)
             munmap(service_comms, sizeof(int));
             CLOSE_READ(comms[WRITE]);
             CLOSE_WRITE(comms[READ]);
-            free(rules.rules);
+            free(rules.rule);
             break;
         }
         else {
@@ -288,7 +297,7 @@ void process_factory(pipe_t readpipe, int *processes, void *service_comms, Proce
 
     int rules[PIPE_SIZE] = {0};
 
-    carriage.rules.rules = rules;
+    carriage.rules.rule = rules;
     carriage.comms[READ] = readpipe;
     carriage.comms[WRITE] = create_pipe();
     packet.ms = 0;

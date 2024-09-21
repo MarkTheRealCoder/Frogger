@@ -24,7 +24,7 @@ typedef enum {
 } InnerMessages;
 
 typedef struct {
-    int *rules;
+    int *rule;
     int buffer;
 } ProductionRules;
 

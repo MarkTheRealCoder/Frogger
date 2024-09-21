@@ -20,32 +20,26 @@ typedef struct {
 } Thread;
 
 
-static int COMMUNICATIONS = 0;
-static sem_t COMMUNICATION_SEMAPHORE;
+static atomic_int COMMUNICATIONS;
 static sem_t POLLING_WRITING;
 static sem_t POLLING_READING;
+static sem_t SEM_OCCUPIED;
+static sem_t SEM_FREE;
 static pthread_mutex_t MUTEX;
+static pthread_mutex_t BUFFER_MUTEX;
 
 
-/*
-                     ,.
-                   (\(\)
-   ,_              ;  o >
-    {`-.          /  (_)
-    `={\`-._____/`   |
-     `-{ /    -=`\   |
-   .="`={  -= = _/   /`"-.
-  (M==M=M==M=M==M==M==M==M)
-   \=N=N==N=N==N=N==N=NN=/
-    \M==M=M==M=M==M===M=/
-     \N=N==N=N==N=NN=N=/
-  jgs \M==M==M=M==M==M/
-       `-------------'
-          "BAK BAK"
- */
 int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList);
 
 void init_semaphores();
 void close_semaphores();
+
+void send_thread_message(int message);
+int read_thread_message();
+
+void wait_producer();
+void signal_producer();
+void wait_consumer();
+void signal_consumer();
 
 #endif //THREADS_H
