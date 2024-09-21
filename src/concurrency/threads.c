@@ -77,8 +77,8 @@ void *generic_thread(void *packet)
         }
 
         if (action == MESSAGE_RUN) {
-            wait_producer(); // FREE
             producer(&rules);
+            wait_producer(); // FREE
 
             pthread_mutex_lock(&BUFFER_MUTEX);
             buffer[GLOBAL_INDEX] = (Event) {
@@ -121,7 +121,7 @@ void thread_factory(int *threads, Component comp, Thread *t, Event *buffer)
     AVAILABLE_DYNPID(packet->id, *threads);
 
     t->rules.rule = NULL;
-    packet->ms = 0;
+    packet->ms = 10;
 
     switch(comp.type)
     {

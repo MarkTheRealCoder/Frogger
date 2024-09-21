@@ -234,7 +234,7 @@ void generic_process(void *service_comms, void *args)
             int delay = comparator.tv_sec - starting.tv_sec;
             int udelay = comparator.tv_usec - starting.tv_usec;
 
-            if ((index || (udelay >= 100000 || delay >= 1)) && isPipeReady(WRITE, comms[READ])) {
+            if ((index || (udelay >= 50000 || delay >= 1)) && isPipeReady(WRITE, comms[READ])) {
                 gettimeofday(&starting, NULL);
                 Event e = {.index=index, .action=rules.buffer};
                 writeTo(&e, comms[READ], sizeof(Event));

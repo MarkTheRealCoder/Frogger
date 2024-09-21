@@ -123,6 +123,7 @@ void user_listener(void *_rules)
     } while (value == -1);
 
     rules->buffer = value;
+    flushinp();
 }
 
 void entity_move(void *_rules)

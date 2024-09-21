@@ -19,7 +19,6 @@ WINDOW *init_screen(Screen *screen)
     WINDOW *w = initscr();
     noecho();
     cbreak();
-    raw();
     curs_set(false);
     keypad(stdscr, true);
     timeout(100);
