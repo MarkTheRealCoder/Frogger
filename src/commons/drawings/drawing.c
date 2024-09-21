@@ -54,7 +54,7 @@ void handle_screen_resize()
 {
     static bool SCREEN_INVALID = true;
 
-    #define MIN_ROWS 40
+    #define MIN_ROWS 42
     #define MIN_COLS 100
 
     int *xy = get_screen_size();
@@ -64,30 +64,13 @@ void handle_screen_resize()
 
     if (SCREEN_INVALID)
     {
-        Position error = {
-                getCenteredX(_FROGGER_SCREEN_TOO_SMALL_LENGTH),
-                getCenteredY(0)
-        };
-
-        Position correctSize = {
-                getCenteredX(_FROGGER_SCREEN_CORRECT_LENGTH),
-                getCenteredY(0) + 1
-        };
-
-        Position displaySize = {
-                0, 0
-        };
-
         erase();
-        char displayString[35] = { 0 };
-        snprintf(displayString, 35, "Display size: %d x %d", cols, rows);
-        display_string(displaySize, COLOR_RED, displayString, 35);
-
-        display_string(error, COLOR_RED, _FROGGER_SCREEN_TOO_SMALL, _FROGGER_SCREEN_TOO_SMALL_LENGTH);
-        display_string(correctSize, COLOR_RED, _FROGGER_SCREEN_CORRECT_SIZE, _FROGGER_SCREEN_CORRECT_LENGTH);
         refresh();
         wgetch(stdscr);
         endwin();
+
+        printf("\n\nFrogger needs a minimum display size of %d x %d to play!\n", MIN_ROWS, MIN_COLS);
+        printf("Current display size: %d x %d\n\n", cols, rows);
         exit(EXIT_FAILURE);
     }
 }

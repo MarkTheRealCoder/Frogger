@@ -83,6 +83,22 @@ bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
     return result;
 }
 
+bool isPipeReady(int mode, pipe_t _pipe) {
+    fd_set set;
+
+    /* Set di file descriptors. */
+    FD_ZERO(&set);
+    FD_SET(_pipe.accesses[mode], &set);
+
+    /* Controlla se non sono presenti elementi nella pipe. */
+
+    switch (mode) {
+        case READ: return select(FD_SETSIZE, &set, NULL, NULL, ACCEPTABLE_WAITING_TIME) > 0;
+        case WRITE: return select(FD_SETSIZE, NULL, &set, NULL, ACCEPTABLE_WAITING_TIME) > 0;
+        default: return false;
+    }
+}
+
 /**
  * Esegue il polling dei processi.
  * @param game          Il gioco.
@@ -91,48 +107,40 @@ bool writeIfReady(void *buff, pipe_t _pipe, size_t size)
  *                      (prende l'ultimo input della pipe e lo rimuove essendo l'input prodotto con le regole non aggiornate)
  * @return              Il messaggio interno.
  */
-InnerMessages process_polling_routine(GameSkeleton *game, Process *processList, bool isResetted[PIPE_SIZE])
+InnerMessages process_polling_routine(pipe_t comms, GameSkeleton *game, Process *processList/*, bool isResetted[PIPE_SIZE]*/)
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    Event value;
+
+    readFrom(&value, comms, sizeof(Event));
+
+    InnerMessages otherMessage = INNER_MESSAGE_NONE;
+    Component *c = find_component(value.index, game);
+
+    /*if ((i == COMPONENT_CLOCK_INDEX || i == COMPONENT_TEMPORARY_CLOCK_INDEX) && isResetted[i - COMPONENT_CLOCK_INDEX]) {
+        Clock *cl = (Clock*) c->component;
+        isResetted[i - COMPONENT_CLOCK_INDEX] = value != (cl->current - cl->fraction);
+        continue;
+    }*/
+
+    switch(c->type)
     {
-        int value = COMMS_EMPTY;
+        case COMPONENT_CLOCK:
+            otherMessage = handle_clock(c, value.action);
+            break;
+        case COMPONENT_ENTITY:
+            otherMessage = handle_entity(c, value.action, true);
+            break;
+        case COMPONENT_ENTITIES:
+            otherMessage = handle_entities(c, value.action);
+            break;
+        default:
+            break;
+    }
 
-        readIfReady(&value, processList[i].comms[READ], sizeof(int));
-
-        if (value == COMMS_EMPTY) {
-            continue;
-        }
-
-        InnerMessages otherMessage = INNER_MESSAGE_NONE;
-        Component *c = find_component(i, game);
-
-        if ((i == COMPONENT_CLOCK_INDEX || i == COMPONENT_TEMPORARY_CLOCK_INDEX) && isResetted[i - COMPONENT_CLOCK_INDEX]) {
-            Clock *cl = (Clock*) c->component;
-            isResetted[i - COMPONENT_CLOCK_INDEX] = value != (cl->current - cl->fraction);
-            continue;
-        }
-
-        switch(c->type)
-        {
-            case COMPONENT_CLOCK:
-                otherMessage = handle_clock(c, value);
-                writeTo(&value, processList[i].comms[WRITE], sizeof(int));
-                break;
-            case COMPONENT_ENTITY:
-                otherMessage = handle_entity(c, value, true);
-                break;
-            case COMPONENT_ENTITIES:
-                otherMessage = handle_entities(c, value);
-                break;
-            default:
-                break;
-        }
-
-        if (otherMessage != INNER_MESSAGE_NONE) {
-            innerMessage = otherMessage;
-        }
+    if (otherMessage != INNER_MESSAGE_NONE) {
+        innerMessage = otherMessage;
     }
 
     return innerMessage;
@@ -150,7 +158,7 @@ void send_message(const int message, void *service_mem)
 
 /**
  * Controlla se ci sono comunicazioni.
- * @param id            L'id del processo.
+ * @param id            L'index del processo.
  * @param service_mem   La memoria di servizio.
  * @return              Il messaggio.
  */
@@ -198,6 +206,7 @@ void generic_process(void *service_comms, void *args)
 
     while (true)
     {
+        bool write = false;
         SystemMessage new_action = check_for_comms(id, service_comms);
         if (new_action != MESSAGE_NONE && new_action != action) {
             action = new_action;
@@ -216,9 +225,11 @@ void generic_process(void *service_comms, void *args)
             int delay = comparator.tv_sec - starting.tv_sec;
             int udelay = comparator.tv_usec - starting.tv_usec;
 
-            if (index || (udelay >= 100000 || delay >= 1)) {
+            if ((index || (udelay >= 100000 || delay >= 1)) && isPipeReady(WRITE, comms[READ])) {
                 gettimeofday(&starting, NULL);
-                writeIfReady(&(rules.buffer), comms[READ], sizeof(int));
+                Event e = {.index=index, .action=rules.buffer};
+                writeTo(&e, comms[READ], sizeof(Event));
+                write = true;
             }
         }
         else if (action == MESSAGE_STOP) {
@@ -228,8 +239,13 @@ void generic_process(void *service_comms, void *args)
             free(rules.rules);
             break;
         }
+        else {
+            write = true;
+        }
 
-        sleepy(p->ms + ((rules.buffer == ACTION_PAUSE) ? 500 : 0), TIMEFRAME_MILLIS);
+        if (write) {
+            sleepy(p->ms + ((rules.buffer == ACTION_PAUSE) ? 500 : 0), TIMEFRAME_MILLIS);
+        }
     }
 }
 
@@ -243,9 +259,7 @@ void generic_process(void *service_comms, void *args)
 */
 Process palloc(void *service_comms, Packet *packet)
 {
-    Process p = {
-            .comms = ((ProcessCarriage*) packet->carriage)->comms
-    };
+    Process p;
 
     p.pid = fork();
 
@@ -264,7 +278,7 @@ Process palloc(void *service_comms, Packet *packet)
  * @param p             Il processo.
  * @param c             Il componente.
  */
-void process_factory(int *processes, void *service_comms, Process *p, Component c)
+void process_factory(pipe_t readpipe, int *processes, void *service_comms, Process *p, Component c)
 {
     Packet packet = {};
 
@@ -275,7 +289,7 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
     int rules[PIPE_SIZE] = {0};
 
     carriage.rules.rules = rules;
-    carriage.comms[READ] = create_pipe();
+    carriage.comms[READ] = readpipe;
     carriage.comms[WRITE] = create_pipe();
     packet.ms = 0;
 
@@ -306,8 +320,7 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
         {
             packet.producer = &timer_counter;
             Clock *clock = (Clock*) c.component;
-            rules[0] = clock->current;
-            rules[1] = clock->fraction;
+            rules[0] = clock->fraction;
             packet.ms = clock->fraction;
         } break;
         default:
@@ -316,13 +329,9 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
 
     packet.carriage = &carriage;
     *p = palloc(service_comms, &packet);
-    p->comms = CALLOC(pipe_t, 2);
-    p->comms[READ].accesses[0] = carriage.comms[READ].accesses[0];
-    p->comms[READ].accesses[1] = carriage.comms[READ].accesses[1];
-    p->comms[WRITE].accesses[0] = carriage.comms[WRITE].accesses[0];
-    p->comms[WRITE].accesses[1] = carriage.comms[WRITE].accesses[1];
-    CLOSE_READ(p->comms[WRITE]);
-    CLOSE_WRITE(p->comms[READ]);
+    p->write.accesses[0] = carriage.comms[WRITE].accesses[0];
+    p->write.accesses[1] = carriage.comms[WRITE].accesses[1];
+    CLOSE_READ(p->write);
 }
 
 /**
@@ -332,7 +341,7 @@ void process_factory(int *processes, void *service_comms, Process *p, Component 
  * @param processes     I processi.
  * @return              La lista dei processi.
  */
-Process *create_processes(GameSkeleton *game, void* service_comms, int *processes)
+Process *create_processes(pipe_t readpipe, GameSkeleton *game, void* service_comms, int *processes)
 {
     Process *processList = CALLOC(Process, MAX_CONCURRENCY);
     CRASH_IF_NULL(processList)
@@ -369,7 +378,7 @@ Process *create_processes(GameSkeleton *game, void* service_comms, int *processe
             }
         }
 
-        process_factory(processes, service_comms, &processList[i], comps[i]);
+        process_factory(readpipe, processes, service_comms, &processList[i], comps[i]);
     }
 
     return processList;
@@ -388,23 +397,11 @@ void reset_game_processes(Process *processList, GameSkeleton *game, struct entit
     for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
         if (tmp_buffer[i] != COMMS_EMPTY) {
-            writeIfReady(&(tmp_buffer[i]), processList[i].comms[WRITE], sizeof(int));
+            writeIfReady(&(tmp_buffer[i]), processList[i].write, sizeof(int));
         }
     }
 
     free(tmp_buffer);
-}
-
-/**
- * Resetta il timer secondario.
- * @param processList   La lista dei processi.
- * @param game          Il gioco.
- */
-void reset_temporary_clock_process(Process *processList, GameSkeleton *game)
-{
-    int value;
-    reset_secondary_timer(&value, game);
-    writeIfReady(&value, processList[COMPONENT_TEMPORARY_CLOCK_INDEX].comms[WRITE], sizeof(int));
 }
 
 /**
@@ -427,7 +424,9 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
     bool running = true, drawAll = true;
     int processes = 0;
 
-    Process *processList = create_processes(game, service_comms, &processes);
+    pipe_t readpipe = create_pipe();
+
+    Process *processList = create_processes(readpipe, game, service_comms, &processes);
     Clock *mainClock = (Clock*) find_component(COMPONENT_CLOCK_INDEX, game)->component;
     Clock *secClock = (Clock*) find_component(COMPONENT_TEMPORARY_CLOCK_INDEX, game)->component;
 
@@ -438,9 +437,11 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
 
     bool isResetted[PIPE_SIZE] = { false };
 
+    CLOSE_WRITE(readpipe);
+
     while (running)
     {
-        InnerMessages result = process_polling_routine(game, processList, isResetted);
+        InnerMessages result = process_polling_routine(readpipe, game, processList/*, isResetted*/);
         bool skipValidation = false;
 
         switch (result)
@@ -490,7 +491,7 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
             case EVALUATION_STOP_SECONDARY_CLOCK:
             {
                 send_message(create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX))), service_comms);
-                reset_temporary_clock_process(processList, game);
+                reset_secondary_timer(game);
                 isResetted[1] = true;
             } break;
             case POLLING_FROG_DEAD:
@@ -529,7 +530,6 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
         draw(*entitiesList, &game->map, mainClock, secClock, game->score, game->lives, drawAll);
         reset_moved(*entitiesList);
         drawAll = false;
-        sleepy(50, TIMEFRAME_MILLIS);
     }
 
     send_message(create_message(MESSAGE_STOP, processes), service_comms);
@@ -539,10 +539,10 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
     center_string_colored("The frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
     center_string_colored("Wait a few seconds, then press a button!", alloc_pair(COLOR_RED, COLOR_BLACK), 41, 21);
 
+    CLOSE_READ(readpipe);
     for (int i = 0; i < MAX_CONCURRENCY; i++)
     {
-        CLOSE_READ(processList[i].comms[READ]);
-        CLOSE_WRITE(processList[i].comms[WRITE]);
+        CLOSE_WRITE(processList[i].write);
         waitpid(processList[i].pid, NULL, 0);
     }
     free(processList);

@@ -5,13 +5,13 @@ static Timer *GLOBAL_TIMERS = NULL;
 InnerMessages handle_clock(Component *component, const int value)
 {
     Clock *clock = (Clock*) component->component;
-    clock->current = value;
+    clock->current -= value;
 
-    if (clock->type == CLOCK_MAIN && value <= 0) {
+    if (clock->type == CLOCK_MAIN && clock->current <= 0) {
         return POLLING_MANCHE_LOST;
     }
 
-    if (clock->type == CLOCK_SECONDARY && value <= 0) {
+    if (clock->type == CLOCK_SECONDARY && clock->current <= 0) {
         return POLLING_FROG_DEAD;
     }
 
@@ -128,16 +128,13 @@ void user_listener(void *_rules)
 void entity_move(void *_rules)
 {
     ProductionRules *rules = (ProductionRules*)_rules;
-    int value = rules->rules[0];
-    rules->buffer = value;
+    rules->buffer = *rules->rules;
 }
 
 void timer_counter(void *_rules)
 {
     ProductionRules *rules = (ProductionRules*)_rules;
-    int value = (int)((int*)rules->rules)[0]; // current value (updated in main routine)
-    int part = (int)((int*)rules->rules)[1]; // fraction to be subtracted from value;
-    rules->buffer = value - part;
+    rules->buffer = *rules->rules;
 }
 
 /**
@@ -573,21 +570,20 @@ void free_memory(GameSkeleton *game, struct entities_list **list)
     free(game->map.hideouts);
 }
 
-void common_timer_reset(int *buffer, GameSkeleton *game, const int index)
+void common_timer_reset(GameSkeleton *game, const int index)
 {
     Clock *clock = (Clock*) game->components[index].component;
     clock->current = (int)clock->starting;
-    *buffer = clock->current;
 }
 
-void reset_main_timer(int *buffer, GameSkeleton *game)
+void reset_main_timer(GameSkeleton *game)
 {
-    common_timer_reset(buffer, game, COMPONENT_CLOCK_INDEX);
+    common_timer_reset(game, COMPONENT_CLOCK_INDEX);
 }
 
-void reset_secondary_timer(int *buffer, GameSkeleton *game)
+void reset_secondary_timer(GameSkeleton *game)
 {
-    common_timer_reset(buffer, game, COMPONENT_TEMPORARY_CLOCK_INDEX);
+    common_timer_reset(game, COMPONENT_TEMPORARY_CLOCK_INDEX);
 }
 
 void reset_frog(GameSkeleton *game)
@@ -663,8 +659,8 @@ int *reset_game(GameSkeleton *game, struct entities_list **list)
         buffer[i] = COMMS_EMPTY;
     }
 
-    reset_main_timer(&buffer[COMPONENT_CLOCK_INDEX], game);
-    reset_secondary_timer(&buffer[COMPONENT_TEMPORARY_CLOCK_INDEX], game);
+    reset_main_timer(game);
+    reset_secondary_timer(game);
     reset_frog(game);
     reset_crocodiles(buffer, game);
     reset_plants(game);

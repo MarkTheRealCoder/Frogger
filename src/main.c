@@ -22,8 +22,6 @@ int main(int argc, char *argv[])
 
     // Se il terminale è troppo piccolo, comunica a schermo.
     handle_screen_resize();
-    // Rimane in ascolto di un segnale di ridimensionamento del terminale.
-    signal(SIGWINCH, handle_screen_resize);
 
     int exitCode = EXIT_FAILURE;
 

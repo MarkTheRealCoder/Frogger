@@ -1,5 +1,8 @@
 #include "threads.h"
 
+static int GLOBAL_INDEX = 0;
+static int INNER_INDEX = 0;
+
 /**
  * Routine di polling dei thread.
  * @param buffer        Il buffer di comunicazione.
@@ -7,38 +10,33 @@
  * @param threadList    La lista dei thread.
  * @return              Il messaggio interno.
  */
-InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *threadList)
+InnerMessages thread_polling_routine(Event *buffer, GameSkeleton *game, Thread *threadList)
 {
     InnerMessages innerMessage = INNER_MESSAGE_NONE;
 
     sem_wait(&POLLING_READING);
     sem_wait(&POLLING_WRITING);
-    //sem_wait(&POLLING_READING);
 
-    for (int i = 0; i < MAX_CONCURRENCY; i++)
+    for (int i = 0; INNER_INDEX != GLOBAL_INDEX; i++)
     {
-        int value = buffer[i];
+        Event value = buffer[(INNER_INDEX + i) % DOUBLE_MAX_CONCURRENCY];
 
-        if (value == COMMS_EMPTY) {
-            continue;
-        }
+        //buffer[i % DOUBLE_MAX_CONCURRENCY];
 
-        buffer[i] = COMMS_EMPTY;
-        Component *c = find_component(i, game);
+        Component *c = find_component(value.index, game);
 
         InnerMessages otherMessage = INNER_MESSAGE_NONE;
 
         switch(c->type)
         {
             case COMPONENT_CLOCK:
-                otherMessage = handle_clock(c, value);
-                threadList[i].rules.rules[0] = value;
+                otherMessage = handle_clock(c, value.action);
                 break;
             case COMPONENT_ENTITY:
-                otherMessage = handle_entity(c, value, true);
+                otherMessage = handle_entity(c, value.action, true);
                 break;
             case COMPONENT_ENTITIES:
-                otherMessage = handle_entities(c, value);
+                otherMessage = handle_entities(c, value.action);
                 break;
             default:
                 break;
@@ -47,9 +45,13 @@ InnerMessages thread_polling_routine(int *buffer, GameSkeleton *game, Thread *th
         if (otherMessage != INNER_MESSAGE_NONE) {
             innerMessage = otherMessage;
         }
+
+        if ((INNER_INDEX + i) % DOUBLE_MAX_CONCURRENCY == GLOBAL_INDEX) break;
     }
 
+    INNER_INDEX = GLOBAL_INDEX;
     sem_post(&POLLING_WRITING);
+    sem_post(&POLLING_READING);
 
     return innerMessage;
 }
@@ -67,7 +69,7 @@ void *generic_thread(void *packet)
     while ((id >> index) != 1) index++;
 
     ThreadCarriage *carriage = (ThreadCarriage*) p->carriage;
-    int *buffer = (int*) carriage->buffer;
+    Event *buffer = (Event*) carriage->buffer;
     ProductionRules rules = carriage->rules;
 
     SystemMessage action = MESSAGE_NONE;
@@ -83,16 +85,16 @@ void *generic_thread(void *packet)
         }
 
         if (action == MESSAGE_RUN) {
+            sem_wait(&POLLING_READING);
+            sem_post(&POLLING_READING);
             sem_wait(&POLLING_WRITING);
-            sem_post(&POLLING_WRITING);
 
             producer(&rules);
 
-            if (buffer[index] == COMMS_EMPTY) {
-                buffer[index] = rules.buffer;
-            }
+            buffer[GLOBAL_INDEX] = (Event){.index=index, .action=rules.buffer};
+            GLOBAL_INDEX = (GLOBAL_INDEX + 1) % DOUBLE_MAX_CONCURRENCY;
 
-            sem_post(&POLLING_READING);
+            sem_post(&POLLING_WRITING);
         }
         else if (action == MESSAGE_STOP) {
             break;
@@ -101,7 +103,6 @@ void *generic_thread(void *packet)
         sleepy(p->ms + ((rules.buffer == ACTION_PAUSE) ? 500 : 0), TIMEFRAME_MILLIS);
     }
 
-    free(rules.rules);
     free(carriage);
     free(p);
 
@@ -115,7 +116,7 @@ void *generic_thread(void *packet)
  * @param t         Il thread.
  * @param buffer    Il buffer.
  */
-void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
+void thread_factory(int *threads, Component comp, Thread *t, Event *buffer)
 {
     Packet *packet = CALLOC(Packet, 1);
     CRASH_IF_NULL(packet)
@@ -158,11 +159,10 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
         case COMPONENT_CLOCK:
         {
             packet->producer = &timer_counter;
-            t->rules.rules = CALLOC(int, 2);
+            t->rules.rules = CALLOC(int, 1);
             CRASH_IF_NULL(t->rules.rules)
             Clock *clock = (Clock*) comp.component;
-            t->rules.rules[0] = clock->current;
-            t->rules.rules[1] = clock->fraction;
+            t->rules.rules[0] = clock->fraction;
             packet->ms = clock->fraction;
         } break;
         default:
@@ -180,7 +180,7 @@ void thread_factory(int *threads, Component comp, Thread *t, int *buffer)
  * @param threads   Il numero di thread.
  * @return          La lista dei thread.
  */
-Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threads)
+Thread *create_threads(Component comps[MAX_CONCURRENCY], Event *buffer, int *threads)
 {
     Thread *threads_list = CALLOC(Thread, MAX_CONCURRENCY);
     CRASH_IF_NULL(threads_list)
@@ -230,7 +230,7 @@ Thread *create_threads(Component comps[MAX_CONCURRENCY], int *buffer, int *threa
  * @param game          La struttura del gioco.
  * @param list          La lista delle entita'.
  */
-void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, struct entities_list **list)
+void reset_game_threads(Event *buffer, Thread *threadList, GameSkeleton *game, struct entities_list **list)
 {
     int *tmp_buffer = reset_game(game, list);
 
@@ -240,23 +240,12 @@ void reset_game_threads(int *buffer, Thread *threadList, GameSkeleton *game, str
         if (tmp_buffer[i] != COMMS_EMPTY) {
             threadList[i].rules.rules[0] = tmp_buffer[i];
         }
-        buffer[i] = COMMS_EMPTY;
     }
+    GLOBAL_INDEX = 0;
+    INNER_INDEX = 0;
     sem_post(&POLLING_WRITING);
 
     free(tmp_buffer);
-}
-
-/**
- * Resetta il timer secondario.
- * @param threads   I thread.
- * @param game      Il gioco.
- */
-void reset_temporary_clock_threads(Thread* threads, GameSkeleton *game)
-{
-    sem_wait(&POLLING_WRITING);
-    reset_secondary_timer(&threads[COMPONENT_TEMPORARY_CLOCK_INDEX].rules.rules[0], game);
-    sem_post(&POLLING_WRITING);
 }
 
 /**
@@ -271,7 +260,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
     erase();
     init_semaphores();
 
-    int *buffer = CALLOC(int, MAX_CONCURRENCY);
+    Event *buffer = CALLOC(Event, MAX_CONCURRENCY * 2);
     CRASH_IF_NULL(buffer)
 
     int *lives = &game->lives;
@@ -350,7 +339,7 @@ int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entiti
             {
                 pthread_mutex_lock(&MUTEX);
                 COMMUNICATIONS = create_message(MESSAGE_HALT, (1 << (COMPONENT_TEMPORARY_CLOCK_INDEX)));
-                reset_temporary_clock_threads(threadList, game);
+                reset_secondary_timer(game);
                 pthread_mutex_unlock(&MUTEX);
             } break;
             case POLLING_FROG_DEAD:

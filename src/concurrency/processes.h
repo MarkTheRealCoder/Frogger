@@ -57,7 +57,7 @@ typedef struct {
 
 typedef struct {
     pid_t pid;
-    pipe_t *comms;
+    pipe_t write;
 } Process;
 
 typedef struct {

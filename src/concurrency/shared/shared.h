@@ -55,12 +55,17 @@ typedef struct {
     int ms;
 } Packet;
 
+typedef struct {
+    int action;
+    unsigned int index;
+} Event;
+
 InnerMessages handle_clock(Component *component, int value);
 InnerMessages handle_entity(Component *component, int value, int canPause);
 InnerMessages handle_entities(Component *component, int value);
 void invalidate_entity(Entity *e);
 void handle_invalid_entities(struct entities_list **list, Component components[MAX_CONCURRENCY]);
-void reset_secondary_timer(int *buffer, GameSkeleton *game);
+void reset_secondary_timer(GameSkeleton *game);
 
 Component *find_component(int index, GameSkeleton *game);
 Component **find_components(GameSkeleton *game, ...);

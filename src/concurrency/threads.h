@@ -6,6 +6,8 @@
 #include "../commons/drawing.h"
 #include "./shared/shared.h"
 
+#define DOUBLE_MAX_CONCURRENCY 48
+
 typedef struct {
     ProductionRules rules;
     void *buffer;
@@ -41,7 +43,6 @@ static pthread_mutex_t MUTEX;
        `-------------'
           "BAK BAK"
  */
-InnerMessages thread_polling_routine(int buffer[MAX_CONCURRENCY], GameSkeleton *game, Thread *threadList);
 int thread_main(Screen screen, GameSkeleton *game, struct entities_list **entitiesList);
 
 void init_semaphores();
