@@ -23,7 +23,7 @@ int choose_between(const int count, ...)
     va_start(args, count);
 
     int random_index = gen_num(0, count - 1);
-    int result;
+    int result = 0;
     
     for (int i = 0; i < count; i++) 
     {

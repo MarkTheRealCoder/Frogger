@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -O0 -Wall -Wno-unused
+CFLAGS = -g -O1 -Wall -Wno-unused
 
 LIBS = -lncursesw -lpthread
 INCLUDES = -Isrc/utilities -Isrc/commons -Isrc/concurrency -Isrc/concurrency/shared
