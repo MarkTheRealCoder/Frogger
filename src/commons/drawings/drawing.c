@@ -239,23 +239,21 @@ Cuboid getCuboidFromEntity(const Entity e)
  * @param e1 La prima entita'.
  * @param e2 La seconda entita'.
  */
-CollisionPacket areColliding(const Entity e1, const Entity e2)
+CollisionPacket areColliding(const Entity e1, const Entity e2, MapSkeleton map)
 {
     CollisionPacket collisionPacket = {
         .e1 = e1.trueType,
         .e2 = e2.trueType,
         .e1_priority = getPriorityByEntityType(e1.type),
-        .e2_priority = getPriorityByEntityType(e2.type)
+        .e2_priority = getPriorityByEntityType(e2.type),
+        .collision_type = COLLISION_AVOIDED
     };
 
     Cuboid c1 = getCuboidFromEntity(e1);
     Cuboid c2 = getCuboidFromEntity(e2);
-
-    if (!compareCuboids(c1, c2)) 
-    {
-        collisionPacket.collision_type = COLLISION_AVOIDED;
-    }
-    else 
+    bool e1_visible = WITHIN_BOUNDARIES(e1.current.x, e1.current.y, map);
+    bool e2_visible = WITHIN_BOUNDARIES(e2.current.x, e2.current.y, map);
+    if (e1_visible && e2_visible && compareCuboids(c1, c2)) 
     {
         collisionPacket.collision_type = e1.trueType & e2.trueType;
     }

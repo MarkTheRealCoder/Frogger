@@ -440,7 +440,7 @@ InnerMessages apply_physics(GameSkeleton *game, struct entities_list **list)
         {
             Entity *innerEntity = innerEl->e;
 
-            collisionPacket = areColliding(*entity, *innerEntity);
+            collisionPacket = areColliding(*entity, *innerEntity, game->map);
 
             switch (collisionPacket.collision_type)
             {

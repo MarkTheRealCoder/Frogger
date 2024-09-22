@@ -223,7 +223,7 @@ int getPriorityByEntityType(EntityType entityType);
 int getHeightByEntityType(EntityType entityType);
 
 Cuboid getCuboidFromEntity(Entity e);
-CollisionPacket areColliding(Entity e1, Entity e2);
+CollisionPacket areColliding(Entity e1, Entity e2, MapSkeleton map);
 
 void draw(struct entities_list *es, MapSkeleton *map, Clock *mainClock, Clock *secClock, int score, int lives, bool drawAll);
 
