@@ -740,7 +740,7 @@ Timer *scroll_timers(int *index)
     return pivot;
 }
 
-void update_timer(const unsigned int index)
+void update_timer(int index)
 {
     Timer *pivot = scroll_timers(&index);
 

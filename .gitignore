@@ -3,7 +3,6 @@
 /.idea/
 /build/
 /CMakeFiles/
-Makefile
 CMakeCache.txt
 frogger
 cmake_install.cmake
@@ -15,3 +14,4 @@ build.ninja
 /.cmake/
 valgrind_output.txt
 valgrind_output.txt.*
+/out/
