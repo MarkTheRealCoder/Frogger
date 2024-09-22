@@ -107,6 +107,9 @@ enum color_codes getEntityColor(const TrueType type)
         case TRUETYPE_PROJ_PLANT:
             color = COLORCODES_PROJECTILE_FL;
             break;
+        default:
+            color = COLOR_BLACK;
+            break;
     }
 
     return color;

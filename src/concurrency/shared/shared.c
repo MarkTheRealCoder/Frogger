@@ -715,7 +715,7 @@ int destroy_timer(const unsigned int index)
     return true;
 }
 
-Timer *scroll_timers(int *index)
+Timer *scroll_timers(const int *index)
 {
     if (index && *index == 0) {
         return NULL;
@@ -751,7 +751,7 @@ void update_timer(int index)
     gettimeofday(&pivot->start, NULL);
 }
 
-int add_timer(const unsigned int index)
+int add_timer(const int index)
 {
     int tmp = -(int)index;
     Timer *pivot = scroll_timers(&tmp);
@@ -776,7 +776,7 @@ int add_timer(const unsigned int index)
     return 1;
 }
 
-int time_elapsed(unsigned int index)
+int time_elapsed(int index)
 {
     Timer *pivot = scroll_timers(&index);
 

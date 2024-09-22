@@ -90,8 +90,8 @@ void reset_moved(struct entities_list *list);
 void clear_timers();
 int destroy_timer(unsigned int index);
 void update_timer(int index);
-int add_timer(unsigned int index);
-int time_elapsed(unsigned int index);
+int add_timer(int index);
+int time_elapsed(int index);
 
 void gen_plants(GameSkeleton *game);
 

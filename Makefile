@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -O0
+CFLAGS = -g -O0 -Wall -Wno-unused
 
 LIBS = -lncursesw -lpthread
 INCLUDES = -Isrc/utilities -Isrc/commons -Isrc/concurrency -Isrc/concurrency/shared
@@ -21,7 +21,7 @@ outdir:
 	mkdir -p out
 
 frogger: $(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) $(OBJS) -o frogger
+	$(CC) $(CFLAGS) $(OBJS) -o frogger $(LIBS)
 
 # MAIN
 
