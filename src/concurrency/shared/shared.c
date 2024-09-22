@@ -174,8 +174,8 @@ Position reset_croc_position(const MapSkeleton map, const int y)
 Position invalidate_position(Entity *e, struct entities_list *list)
 {
     Position lastEntityPos = e->last;
-    //if (e->trueType == TRUETYPE_FROG) display_debug_string(24, "X: %i, Y: %i", 80, lastEntityPos.x, lastEntityPos.y);
     static int pos = 0;
+
     while (list)
     {
         Entity *comparison = list->e;

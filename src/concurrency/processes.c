@@ -545,8 +545,10 @@ int process_main(Screen screen, GameSkeleton *game, struct entities_list **entit
 
     clear_screen();
 
-    center_string_colored("The frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 30, 20);
-    center_string_colored("Wait a few seconds, then press a button!", alloc_pair(COLOR_RED, COLOR_BLACK), 41, 21);
+    center_string_colored("##########################################", alloc_pair(COLOR_WHITE, COLOR_BLACK), 45, 19);
+    center_string_colored("\tThe frog is going to sleep...", alloc_pair(COLOR_RED, COLOR_BLACK), 32, 20);
+    center_string_colored("\tWait a few seconds!", alloc_pair(COLOR_RED, COLOR_BLACK), 22, 21);
+    center_string_colored("##########################################", alloc_pair(COLOR_WHITE, COLOR_BLACK), 45, 22);
 
     CLOSE_READ(readpipe);
     for (int i = 0; i < MAX_CONCURRENCY; i++)

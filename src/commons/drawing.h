@@ -95,9 +95,9 @@ enum MainMenuOptions {
     MMO_QUIT
 };
 
-enum PauseMenuOptions {
-    PMO_RESUME,
-    PMO_QUIT
+enum EndGameMenuOptions {
+    EGMO_RESTART,
+    EGMO_QUIT
 };
 
 enum VersionMenuOptions {

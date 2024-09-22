@@ -680,6 +680,13 @@ void make_MapSkeleton(MapSkeleton *map, const Position sp, const int width)
     map->width = width;
 }
 
+/**
+ * Disegna la mappa.
+ * @param sp    La posizione iniziale.
+ * @param width La larghezza della mappa.
+ * @param _map  La mappa di gioco.
+ * @return      La mappa di gioco.
+ */
 MapSkeleton display_map(const Position sp, const int width, MapSkeleton _map)
 {
     int current_pair = -1;

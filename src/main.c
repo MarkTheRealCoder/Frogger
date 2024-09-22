@@ -2,6 +2,8 @@
 
 enum MAIN_TASK propose_version_menu(Screen screen, int *menuOutput);
 enum MAIN_TASK propose_main_menu(Screen screen, int *menuOutput);
+enum MAIN_TASK propose_end_game_menu(Screen screen, int finalScore, int *menuOutput);
+
 void handle_termination(enum MAIN_TASK task, WINDOW *terminal);
 int game_main(Screen screen, WINDOW *terminal, enum MAIN_TASK *currentTask);
 
@@ -70,7 +72,9 @@ int game_main(const Screen screen, WINDOW *terminal, enum MAIN_TASK *currentTask
         finalScore = thread_main(screen, &game, &entities);
     }
 
-    show(screen, (finalScore > 0 ? PS_WIN : PS_LOST), &finalScore);
+    int endGameMenu = -1;
+    *currentTask = propose_end_game_menu(screen, finalScore, &endGameMenu);
+    handle_termination(*currentTask, terminal);
 
     return EXIT_SUCCESS;
 }
@@ -124,6 +128,36 @@ enum MAIN_TASK propose_main_menu(const Screen screen, int *menuOutput)
             case MMO_START_NEW:
                 break;
             case MMO_QUIT:
+                resultTask = TERMINATE;
+            default:
+                *menuOutput = 0;
+                break;
+        }
+    } while (*menuOutput == -1);
+
+    return resultTask;
+}
+
+/**
+ * Propone il menu di fine partita.
+ * @param screen        La struttura dello schermo.
+ * @param finalScore    Il punteggio finale.
+ * @param menuOutput    L'output del menu.
+ * @return              Il task corrente.
+ */
+enum MAIN_TASK propose_end_game_menu(const Screen screen, int finalScore, int *menuOutput)
+{
+    enum MAIN_TASK resultTask = KEEP_GOING;
+    *menuOutput = finalScore;
+
+    do {
+        show(screen, (finalScore > 0 ? PS_WIN : PS_LOST), menuOutput);
+
+        switch (*menuOutput)
+        {
+            case EGMO_RESTART:
+                break;
+            case EGMO_QUIT:
                 resultTask = TERMINATE;
             default:
                 *menuOutput = 0;
