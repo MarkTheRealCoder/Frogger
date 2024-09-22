@@ -31,6 +31,10 @@ int main(int argc, char *argv[])
         exitCode = game_main(screen, terminal, &currentTask);
     } while (currentTask != TERMINATE);
 
+    reset_color_pairs();
+    endwin();
+    delwin(terminal);
+
     return exitCode;
 }
 

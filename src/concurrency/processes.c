@@ -201,10 +201,9 @@ void generic_process(void *service_comms, void *args)
 
     ProcessCarriage *carriage = (ProcessCarriage *) p->carriage;
     pipe_t *comms = carriage->comms;
-    ProductionRules rules;
-    rules.rule = CALLOC(int, ((index == COMPONENT_CLOCK_INDEX || index == COMPONENT_TEMPORARY_CLOCK_INDEX) ? 2 : 1));
+    ProductionRules rules = { };
+    rules.rule = CALLOC(int, 1);
     rules.rule[0] = carriage->rules.rule[0];
-    rules.rule[1] = carriage->rules.rule[1];
 
     CLOSE_READ(comms[READ]);
     CLOSE_WRITE(comms[WRITE]);
@@ -225,7 +224,9 @@ void generic_process(void *service_comms, void *args)
             int tmp = -1;
             if (index) {
                 readIfReady(&(tmp), comms[WRITE], sizeof(int));
-                if (tmp != -1) rules.rule[0] = tmp;
+                if (tmp != -1) {
+                    rules.rule[0] = tmp;
+                }
             }
 
             producer(&rules);
@@ -253,7 +254,8 @@ void generic_process(void *service_comms, void *args)
         }
 
         if (write) {
-            sleepy(p->ms + ((rules.buffer == ACTION_PAUSE) ? 500 : 0), TIMEFRAME_MILLIS);
+            int additionalPause = (rules.buffer == ACTION_PAUSE) ? 500 : 0;
+            sleepy(p->ms + additionalPause, TIMEFRAME_MILLIS);
         }
     }
 }
